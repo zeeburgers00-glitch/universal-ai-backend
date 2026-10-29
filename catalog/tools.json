@@ -1,0 +1,709 @@
+[
+  {
+    "id": "ollama",
+    "name": "Ollama",
+    "category": "llm-runtime",
+    "kind": "runtime",
+    "description": "Run supported open-weight language models locally or on a private server.",
+    "repository_url": "https://github.com/ollama/ollama",
+    "docs_url": "https://ollama.com",
+    "license": "Check upstream LICENSE",
+    "integration_type": "provider-adapter",
+    "status": "catalog_only",
+    "capabilities": [
+      "local-inference",
+      "chat",
+      "embeddings"
+    ],
+    "permissions": [],
+    "risk_level": "medium"
+  },
+  {
+    "id": "vllm",
+    "name": "vLLM",
+    "category": "llm-runtime",
+    "kind": "runtime",
+    "description": "High-throughput inference server for supported language models.",
+    "repository_url": "https://github.com/vllm-project/vllm",
+    "docs_url": "https://docs.vllm.ai/",
+    "license": "Check upstream LICENSE",
+    "integration_type": "external-service",
+    "status": "catalog_only",
+    "capabilities": [
+      "model-serving",
+      "chat"
+    ],
+    "permissions": [],
+    "risk_level": "medium"
+  },
+  {
+    "id": "llama-cpp-python",
+    "name": "llama-cpp-python",
+    "category": "llm-runtime",
+    "kind": "library",
+    "description": "Python bindings and API server for llama.cpp-compatible models.",
+    "repository_url": "https://github.com/abetlen/llama-cpp-python",
+    "license": "Check upstream LICENSE",
+    "integration_type": "python-library",
+    "status": "catalog_only",
+    "capabilities": [
+      "local-inference",
+      "chat"
+    ],
+    "permissions": [],
+    "risk_level": "medium"
+  },
+  {
+    "id": "llama.cpp",
+    "name": "llama.cpp",
+    "category": "llm-runtime",
+    "kind": "runtime",
+    "description": "Efficient local inference for supported GGUF models.",
+    "repository_url": "https://github.com/ggml-org/llama.cpp",
+    "license": "Check upstream LICENSE",
+    "integration_type": "external-service",
+    "status": "catalog_only",
+    "capabilities": [
+      "local-inference",
+      "model-serving"
+    ],
+    "permissions": [],
+    "risk_level": "medium"
+  },
+  {
+    "id": "localai",
+    "name": "LocalAI",
+    "category": "llm-runtime",
+    "kind": "server",
+    "description": "Self-hosted OpenAI-compatible inference API for supported models and modalities.",
+    "repository_url": "https://github.com/mudler/LocalAI",
+    "license": "Check upstream LICENSE",
+    "integration_type": "external-service",
+    "status": "catalog_only",
+    "capabilities": [
+      "local-inference",
+      "chat",
+      "image",
+      "audio"
+    ],
+    "permissions": [],
+    "risk_level": "medium"
+  },
+  {
+    "id": "litellm",
+    "name": "LiteLLM",
+    "category": "llm-providers",
+    "kind": "gateway",
+    "description": "Unified interface and routing layer across many model providers.",
+    "repository_url": "https://github.com/BerriAI/litellm",
+    "license": "Check upstream LICENSE",
+    "integration_type": "python-library",
+    "status": "catalog_only",
+    "capabilities": [
+      "provider-routing",
+      "fallbacks",
+      "usage-tracking"
+    ],
+    "permissions": [],
+    "risk_level": "medium"
+  },
+  {
+    "id": "openai-python",
+    "name": "OpenAI Python SDK",
+    "category": "llm-providers",
+    "kind": "sdk",
+    "description": "Python SDK for OpenAI APIs.",
+    "repository_url": "https://github.com/openai/openai-python",
+    "license": "Check upstream LICENSE",
+    "integration_type": "python-library",
+    "status": "catalog_only",
+    "capabilities": [
+      "chat",
+      "embeddings",
+      "images",
+      "audio"
+    ],
+    "permissions": [],
+    "risk_level": "low"
+  },
+  {
+    "id": "anthropic-sdk-python",
+    "name": "Anthropic Python SDK",
+    "category": "llm-providers",
+    "kind": "sdk",
+    "description": "Python SDK for Anthropic APIs.",
+    "repository_url": "https://github.com/anthropics/anthropic-sdk-python",
+    "license": "Check upstream LICENSE",
+    "integration_type": "python-library",
+    "status": "catalog_only",
+    "capabilities": [
+      "chat",
+      "tools"
+    ],
+    "permissions": [],
+    "risk_level": "low"
+  },
+  {
+    "id": "langchain",
+    "name": "LangChain",
+    "category": "agents",
+    "kind": "framework",
+    "description": "Components and integrations for LLM-powered applications.",
+    "repository_url": "https://github.com/langchain-ai/langchain",
+    "license": "Check upstream LICENSE",
+    "integration_type": "python-library",
+    "status": "catalog_only",
+    "capabilities": [
+      "agents",
+      "retrieval",
+      "tools"
+    ],
+    "permissions": [],
+    "risk_level": "medium"
+  },
+  {
+    "id": "langgraph",
+    "name": "LangGraph",
+    "category": "agents",
+    "kind": "framework",
+    "description": "Stateful, controllable agent and workflow orchestration.",
+    "repository_url": "https://github.com/langchain-ai/langgraph",
+    "license": "Check upstream LICENSE",
+    "integration_type": "python-library",
+    "status": "catalog_only",
+    "capabilities": [
+      "agents",
+      "workflows",
+      "state"
+    ],
+    "permissions": [],
+    "risk_level": "medium"
+  },
+  {
+    "id": "crewai",
+    "name": "CrewAI",
+    "category": "agents",
+    "kind": "framework",
+    "description": "Framework for role-based multi-agent orchestration.",
+    "repository_url": "https://github.com/crewAIInc/crewAI",
+    "license": "Check upstream LICENSE",
+    "integration_type": "python-library",
+    "status": "catalog_only",
+    "capabilities": [
+      "multi-agent",
+      "workflows"
+    ],
+    "permissions": [],
+    "risk_level": "medium"
+  },
+  {
+    "id": "autogen",
+    "name": "AutoGen",
+    "category": "agents",
+    "kind": "framework",
+    "description": "Framework and tools for multi-agent AI applications.",
+    "repository_url": "https://github.com/microsoft/autogen",
+    "license": "Check upstream LICENSE",
+    "integration_type": "python-library",
+    "status": "catalog_only",
+    "capabilities": [
+      "multi-agent",
+      "tools",
+      "workflows"
+    ],
+    "permissions": [],
+    "risk_level": "medium"
+  },
+  {
+    "id": "agno",
+    "name": "Agno",
+    "category": "agents",
+    "kind": "framework",
+    "description": "Framework for building agents and multi-agent systems.",
+    "repository_url": "https://github.com/agno-agi/agno",
+    "license": "Check upstream LICENSE",
+    "integration_type": "python-library",
+    "status": "catalog_only",
+    "capabilities": [
+      "agents",
+      "memory",
+      "tools"
+    ],
+    "permissions": [],
+    "risk_level": "medium"
+  },
+  {
+    "id": "mcp-python-sdk",
+    "name": "MCP Python SDK",
+    "category": "mcp-integrations",
+    "kind": "sdk",
+    "description": "Python SDK to build Model Context Protocol clients and servers.",
+    "repository_url": "https://github.com/modelcontextprotocol/python-sdk",
+    "license": "Check upstream LICENSE",
+    "integration_type": "sdk",
+    "status": "catalog_only",
+    "capabilities": [
+      "mcp-client",
+      "mcp-server",
+      "tools"
+    ],
+    "permissions": [],
+    "risk_level": "medium"
+  },
+  {
+    "id": "mcp-servers",
+    "name": "MCP Servers",
+    "category": "mcp-integrations",
+    "kind": "collection",
+    "description": "Reference collection of Model Context Protocol servers and integrations.",
+    "repository_url": "https://github.com/modelcontextprotocol/servers",
+    "license": "Check upstream LICENSE and each server's terms",
+    "integration_type": "external-tool",
+    "status": "catalog_only",
+    "capabilities": [
+      "mcp",
+      "connectors",
+      "tools"
+    ],
+    "permissions": [],
+    "risk_level": "high"
+  },
+  {
+    "id": "n8n",
+    "name": "n8n",
+    "category": "automation",
+    "kind": "workflow-platform",
+    "description": "Workflow automation platform with app integrations and AI nodes.",
+    "repository_url": "https://github.com/n8n-io/n8n",
+    "docs_url": "https://docs.n8n.io/",
+    "license": "Check current sustainable-use/fair-code terms",
+    "integration_type": "external-service",
+    "status": "catalog_only",
+    "capabilities": [
+      "automation",
+      "integrations",
+      "webhooks"
+    ],
+    "permissions": [],
+    "risk_level": "high"
+  },
+  {
+    "id": "activepieces",
+    "name": "Activepieces",
+    "category": "automation",
+    "kind": "workflow-platform",
+    "description": "Automation platform with reusable app connectors.",
+    "repository_url": "https://github.com/activepieces/activepieces",
+    "license": "Check upstream LICENSE and edition terms",
+    "integration_type": "external-service",
+    "status": "catalog_only",
+    "capabilities": [
+      "automation",
+      "integrations"
+    ],
+    "permissions": [],
+    "risk_level": "high"
+  },
+  {
+    "id": "browser-use",
+    "name": "browser-use",
+    "category": "browser-computer-control",
+    "kind": "library",
+    "description": "Browser automation tooling designed for AI agents.",
+    "repository_url": "https://github.com/browser-use/browser-use",
+    "license": "Check upstream LICENSE",
+    "integration_type": "python-library",
+    "status": "catalog_only",
+    "capabilities": [
+      "browser-control",
+      "automation"
+    ],
+    "permissions": [
+      "browser"
+    ],
+    "risk_level": "high"
+  },
+  {
+    "id": "playwright",
+    "name": "Playwright",
+    "category": "browser-computer-control",
+    "kind": "automation-library",
+    "description": "Browser automation library for Chromium, Firefox, and WebKit.",
+    "repository_url": "https://github.com/microsoft/playwright",
+    "license": "Check upstream LICENSE",
+    "integration_type": "python-library",
+    "status": "catalog_only",
+    "capabilities": [
+      "browser-control",
+      "testing",
+      "automation"
+    ],
+    "permissions": [
+      "browser"
+    ],
+    "risk_level": "medium"
+  },
+  {
+    "id": "pyautogui",
+    "name": "PyAutoGUI",
+    "category": "browser-computer-control",
+    "kind": "computer-control-library",
+    "description": "Desktop mouse and keyboard automation; requires strict user permission boundaries.",
+    "repository_url": "https://github.com/asweigart/pyautogui",
+    "license": "Check upstream LICENSE",
+    "integration_type": "python-library",
+    "status": "catalog_only",
+    "capabilities": [
+      "desktop-control",
+      "mouse",
+      "keyboard"
+    ],
+    "permissions": [
+      "computer-control"
+    ],
+    "risk_level": "high"
+  },
+  {
+    "id": "openhands",
+    "name": "OpenHands",
+    "category": "coding-agents",
+    "kind": "agent-platform",
+    "description": "Platform for AI software development agents.",
+    "repository_url": "https://github.com/All-Hands-AI/OpenHands",
+    "license": "Review upstream and subcomponent terms",
+    "integration_type": "external-service",
+    "status": "catalog_only",
+    "capabilities": [
+      "coding-agent",
+      "computer-tools"
+    ],
+    "permissions": [
+      "filesystem",
+      "shell"
+    ],
+    "risk_level": "high"
+  },
+  {
+    "id": "aider",
+    "name": "Aider",
+    "category": "coding-agents",
+    "kind": "coding-assistant",
+    "description": "AI pair-programming tool with repository and Git workflows.",
+    "repository_url": "https://github.com/Aider-AI/aider",
+    "license": "Check upstream LICENSE",
+    "integration_type": "external-tool",
+    "status": "catalog_only",
+    "capabilities": [
+      "coding-agent",
+      "git"
+    ],
+    "permissions": [
+      "filesystem",
+      "git"
+    ],
+    "risk_level": "high"
+  },
+  {
+    "id": "swe-agent",
+    "name": "SWE-agent",
+    "category": "coding-agents",
+    "kind": "coding-agent",
+    "description": "Agent framework for resolving software engineering tasks.",
+    "repository_url": "https://github.com/SWE-agent/SWE-agent",
+    "license": "Check upstream LICENSE",
+    "integration_type": "external-service",
+    "status": "catalog_only",
+    "capabilities": [
+      "coding-agent",
+      "repository-tasks"
+    ],
+    "permissions": [
+      "filesystem",
+      "shell"
+    ],
+    "risk_level": "high"
+  },
+  {
+    "id": "haystack",
+    "name": "Haystack",
+    "category": "rag-search",
+    "kind": "framework",
+    "description": "Framework for retrieval-augmented generation and AI pipelines.",
+    "repository_url": "https://github.com/deepset-ai/haystack",
+    "license": "Check upstream LICENSE",
+    "integration_type": "python-library",
+    "status": "catalog_only",
+    "capabilities": [
+      "rag",
+      "pipelines",
+      "search"
+    ],
+    "permissions": [],
+    "risk_level": "medium"
+  },
+  {
+    "id": "llamaindex",
+    "name": "LlamaIndex",
+    "category": "rag-search",
+    "kind": "framework",
+    "description": "Data framework for retrieval-augmented generation and agentic data workflows.",
+    "repository_url": "https://github.com/run-llama/llama_index",
+    "license": "Check upstream LICENSE",
+    "integration_type": "python-library",
+    "status": "catalog_only",
+    "capabilities": [
+      "rag",
+      "connectors",
+      "retrieval"
+    ],
+    "permissions": [],
+    "risk_level": "medium"
+  },
+  {
+    "id": "chroma",
+    "name": "Chroma",
+    "category": "vector-databases",
+    "kind": "vector-database",
+    "description": "Embedding database for AI applications.",
+    "repository_url": "https://github.com/chroma-core/chroma",
+    "license": "Check upstream LICENSE",
+    "integration_type": "external-service",
+    "status": "catalog_only",
+    "capabilities": [
+      "vector-search",
+      "embeddings"
+    ],
+    "permissions": [],
+    "risk_level": "medium"
+  },
+  {
+    "id": "qdrant",
+    "name": "Qdrant",
+    "category": "vector-databases",
+    "kind": "vector-database",
+    "description": "Vector search engine and database.",
+    "repository_url": "https://github.com/qdrant/qdrant",
+    "license": "Check upstream LICENSE",
+    "integration_type": "external-service",
+    "status": "catalog_only",
+    "capabilities": [
+      "vector-search",
+      "retrieval"
+    ],
+    "permissions": [],
+    "risk_level": "medium"
+  },
+  {
+    "id": "pgvector",
+    "name": "pgvector",
+    "category": "vector-databases",
+    "kind": "database-extension",
+    "description": "Vector similarity search extension for PostgreSQL.",
+    "repository_url": "https://github.com/pgvector/pgvector",
+    "license": "Check upstream LICENSE",
+    "integration_type": "database-extension",
+    "status": "catalog_only",
+    "capabilities": [
+      "vector-search",
+      "postgresql"
+    ],
+    "permissions": [],
+    "risk_level": "medium"
+  },
+  {
+    "id": "whisper",
+    "name": "Whisper",
+    "category": "audio-voice",
+    "kind": "speech-recognition-model",
+    "description": "Speech recognition model and inference code.",
+    "repository_url": "https://github.com/openai/whisper",
+    "license": "Check upstream LICENSE and model terms",
+    "integration_type": "python-library",
+    "status": "catalog_only",
+    "capabilities": [
+      "speech-to-text",
+      "transcription"
+    ],
+    "permissions": [],
+    "risk_level": "medium"
+  },
+  {
+    "id": "faster-whisper",
+    "name": "faster-whisper",
+    "category": "audio-voice",
+    "kind": "speech-recognition-library",
+    "description": "Optimized Whisper inference using CTranslate2.",
+    "repository_url": "https://github.com/SYSTRAN/faster-whisper",
+    "license": "Check upstream LICENSE and model terms",
+    "integration_type": "python-library",
+    "status": "catalog_only",
+    "capabilities": [
+      "speech-to-text",
+      "transcription"
+    ],
+    "permissions": [],
+    "risk_level": "medium"
+  },
+  {
+    "id": "whisper.cpp",
+    "name": "whisper.cpp",
+    "category": "audio-voice",
+    "kind": "speech-recognition-runtime",
+    "description": "C/C++ Whisper inference implementation for supported platforms.",
+    "repository_url": "https://github.com/ggml-org/whisper.cpp",
+    "license": "Check upstream LICENSE and model terms",
+    "integration_type": "external-tool",
+    "status": "catalog_only",
+    "capabilities": [
+      "speech-to-text",
+      "local-inference"
+    ],
+    "permissions": [],
+    "risk_level": "medium"
+  },
+  {
+    "id": "piper",
+    "name": "Piper",
+    "category": "audio-voice",
+    "kind": "text-to-speech",
+    "description": "Local neural text-to-speech tooling; check each model's license.",
+    "repository_url": "https://github.com/rhasspy/piper",
+    "license": "Check repository and voice-model licenses",
+    "integration_type": "external-tool",
+    "status": "catalog_only",
+    "capabilities": [
+      "text-to-speech",
+      "local-audio"
+    ],
+    "permissions": [],
+    "risk_level": "medium"
+  },
+  {
+    "id": "comfyui",
+    "name": "ComfyUI",
+    "category": "image-video",
+    "kind": "generative-workflow",
+    "description": "Node-based interface and API for generative image/video workflows.",
+    "repository_url": "https://github.com/comfyanonymous/ComfyUI",
+    "license": "Check upstream LICENSE and model terms",
+    "integration_type": "external-service",
+    "status": "catalog_only",
+    "capabilities": [
+      "image-generation",
+      "image-workflow",
+      "video-workflow"
+    ],
+    "permissions": [],
+    "risk_level": "high"
+  },
+  {
+    "id": "diffusers",
+    "name": "Hugging Face Diffusers",
+    "category": "image-video",
+    "kind": "model-library",
+    "description": "Libraries and pipelines for diffusion models.",
+    "repository_url": "https://github.com/huggingface/diffusers",
+    "license": "Check upstream LICENSE and individual model licenses",
+    "integration_type": "python-library",
+    "status": "catalog_only",
+    "capabilities": [
+      "image-generation",
+      "audio",
+      "video"
+    ],
+    "permissions": [],
+    "risk_level": "medium"
+  },
+  {
+    "id": "searxng",
+    "name": "SearXNG",
+    "category": "search-web",
+    "kind": "metasearch-engine",
+    "description": "Self-hosted metasearch engine that must be deployed and configured separately.",
+    "repository_url": "https://github.com/searxng/searxng",
+    "license": "Check upstream LICENSE",
+    "integration_type": "external-service",
+    "status": "catalog_only",
+    "capabilities": [
+      "web-search",
+      "metasearch"
+    ],
+    "permissions": [],
+    "risk_level": "medium"
+  },
+  {
+    "id": "crawl4ai",
+    "name": "Crawl4AI",
+    "category": "search-web",
+    "kind": "web-crawling-library",
+    "description": "Web crawling and extraction toolkit for AI-oriented workflows.",
+    "repository_url": "https://github.com/unclecode/crawl4ai",
+    "license": "Check upstream LICENSE",
+    "integration_type": "python-library",
+    "status": "catalog_only",
+    "capabilities": [
+      "web-crawling",
+      "extraction"
+    ],
+    "permissions": [
+      "network"
+    ],
+    "risk_level": "high"
+  },
+  {
+    "id": "firecrawl",
+    "name": "Firecrawl",
+    "category": "search-web",
+    "kind": "web-data-platform",
+    "description": "Web crawling and extraction tools; review hosted-service and repository terms.",
+    "repository_url": "https://github.com/firecrawl/firecrawl",
+    "license": "Check upstream LICENSE and service terms",
+    "integration_type": "external-service",
+    "status": "catalog_only",
+    "capabilities": [
+      "web-search",
+      "web-crawling",
+      "extraction"
+    ],
+    "permissions": [
+      "network"
+    ],
+    "risk_level": "high"
+  },
+  {
+    "id": "supabase",
+    "name": "Supabase",
+    "category": "backend-data",
+    "kind": "backend-platform",
+    "description": "PostgreSQL database, authentication, storage, and realtime backend services.",
+    "repository_url": "https://github.com/supabase/supabase",
+    "license": "Check repository and hosted-service terms",
+    "integration_type": "external-service",
+    "status": "catalog_only",
+    "capabilities": [
+      "database",
+      "auth",
+      "storage",
+      "realtime"
+    ],
+    "permissions": [],
+    "risk_level": "medium"
+  },
+  {
+    "id": "temporal",
+    "name": "Temporal",
+    "category": "automation",
+    "kind": "workflow-engine",
+    "description": "Durable execution engine for reliable long-running workflows.",
+    "repository_url": "https://github.com/temporalio/temporal",
+    "license": "Check upstream LICENSE",
+    "integration_type": "external-service",
+    "status": "catalog_only",
+    "capabilities": [
+      "durable-workflows",
+      "orchestration"
+    ],
+    "permissions": [],
+    "risk_level": "medium"
+  }
+]
