@@ -32,7 +32,7 @@ You can also call `POST /v1/tools` with `X-API-Key`. This starter's in-memory wr
 
 ## Expanded catalog sources and license filters
 
-The API loads three catalogs in this order: `catalog/tools.json`, `catalog/extended.json`, and `catalog/commercial.json`. Duplicate repository URLs are merged and the original seed IDs are preserved.
+The API loads three catalogs in this order: `catalog/tools.json`, `catalog/extended.json`, `catalog/commercial.json`, and `catalog/llmops.json`. Duplicate repository URLs are merged and the original seed IDs are preserved.
 
 - `GET /v1/catalog/stats` shows current entry totals, categories, and license review statuses.
 - `GET /v1/catalog/sources` lists the curated directories used for discovery and explains the classification policy.
@@ -43,3 +43,8 @@ The API loads three catalogs in this order: `catalog/tools.json`, `catalog/exten
 This catalog includes three distinct concepts: a project's source license, the license of model weights/data, and the terms for a hosted API or enterprise edition. An open-source SDK for a paid hosted API does not make that hosted API or its models open-source. "Source available" and fair-code projects may have restrictions that differ from OSI-approved licenses.
 
 The catalog is not a universal inventory. A project being indexed does not mean its code is installed, safe, compatible, or tested. Review the exact upstream commit, license, dependencies, commercial terms, and required permissions before implementing an adapter.
+
+
+## LLMOps tool candidates
+
+The `catalog/llmops.json` file adds candidate references covering LLM gateway/router layers, tracing and observability, evaluation and safety testing, and prompt management. It includes source-reported license hints, inactive/archived markers when provided by the source list, and upstream links. Treat all candidates as review-required and validate current license and project status before integration.
