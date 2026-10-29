@@ -12,6 +12,7 @@ from fastapi import HTTPException
 
 SERVICES = {
     "voice": {"url_env": "VOICE_WORKER_URL", "key_env": "VOICE_WORKER_API_KEY"},
+    "openvoice": {"url_env": "OPENVOICE_WORKER_URL", "key_env": "OPENVOICE_WORKER_API_KEY"},
     "media": {"url_env": "MEDIA_WORKER_URL", "key_env": "MEDIA_WORKER_API_KEY"},
     "automation": {"url_env": "AUTOMATION_WORKER_URL", "key_env": "AUTOMATION_WORKER_API_KEY"},
     "agents": {"url_env": "AGENT_WORKER_URL", "key_env": "AGENT_WORKER_API_KEY"},
