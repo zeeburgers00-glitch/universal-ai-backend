@@ -149,4 +149,4 @@ volumes:
 
 networks:
   workers-private:
-    internal: true
+    driver: bridge
