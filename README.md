@@ -25,7 +25,7 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 Copy-Item .env.example .env
 # Edit .env and set BACKEND_API_KEY, AI_BASE_URL, AI_API_KEY
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --env-file .env
 ```
 
 Open `http://127.0.0.1:8000/docs`.
