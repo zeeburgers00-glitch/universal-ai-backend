@@ -12,8 +12,13 @@ from urllib.parse import urlparse
 from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 
-from rea_jobs import initialize_rea_jobs, read_rea_job, shutdown_rea_jobs, submit_rea_job
-from rea_mcp import ReaBridgeError, list_rea_tools
+try:
+    from .rea_jobs import initialize_rea_jobs, read_rea_job, shutdown_rea_jobs, submit_rea_job
+    from .rea_mcp import ReaBridgeError, list_rea_tools
+except ImportError:
+    # Also supports the documented `uvicorn app:app` invocation from this directory.
+    from rea_jobs import initialize_rea_jobs, read_rea_job, shutdown_rea_jobs, submit_rea_job
+    from rea_mcp import ReaBridgeError, list_rea_tools
 
 app = FastAPI(title="Universal AI Windows Agent", version="0.1.0")
 WORKSPACE = Path(os.getenv("WINDOWS_AGENT_WORKSPACE", str(Path.home() / "UniversalAIAgentWorkspace"))).resolve()
