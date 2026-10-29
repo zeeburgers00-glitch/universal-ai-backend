@@ -153,6 +153,7 @@ class YouTubePublishRequest(BaseModel):
     tags: list[str] = Field(default_factory=list, max_length=100)
     privacy_status: Literal["private", "unlisted", "public"] = "private"
     publish_at: str | None = Field(default=None, max_length=40)
+    self_declared_made_for_kids: bool | None = None
     user_approved: bool = False
     idempotency_key: str | None = Field(default=None, min_length=8, max_length=120, pattern=r"^[A-Za-z0-9_-]+$")
 
