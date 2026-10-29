@@ -28,3 +28,18 @@ You can also call `POST /v1/tools` with `X-API-Key`. This starter's in-memory wr
 ## Live GitHub discovery
 
 `GET /v1/discover/github?q=browser+automation&per_page=20` queries GitHub Search API at request time. GitHub may rate-limit requests. Configure `GITHUB_TOKEN` server-side for higher limits. Results should be reviewed before registration.
+
+
+## Expanded catalog sources and license filters
+
+The API loads three catalogs in this order: `catalog/tools.json`, `catalog/extended.json`, and `catalog/commercial.json`. Duplicate repository URLs are merged and the original seed IDs are preserved.
+
+- `GET /v1/catalog/stats` shows current entry totals, categories, and license review statuses.
+- `GET /v1/catalog/sources` lists the curated directories used for discovery and explains the classification policy.
+- `GET /v1/tools?license_status=review_required` returns entries whose licenses still need verification.
+- `GET /v1/tools?source_classification=source_available` can narrow candidate classifications by substring.
+- `GET /v1/discover/github?q=agent+framework&license_filter=apache-2.0&min_stars=100&sort=stars` queries current public GitHub metadata.
+
+This catalog includes three distinct concepts: a project's source license, the license of model weights/data, and the terms for a hosted API or enterprise edition. An open-source SDK for a paid hosted API does not make that hosted API or its models open-source. "Source available" and fair-code projects may have restrictions that differ from OSI-approved licenses.
+
+The catalog is not a universal inventory. A project being indexed does not mean its code is installed, safe, compatible, or tested. Review the exact upstream commit, license, dependencies, commercial terms, and required permissions before implementing an adapter.
