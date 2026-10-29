@@ -32,6 +32,11 @@
       "name": "Commercial / open-core candidate review list",
       "url": "https://github.com/zeeburgers00-glitch/universal-ai-backend/blob/main/catalog/commercial.json",
       "purpose": "Manually curated projects that have or may have paid cloud/enterprise services, open-source community code, source-available code, or open-source SDKs. License and pricing claims are deliberately marked for upstream verification."
+    },
+    {
+      "name": "Awesome LLMOps Platforms",
+      "url": "https://github.com/talhaanwarch/awesome-llmops-platforms",
+      "purpose": "Upstream discovery list for LLM gateways, observability, evaluation, guardrails, and prompt-management tools; its reported license/status metadata still requires per-project verification."
     }
   ],
   "classification_guide": {
