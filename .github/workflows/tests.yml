@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -14,4 +17,7 @@ jobs:
           python-version: "3.12"
           cache: "pip"
       - run: pip install -r requirements.txt
-      - run: python -m pytest
+      - name: Compile all Python modules
+        run: python -m compileall -q app workers tests
+      - name: Validate manifests and registry
+        run: python -m pytest -q
