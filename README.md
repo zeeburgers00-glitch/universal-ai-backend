@@ -132,3 +132,11 @@ Every catalog candidate still carries `license_status=review_required`. Verify t
 ## Tests
 
 GitHub Actions runs Python compile checks and catalog/manifest tests on pushes and pull requests. Worker images and GPU inference still need to be built and tested on a suitable worker host; the CI runner does not have the user's GPU, OAuth accounts or external worker credentials.
+
+## Operational readiness and go-live
+
+Run `python scripts/preflight.py --env-file .env` before local startup. For production, run `python scripts/preflight.py --env-file .env --worker-env-file workers/.env.workers --production`; add `--strict-workers` only when every declared worker is intended to be active. The checker prints configuration names/status only, never secret values.
+
+After deploying the same commit SHA as GitHub `main`, run `python scripts/smoke_test.py https://universal-ai-backend.vercel.app --json`. The smoke test exercises read-only API endpoints and never posts content, sends a message or starts a worker job.
+
+See [the complete Windows + production go-live checklist](docs/GO_LIVE_CHECKLIST.md) for Vercel setup, Docker Compose deployment, Windows JARVIS/REA setup, external provider credentials, live verification and production hardening.
