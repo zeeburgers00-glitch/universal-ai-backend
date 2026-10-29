@@ -17,6 +17,7 @@ SERVICES = {
     "agents": {"url_env": "AGENT_WORKER_URL", "key_env": "AGENT_WORKER_API_KEY"},
     "desktop": {"url_env": "DESKTOP_AGENT_URL", "key_env": "DESKTOP_AGENT_API_KEY"},
     "youtube": {"url_env": "YOUTUBE_WORKER_URL", "key_env": "YOUTUBE_WORKER_API_KEY"},
+    "channels": {"url_env": "CHANNEL_WORKER_URL", "key_env": "CHANNEL_WORKER_API_KEY"},
 }
 SAFE_PATH = re.compile(r"^/v1/[a-zA-Z0-9/_-]{1,120}$")
 
