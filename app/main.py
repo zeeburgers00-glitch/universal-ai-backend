@@ -158,6 +158,15 @@ class YouTubePublishRequest(BaseModel):
     idempotency_key: str | None = Field(default=None, min_length=8, max_length=120, pattern=r"^[A-Za-z0-9_-]+$")
 
 
+class ReaToolCallRequest(BaseModel):
+    paired_device_id: str = Field(min_length=3, max_length=300)
+    tool_name: str = Field(min_length=1, max_length=200, pattern=r"^[A-Za-z0-9._:/-]+$")
+    arguments: dict[str, Any] = Field(default_factory=dict)
+    user_approved: bool = False
+    authorization_scope_confirmed: bool = False
+    authorization_scope_note: str = Field(min_length=15, max_length=2000)
+
+
 class DesktopActionRequest(BaseModel):
     paired_device_id: str = Field(min_length=3, max_length=300)
     action: Literal[
@@ -539,15 +548,41 @@ async def desktop_action(request: DesktopActionRequest):
     return _worker_response(status_code, content_type, body)
 
 
+@app.get("/v1/rea/tools", dependencies=[Depends(require_api_key)])
+async def rea_tool_catalog():
+    status_code, content_type, body = await get_worker("desktop", "/v1/rea/tools", timeout_seconds=25)
+    return _worker_response(status_code, content_type, body)
+
+
+@app.post("/v1/rea/jobs", status_code=202, dependencies=[Depends(require_api_key)])
+async def create_rea_job(request: ReaToolCallRequest):
+    if not request.user_approved:
+        raise HTTPException(status_code=409, detail="Each REA MCP tool call requires explicit user_approved=true.")
+    if not request.authorization_scope_confirmed or not request.authorization_scope_note.strip():
+        raise HTTPException(status_code=400, detail="Confirm authorization for the target and describe the scope before running REA.")
+    payload = request.model_dump()
+    status_code, content_type, body = await post_worker("desktop", "/v1/rea/jobs", payload, timeout_seconds=25)
+    if "application/json" not in content_type:
+        raise HTTPException(status_code=502, detail="REA worker returned a non-JSON job response")
+    try:
+        result = json.loads(body.decode("utf-8"))
+    except (ValueError, UnicodeDecodeError):
+        raise HTTPException(status_code=502, detail="REA worker returned invalid JSON")
+    if isinstance(result, dict) and result.get("task_id"):
+        result["poll_url"] = f"/v1/tasks/rea/{result['task_id']}"
+    return JSONResponse(status_code=status_code, content=result)
+
+
 @app.get("/v1/tasks/{service}/{task_id}", dependencies=[Depends(require_api_key)])
 async def task_status(service: str, task_id: str):
     service_alias = {"voice": "voice", "media": "media", "automation": "automation",
-                     "agents": "agents", "desktop": "desktop", "youtube": "youtube"}
+                     "agents": "agents", "desktop": "desktop", "youtube": "youtube", "rea": "desktop"}
     if service not in service_alias:
         raise HTTPException(status_code=404, detail="Unknown task service")
     if not re.fullmatch(r"[A-Za-z0-9._:-]{1,180}", task_id):
         raise HTTPException(status_code=400, detail="Invalid task identifier")
-    status_code, content_type, body = await get_worker(service_alias[service], f"/v1/tasks/{task_id}", timeout_seconds=15)
+    worker_path = f"/v1/rea/tasks/{task_id}" if service == "rea" else f"/v1/tasks/{task_id}"
+    status_code, content_type, body = await get_worker(service_alias[service], worker_path, timeout_seconds=15)
     return _worker_response(status_code, content_type, body)
 
 
