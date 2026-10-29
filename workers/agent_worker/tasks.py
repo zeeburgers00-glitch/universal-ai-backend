@@ -15,6 +15,7 @@ ALLOWED_ACTIONS = {
     "youtube_publish",
     "channel_action",
     "desktop_action",
+    "rea_call",
     "coding_plan",
     "knowledge_query",
     "approval_required",
@@ -132,7 +133,7 @@ def plan_agent(self, payload: dict[str, Any]) -> dict[str, Any]:
             "description": str(step.get("description") or "")[:2000],
             "inputs": inputs_value,
             "requires_approval": bool(step.get("requires_approval")) or action in {
-                "youtube_publish", "channel_action", "desktop_action",
+                "youtube_publish", "channel_action", "desktop_action", "rea_call",
             },
             "expected_output": str(step.get("expected_output") or "")[:1000],
             "execution_status": "not_executed",
