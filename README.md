@@ -14,7 +14,7 @@
 - `workers/channel_worker/`: approval-gated message adapters for Telegram, Discord, Slack and WhatsApp Business approved templates.
 - `workers/agent_worker/`: asynchronous AI agent planner that returns a validated JSON action plan. It does not run arbitrary code or auto-execute plans.
 - `workers/automation_worker/`: durable workflow dispatcher with an allowlist of voice, media, YouTube, messaging and desktop action routes.
-- `workers/windows_agent/`: local paired Windows executor with app/URL allowlists, workspace-bounded file access and approvals for sensitive actions.
+- `workers/windows_agent/`: local paired Windows executor with app/URL allowlists, workspace-bounded file access, an optional persistent REA MCP bridge and approvals for sensitive actions.
 - `workers/docker-compose.yml`: one Compose file for Redis and the Linux-hosted voice/media/YouTube/channel/agent/workflow services.
 - `tests/` and `.github/workflows/tests.yml`: catalog safety, manifest and Python compile checks.
 
@@ -69,6 +69,7 @@ Protected action endpoints require `X-API-Key: <BACKEND_API_KEY>` from a trusted
 - `POST /v1/channels/{channel_id}/actions` — run supported channel actions after approval.
 - `POST /v1/youtube/publish` — queue an approved YouTube upload.
 - `POST /v1/desktop/actions` — route approved actions to the paired Windows agent.
+- `GET /v1/rea/tools` and `POST /v1/rea/jobs` — discover and queue allowlisted REA MCP analysis tools on the paired Windows PC; poll via `GET /v1/tasks/rea/{task_id}`.
 - `GET /v1/tasks/{service}/{task_id}` — check a worker task's status.
 
 Large video/audio uploads should go directly to the secured media worker's `POST /v1/assets/upload` endpoint, not through a Vercel function. Use asset IDs in subsequent requests; do not pass arbitrary server file paths.
@@ -105,7 +106,7 @@ Then expose each selected worker through a private network or an HTTPS reverse p
 - `AGENT_WORKER_URL` / `AGENT_WORKER_API_KEY`
 - `AUTOMATION_WORKER_URL` / `AUTOMATION_WORKER_API_KEY`
 
-Set `AGENT_MODEL_BASE_URL`, `AGENT_MODEL_API_KEY` and `AGENT_DEFAULT_MODEL` in the worker host environment for the agent planner. The Windows desktop agent is not part of the Linux Compose stack; install `workers/windows_agent` locally on your own Windows PC and expose it only through a protected HTTPS tunnel/private network.
+Set `AGENT_MODEL_BASE_URL`, `AGENT_MODEL_API_KEY` and `AGENT_DEFAULT_MODEL` in the worker host environment for the agent planner. The Windows desktop agent is not part of the Linux Compose stack; install `workers/windows_agent` locally on your own Windows PC and expose it only through a protected HTTPS tunnel/private network. For REA, install `rea-agents@6.8.0` globally on that PC, set `REA_ENTRY_SCRIPT`, enable the bridge locally, configure allowed target roots/URL hosts and manually allowlist exact MCP tool names.
 
 ### Model and license safety
 
@@ -114,6 +115,10 @@ F5-TTS is included as an engine adapter, but its source-code license and model-w
 Voice cloning, voice conversion and talking-avatar workflows require consent and rights to the reference voice/identity. The worker records a consent ID and checks that it matches; a production app must maintain genuine consent evidence, user identity, retention and revocation controls. Do not impersonate people without authorization.
 
 The official [YouTube videos.insert endpoint](https://developers.google.com/youtube/v3/docs/videos/insert) requires OAuth, quotas and applicable YouTube API terms. The YouTube worker is configured for a single authorized channel connection at a time; multi-account production use needs a persistent encrypted OAuth connection store and per-tenant authorization.
+
+## REA reverse-engineering integration
+
+REA is an optional specialized CLI/MCP integration for evidence-backed analysis of authorized application artifacts—not a TTS model or universal action engine. Its npm package is MIT at the REA-authored-code level, while external analysis engines and third-party dependencies retain their own terms. The Windows-agent bridge uses local stdio, retains state across sequential calls and queues longer tasks. It is disabled by default and requires a local tool-name allowlist, explicit approval per call, file-root restrictions and URL-host restrictions. Do not expose REA's documented plain-HTTP MCP listener publicly; upstream says it has no TLS/client authentication and that runtime analysis is not a sandbox. More details: https://github.com/morluto/rea and https://github.com/morluto/rea/blob/main/docs/mcp-contracts.md.
 
 ## Commercial/open-source license classification
 
