@@ -1,0 +1,386 @@
+[
+  {
+    "id": "openai-compatible",
+    "name": "Custom OpenAI-compatible endpoint",
+    "api_mode": "OpenAI-compatible",
+    "base_url_env": "AI_BASE_URL",
+    "api_key_env": "AI_API_KEY",
+    "default_model_env": "AI_DEFAULT_MODEL",
+    "readiness": "configured_if_env_present",
+    "status": "provider_adapter_candidate",
+    "capabilities": [
+      "chat_completions",
+      "tool_calling_if_supported_by_upstream"
+    ],
+    "notes": "Endpoint and key supplied by operator.",
+    "security": "Credentials are server-side environment variables; never send secret values to the frontend."
+  },
+  {
+    "id": "groq",
+    "name": "Groq",
+    "api_mode": "OpenAI-compatible",
+    "base_url_env": "GROQ_BASE_URL",
+    "api_key_env": "GROQ_API_KEY",
+    "default_model_env": "GROQ_DEFAULT_MODEL",
+    "readiness": "configured_if_env_present",
+    "status": "provider_adapter_candidate",
+    "capabilities": [
+      "chat_completions",
+      "tool_calling_if_supported_by_upstream"
+    ],
+    "notes": "Hosted fast inference; use current account limits/pricing.",
+    "security": "Credentials are server-side environment variables; never send secret values to the frontend."
+  },
+  {
+    "id": "openrouter",
+    "name": "OpenRouter",
+    "api_mode": "OpenAI-compatible",
+    "base_url_env": "OPENROUTER_BASE_URL",
+    "api_key_env": "OPENROUTER_API_KEY",
+    "default_model_env": "OPENROUTER_DEFAULT_MODEL",
+    "readiness": "configured_if_env_present",
+    "status": "provider_adapter_candidate",
+    "capabilities": [
+      "chat_completions",
+      "tool_calling_if_supported_by_upstream"
+    ],
+    "notes": "Model availability and price vary by selected provider/model.",
+    "security": "Credentials are server-side environment variables; never send secret values to the frontend."
+  },
+  {
+    "id": "together",
+    "name": "Together AI",
+    "api_mode": "OpenAI-compatible",
+    "base_url_env": "TOGETHER_BASE_URL",
+    "api_key_env": "TOGETHER_API_KEY",
+    "default_model_env": "TOGETHER_DEFAULT_MODEL",
+    "readiness": "configured_if_env_present",
+    "status": "provider_adapter_candidate",
+    "capabilities": [
+      "chat_completions",
+      "tool_calling_if_supported_by_upstream"
+    ],
+    "notes": "Hosted inference; model availability/pricing are provider controlled.",
+    "security": "Credentials are server-side environment variables; never send secret values to the frontend."
+  },
+  {
+    "id": "deepseek",
+    "name": "DeepSeek API",
+    "api_mode": "OpenAI-compatible",
+    "base_url_env": "DEEPSEEK_BASE_URL",
+    "api_key_env": "DEEPSEEK_API_KEY",
+    "default_model_env": "DEEPSEEK_DEFAULT_MODEL",
+    "readiness": "configured_if_env_present",
+    "status": "provider_adapter_candidate",
+    "capabilities": [
+      "chat_completions",
+      "tool_calling_if_supported_by_upstream"
+    ],
+    "notes": "Hosted API is separate from open-source model release licenses.",
+    "security": "Credentials are server-side environment variables; never send secret values to the frontend."
+  },
+  {
+    "id": "fireworks",
+    "name": "Fireworks AI",
+    "api_mode": "OpenAI-compatible",
+    "base_url_env": "FIREWORKS_BASE_URL",
+    "api_key_env": "FIREWORKS_API_KEY",
+    "default_model_env": "FIREWORKS_DEFAULT_MODEL",
+    "readiness": "configured_if_env_present",
+    "status": "provider_adapter_candidate",
+    "capabilities": [
+      "chat_completions",
+      "tool_calling_if_supported_by_upstream"
+    ],
+    "notes": "Hosted inference service; pricing is model/account specific.",
+    "security": "Credentials are server-side environment variables; never send secret values to the frontend."
+  },
+  {
+    "id": "cerebras",
+    "name": "Cerebras Inference",
+    "api_mode": "OpenAI-compatible",
+    "base_url_env": "CEREBRAS_BASE_URL",
+    "api_key_env": "CEREBRAS_API_KEY",
+    "default_model_env": "CEREBRAS_DEFAULT_MODEL",
+    "readiness": "configured_if_env_present",
+    "status": "provider_adapter_candidate",
+    "capabilities": [
+      "chat_completions",
+      "tool_calling_if_supported_by_upstream"
+    ],
+    "notes": "Hosted inference; verify account plan/limits.",
+    "security": "Credentials are server-side environment variables; never send secret values to the frontend."
+  },
+  {
+    "id": "mistral",
+    "name": "Mistral API",
+    "api_mode": "OpenAI-compatible",
+    "base_url_env": "MISTRAL_BASE_URL",
+    "api_key_env": "MISTRAL_API_KEY",
+    "default_model_env": "MISTRAL_DEFAULT_MODEL",
+    "readiness": "configured_if_env_present",
+    "status": "provider_adapter_candidate",
+    "capabilities": [
+      "chat_completions",
+      "tool_calling_if_supported_by_upstream"
+    ],
+    "notes": "Hosted API; not all model endpoints are open-source.",
+    "security": "Credentials are server-side environment variables; never send secret values to the frontend."
+  },
+  {
+    "id": "gemini",
+    "name": "Google Gemini API",
+    "api_mode": "OpenAI-compatible",
+    "base_url_env": "GEMINI_BASE_URL",
+    "api_key_env": "GEMINI_API_KEY",
+    "default_model_env": "GEMINI_DEFAULT_MODEL",
+    "readiness": "configured_if_env_present",
+    "status": "provider_adapter_candidate",
+    "capabilities": [
+      "chat_completions",
+      "tool_calling_if_supported_by_upstream"
+    ],
+    "notes": "Hosted API; Google API terms/quotas apply.",
+    "security": "Credentials are server-side environment variables; never send secret values to the frontend."
+  },
+  {
+    "id": "anthropic",
+    "name": "Anthropic Messages API",
+    "api_mode": "native-adapter",
+    "base_url_env": "ANTHROPIC_BASE_URL",
+    "api_key_env": "ANTHROPIC_API_KEY",
+    "default_model_env": "ANTHROPIC_DEFAULT_MODEL",
+    "readiness": "configured_if_env_present",
+    "status": "provider_adapter_candidate",
+    "capabilities": [
+      "chat_completions",
+      "tool_calling_if_supported_by_upstream"
+    ],
+    "notes": "Native Messages API adapter; hosted service is proprietary/paid according to plan.",
+    "security": "Credentials are server-side environment variables; never send secret values to the frontend."
+  },
+  {
+    "id": "ollama",
+    "name": "Ollama local/server",
+    "api_mode": "OpenAI-compatible",
+    "base_url_env": "OLLAMA_BASE_URL",
+    "api_key_env": "OLLAMA_API_KEY",
+    "default_model_env": "OLLAMA_DEFAULT_MODEL",
+    "readiness": "configured_if_env_present",
+    "status": "provider_adapter_candidate",
+    "capabilities": [
+      "chat_completions",
+      "tool_calling_if_supported_by_upstream"
+    ],
+    "notes": "Self-hosted inference requires a separately reachable endpoint; not directly hosted in Vercel.",
+    "security": "Credentials are server-side environment variables; never send secret values to the frontend."
+  },
+  {
+    "id": "vllm",
+    "name": "vLLM endpoint",
+    "api_mode": "OpenAI-compatible",
+    "base_url_env": "VLLM_BASE_URL",
+    "api_key_env": "VLLM_API_KEY",
+    "default_model_env": "VLLM_DEFAULT_MODEL",
+    "readiness": "configured_if_env_present",
+    "status": "provider_adapter_candidate",
+    "capabilities": [
+      "chat_completions",
+      "tool_calling_if_supported_by_upstream"
+    ],
+    "notes": "Self-hosted GPU inference endpoint; operator manages GPU infrastructure.",
+    "security": "Credentials are server-side environment variables; never send secret values to the frontend."
+  },
+  {
+    "id": "sglang",
+    "name": "SGLang endpoint",
+    "api_mode": "OpenAI-compatible",
+    "base_url_env": "SGLANG_BASE_URL",
+    "api_key_env": "SGLANG_API_KEY",
+    "default_model_env": "SGLANG_DEFAULT_MODEL",
+    "readiness": "configured_if_env_present",
+    "status": "provider_adapter_candidate",
+    "capabilities": [
+      "chat_completions",
+      "tool_calling_if_supported_by_upstream"
+    ],
+    "notes": "Self-hosted inference endpoint.",
+    "security": "Credentials are server-side environment variables; never send secret values to the frontend."
+  },
+  {
+    "id": "localai",
+    "name": "LocalAI endpoint",
+    "api_mode": "OpenAI-compatible",
+    "base_url_env": "LOCALAI_BASE_URL",
+    "api_key_env": "LOCALAI_API_KEY",
+    "default_model_env": "LOCALAI_DEFAULT_MODEL",
+    "readiness": "configured_if_env_present",
+    "status": "provider_adapter_candidate",
+    "capabilities": [
+      "chat_completions",
+      "tool_calling_if_supported_by_upstream"
+    ],
+    "notes": "Self-hosted endpoint; Vercel needs a secure network path.",
+    "security": "Credentials are server-side environment variables; never send secret values to the frontend."
+  },
+  {
+    "id": "llama-cpp",
+    "name": "llama.cpp server",
+    "api_mode": "OpenAI-compatible",
+    "base_url_env": "LLAMA_CPP_BASE_URL",
+    "api_key_env": "LLAMA_CPP_API_KEY",
+    "default_model_env": "LLAMA_CPP_DEFAULT_MODEL",
+    "readiness": "configured_if_env_present",
+    "status": "provider_adapter_candidate",
+    "capabilities": [
+      "chat_completions",
+      "tool_calling_if_supported_by_upstream"
+    ],
+    "notes": "Self-hosted inference; resource capacity depends on the host.",
+    "security": "Credentials are server-side environment variables; never send secret values to the frontend."
+  },
+  {
+    "id": "lmstudio",
+    "name": "LM Studio local server",
+    "api_mode": "OpenAI-compatible",
+    "base_url_env": "LMSTUDIO_BASE_URL",
+    "api_key_env": "LMSTUDIO_API_KEY",
+    "default_model_env": "LMSTUDIO_DEFAULT_MODEL",
+    "readiness": "configured_if_env_present",
+    "status": "provider_adapter_candidate",
+    "capabilities": [
+      "chat_completions",
+      "tool_calling_if_supported_by_upstream"
+    ],
+    "notes": "Desktop/local server; Vercel cannot reach a private PC without a secure tunnel.",
+    "security": "Credentials are server-side environment variables; never send secret values to the frontend."
+  },
+  {
+    "id": "litellm",
+    "name": "LiteLLM proxy",
+    "api_mode": "OpenAI-compatible",
+    "base_url_env": "LITELLM_BASE_URL",
+    "api_key_env": "LITELLM_API_KEY",
+    "default_model_env": "LITELLM_DEFAULT_MODEL",
+    "readiness": "configured_if_env_present",
+    "status": "provider_adapter_candidate",
+    "capabilities": [
+      "chat_completions",
+      "tool_calling_if_supported_by_upstream"
+    ],
+    "notes": "Gateway can route many upstream providers; inspect its license/edition boundaries.",
+    "security": "Credentials are server-side environment variables; never send secret values to the frontend."
+  },
+  {
+    "id": "siliconflow",
+    "name": "SiliconFlow",
+    "api_mode": "OpenAI-compatible",
+    "base_url_env": "SILICONFLOW_BASE_URL",
+    "api_key_env": "SILICONFLOW_API_KEY",
+    "default_model_env": "SILICONFLOW_DEFAULT_MODEL",
+    "readiness": "configured_if_env_present",
+    "status": "provider_adapter_candidate",
+    "capabilities": [
+      "chat_completions",
+      "tool_calling_if_supported_by_upstream"
+    ],
+    "notes": "Hosted API; model availability and prices vary.",
+    "security": "Credentials are server-side environment variables; never send secret values to the frontend."
+  },
+  {
+    "id": "sambanova",
+    "name": "SambaNova Cloud",
+    "api_mode": "OpenAI-compatible",
+    "base_url_env": "SAMBANOVA_BASE_URL",
+    "api_key_env": "SAMBANOVA_API_KEY",
+    "default_model_env": "SAMBANOVA_DEFAULT_MODEL",
+    "readiness": "configured_if_env_present",
+    "status": "provider_adapter_candidate",
+    "capabilities": [
+      "chat_completions",
+      "tool_calling_if_supported_by_upstream"
+    ],
+    "notes": "Hosted API; account limits apply.",
+    "security": "Credentials are server-side environment variables; never send secret values to the frontend."
+  },
+  {
+    "id": "nebius",
+    "name": "Nebius AI Studio",
+    "api_mode": "OpenAI-compatible",
+    "base_url_env": "NEBIUS_BASE_URL",
+    "api_key_env": "NEBIUS_API_KEY",
+    "default_model_env": "NEBIUS_DEFAULT_MODEL",
+    "readiness": "configured_if_env_present",
+    "status": "provider_adapter_candidate",
+    "capabilities": [
+      "chat_completions",
+      "tool_calling_if_supported_by_upstream"
+    ],
+    "notes": "Hosted API; account limits apply.",
+    "security": "Credentials are server-side environment variables; never send secret values to the frontend."
+  },
+  {
+    "id": "novita",
+    "name": "Novita AI",
+    "api_mode": "OpenAI-compatible",
+    "base_url_env": "NOVITA_BASE_URL",
+    "api_key_env": "NOVITA_API_KEY",
+    "default_model_env": "NOVITA_DEFAULT_MODEL",
+    "readiness": "configured_if_env_present",
+    "status": "provider_adapter_candidate",
+    "capabilities": [
+      "chat_completions",
+      "tool_calling_if_supported_by_upstream"
+    ],
+    "notes": "Hosted API; model availability and prices vary.",
+    "security": "Credentials are server-side environment variables; never send secret values to the frontend."
+  },
+  {
+    "id": "hyperbolic",
+    "name": "Hyperbolic",
+    "api_mode": "OpenAI-compatible",
+    "base_url_env": "HYPERBOLIC_BASE_URL",
+    "api_key_env": "HYPERBOLIC_API_KEY",
+    "default_model_env": "HYPERBOLIC_DEFAULT_MODEL",
+    "readiness": "configured_if_env_present",
+    "status": "provider_adapter_candidate",
+    "capabilities": [
+      "chat_completions",
+      "tool_calling_if_supported_by_upstream"
+    ],
+    "notes": "Hosted API; verify current model and pricing catalog.",
+    "security": "Credentials are server-side environment variables; never send secret values to the frontend."
+  },
+  {
+    "id": "dashscope",
+    "name": "Alibaba DashScope / Qwen API",
+    "api_mode": "OpenAI-compatible",
+    "base_url_env": "DASHSCOPE_BASE_URL",
+    "api_key_env": "DASHSCOPE_API_KEY",
+    "default_model_env": "DASHSCOPE_DEFAULT_MODEL",
+    "readiness": "configured_if_env_present",
+    "status": "provider_adapter_candidate",
+    "capabilities": [
+      "chat_completions",
+      "tool_calling_if_supported_by_upstream"
+    ],
+    "notes": "Hosted API; region-specific service terms and models apply.",
+    "security": "Credentials are server-side environment variables; never send secret values to the frontend."
+  },
+  {
+    "id": "huggingface",
+    "name": "Hugging Face Inference Endpoint",
+    "api_mode": "OpenAI-compatible",
+    "base_url_env": "HUGGINGFACE_BASE_URL",
+    "api_key_env": "HUGGINGFACE_API_KEY",
+    "default_model_env": "HUGGINGFACE_DEFAULT_MODEL",
+    "readiness": "configured_if_env_present",
+    "status": "provider_adapter_candidate",
+    "capabilities": [
+      "chat_completions",
+      "tool_calling_if_supported_by_upstream"
+    ],
+    "notes": "Managed endpoints are billed separately; open model weights have individual licenses.",
+    "security": "Credentials are server-side environment variables; never send secret values to the frontend."
+  }
+]
