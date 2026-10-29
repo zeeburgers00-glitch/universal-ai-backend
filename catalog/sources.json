@@ -27,6 +27,11 @@
       "name": "Awesome Self-Hosted Agents",
       "url": "https://github.com/arcane-bear/awesome-self-hosted-agents",
       "purpose": "Discovery source only. Review every project's own LICENSE and any model/data/service terms."
+    },
+    {
+      "name": "Commercial / open-core candidate review list",
+      "url": "https://github.com/zeeburgers00-glitch/universal-ai-backend/blob/main/catalog/commercial.json",
+      "purpose": "Manually curated projects that have or may have paid cloud/enterprise services, open-source community code, source-available code, or open-source SDKs. License and pricing claims are deliberately marked for upstream verification."
     }
   ],
   "classification_guide": {
