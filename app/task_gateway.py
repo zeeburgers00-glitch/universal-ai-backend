@@ -94,3 +94,24 @@ async def post_worker(
         raise HTTPException(status_code=502, detail=f"{service} worker returned HTTP {response.status_code}")
     content_type = response.headers.get("content-type", "application/octet-stream")
     return response.status_code, content_type, response.content
+
+
+async def get_worker(service: str, path: str, timeout_seconds: float = 15.0) -> tuple[int, str, bytes]:
+    """GET a worker status/health endpoint through a configured fixed service URL."""
+    if not SAFE_PATH.fullmatch(path) or ".." in path:
+        raise HTTPException(status_code=400, detail="Invalid worker route")
+    base_url, api_key = _worker_config(service)
+    timeout = httpx.Timeout(timeout_seconds, connect=8.0)
+    try:
+        async with httpx.AsyncClient(timeout=timeout, follow_redirects=False) as client:
+            response = await client.get(
+                base_url + path,
+                headers={"Authorization": f"Bearer {api_key}", "X-Worker-Service": service},
+            )
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail=f"{service} worker timed out")
+    except httpx.RequestError as exc:
+        raise HTTPException(status_code=502, detail=f"{service} worker request failed: {type(exc).__name__}")
+    if response.status_code >= 400:
+        raise HTTPException(status_code=502, detail=f"{service} worker returned HTTP {response.status_code}")
+    return response.status_code, response.headers.get("content-type", "application/octet-stream"), response.content
