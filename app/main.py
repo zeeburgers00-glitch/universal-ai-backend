@@ -88,7 +88,7 @@ class AgentRunRequest(BaseModel):
     inputs: dict[str, Any] = Field(default_factory=dict)
     user_approved: bool = False
     dry_run: bool = False
-    idempotency_key: str | None = Field(default=None, min_length=8, max_length=120)
+    idempotency_key: str | None = Field(default=None, min_length=8, max_length=120, pattern=r"^[A-Za-z0-9_-]+$")
 
 
 
@@ -112,7 +112,7 @@ class VoiceTTSRequest(BaseModel):
     speaker_consent_record_id: str | None = Field(default=None, max_length=300)
     commercial_use: bool = True
     output_format: Literal["wav", "mp3", "ogg", "flac"] = "wav"
-    idempotency_key: str | None = Field(default=None, min_length=8, max_length=120)
+    idempotency_key: str | None = Field(default=None, min_length=8, max_length=120, pattern=r"^[A-Za-z0-9_-]+$")
 
 
 class VoiceCloneRequest(BaseModel):
@@ -123,7 +123,7 @@ class VoiceCloneRequest(BaseModel):
     speaker_consent_record_id: str | None = Field(default=None, max_length=300)
     commercial_use: bool = True
     voice_profile_name: str = Field(min_length=2, max_length=100)
-    idempotency_key: str | None = Field(default=None, min_length=8, max_length=120)
+    idempotency_key: str | None = Field(default=None, min_length=8, max_length=120, pattern=r"^[A-Za-z0-9_-]+$")
 
 
 class MediaJobRequest(BaseModel):
@@ -131,7 +131,18 @@ class MediaJobRequest(BaseModel):
     inputs: dict[str, Any] = Field(default_factory=dict)
     commercial_use: bool = True
     user_approved: bool = False
-    idempotency_key: str | None = Field(default=None, min_length=8, max_length=120)
+    idempotency_key: str | None = Field(default=None, min_length=8, max_length=120, pattern=r"^[A-Za-z0-9_-]+$")
+
+
+class ChannelActionRequest(BaseModel):
+    connection_id: str = Field(min_length=3, max_length=300)
+    action: str = Field(min_length=3, max_length=80, pattern=r"^[a-zA-Z0-9_-]+$")
+    target_id: str = Field(min_length=1, max_length=300)
+    text: str = Field(default="", max_length=12000)
+    title: str | None = Field(default=None, max_length=300)
+    approved_template_name: str | None = Field(default=None, max_length=200)
+    user_approved: bool = False
+    idempotency_key: str | None = Field(default=None, min_length=8, max_length=120, pattern=r"^[A-Za-z0-9_-]+$")
 
 
 class YouTubePublishRequest(BaseModel):
@@ -143,7 +154,7 @@ class YouTubePublishRequest(BaseModel):
     privacy_status: Literal["private", "unlisted", "public"] = "private"
     publish_at: str | None = Field(default=None, max_length=40)
     user_approved: bool = False
-    idempotency_key: str | None = Field(default=None, min_length=8, max_length=120)
+    idempotency_key: str | None = Field(default=None, min_length=8, max_length=120, pattern=r"^[A-Za-z0-9_-]+$")
 
 
 class DesktopActionRequest(BaseModel):
@@ -155,7 +166,7 @@ class DesktopActionRequest(BaseModel):
     ]
     parameters: dict[str, Any] = Field(default_factory=dict)
     user_approved: bool = False
-    idempotency_key: str | None = Field(default=None, min_length=8, max_length=120)
+    idempotency_key: str | None = Field(default=None, min_length=8, max_length=120, pattern=r"^[A-Za-z0-9_-]+$")
 
 
 def _page(items: list[dict[str, Any]], limit: int, offset: int) -> dict[str, Any]:
@@ -471,6 +482,23 @@ def list_channels(q: str | None = None):
                        "environment_configured": bool(required) and configured_count == len(required)})
     return {"total": len(result), "items": result,
             "note": "OAuth connection state should live in a persistent encrypted connection store; env checks alone do not prove a channel account is connected."}
+
+
+@app.post("/v1/channels/{channel_id}/actions", dependencies=[Depends(require_api_key)])
+async def channel_action(channel_id: str, request: ChannelActionRequest):
+    manifest = next((x for x in _manifest_list("channels.json") if x.get("id") == channel_id), None)
+    if not manifest:
+        raise HTTPException(status_code=404, detail="Channel connector is not in the registry")
+    supported = set(manifest.get("supported_actions", []))
+    if request.action not in supported:
+        raise HTTPException(status_code=400, detail="Action is not declared as supported for this channel connector")
+    if request.action in {"send_message", "send_template_message", "channel_post", "publish_post",
+                          "publish_media", "upload_video", "publish_video", "create_status"} and not request.user_approved:
+        raise HTTPException(status_code=409, detail="External messages and public posts require explicit user_approved=true")
+    payload = {**request.model_dump(), "channel_id": channel_id,
+               "task_id": request.idempotency_key or str(uuid4()), "execution_mode": "async"}
+    status_code, content_type, body = await post_worker("channels", "/v1/channels/action", payload, timeout_seconds=25)
+    return _worker_response(status_code, content_type, body)
 
 
 @app.post("/v1/youtube/publish", dependencies=[Depends(require_api_key)])
