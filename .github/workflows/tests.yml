@@ -18,6 +18,6 @@ jobs:
           cache: "pip"
       - run: pip install -r requirements.txt
       - name: Compile all Python modules
-        run: python -m compileall -q app workers tests
+        run: python -m compileall -q app workers tests scripts
       - name: Validate manifests and registry
         run: python -m pytest -q
