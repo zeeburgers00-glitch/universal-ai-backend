@@ -136,10 +136,10 @@ async def create_rea_job(req: ReaToolCallRequest):
     if not req.authorization_scope_confirmed or not req.authorization_scope_note.strip():
         raise HTTPException(status_code=400, detail="Confirm authorization for the target and describe the scope before running REA")
     try:
-        return submit_rea_job(req.tool_name, req.arguments)
+        return submit_rea_job(req.tool_name, req.arguments, req.authorization_scope_note)
     except ReaBridgeError as exc:
         detail = str(exc)
-        status = 403 if any(word in detail.lower() for word in ("allowlist", "outside", "allowed_target_roots", "allowed_url_hosts", "disabled")) else 503 if any(word in detail.lower() for word in ("not configured", "not found", "node.js")) else 400
+        status = 429 if "queue has reached" in detail.lower() else 403 if any(word in detail.lower() for word in ("allowlist", "outside", "allowed_target_roots", "allowed_url_hosts", "disabled")) else 503 if any(word in detail.lower() for word in ("not configured", "not found", "node.js")) else 400
         raise HTTPException(status_code=status, detail=detail) from exc
 
 
