@@ -3,6 +3,7 @@ import asyncio
 import json
 import os
 import sqlite3
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -29,10 +30,18 @@ def _db_path() -> Path:
     return path
 
 
-def _connect() -> sqlite3.Connection:
+@contextmanager
+def _connect():
     connection = sqlite3.connect(_db_path(), timeout=5)
     connection.row_factory = sqlite3.Row
-    return connection
+    try:
+        yield connection
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
 
 
 def initialize_rea_jobs() -> None:
