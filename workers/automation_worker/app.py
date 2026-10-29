@@ -45,7 +45,7 @@ def health():
             key: bool(os.getenv(key, "").strip())
             for key in [
                 "VOICE_WORKER_URL", "MEDIA_WORKER_URL", "YOUTUBE_WORKER_URL",
-                "CHANNEL_WORKER_URL", "DESKTOP_AGENT_URL",
+                "CHANNEL_WORKER_URL", "DESKTOP_AGENT_URL", "REA_WORKER_URL",
             ]
         },
     }

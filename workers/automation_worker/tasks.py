@@ -14,6 +14,7 @@ ACTIONS = {
     "youtube_publish": ("youtube", "/v1/youtube/publish", "YOUTUBE_WORKER_URL", "YOUTUBE_WORKER_API_KEY"),
     "channel_action": ("channels", "/v1/channels/action", "CHANNEL_WORKER_URL", "CHANNEL_WORKER_API_KEY"),
     "desktop_action": ("desktop", "/v1/desktop/actions", "DESKTOP_AGENT_URL", "DESKTOP_AGENT_API_KEY"),
+    "rea_inspect": ("rea", "/v1/rea/inspect", "REA_WORKER_URL", "REA_WORKER_API_KEY"),
 }
 
 
@@ -22,9 +23,11 @@ def _validate_payload(action_name: str, payload: dict[str, Any], user_approved: 
         raise ValueError(f"Unsupported workflow action {action_name!r}")
     if not isinstance(payload, dict) or len(str(payload)) > 50000:
         raise ValueError("Action payload must be a JSON object below 50 KB")
-    # External posts/messages and all computer actions are always approval-gated.
-    if action_name in {"youtube_publish", "channel_action", "desktop_action"} and not user_approved:
+    # External posts/messages, REA inspections, and all computer actions are always approval-gated.
+    if action_name in {"youtube_publish", "channel_action", "desktop_action", "rea_inspect"} and not user_approved:
         raise PermissionError(f"{action_name} requires explicit user approval")
+    if action_name == "rea_inspect" and not payload.get("authorized_target_confirmed"):
+        raise PermissionError("rea_inspect requires authorized_target_confirmed=true")
     if action_name == "youtube_publish" and not payload.get("video_asset_id"):
         raise ValueError("youtube_publish requires video_asset_id")
     if action_name == "voice_clone" and not (

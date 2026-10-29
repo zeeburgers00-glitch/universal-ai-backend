@@ -40,5 +40,8 @@ Vercel sends JSON requests to these configured HTTPS base URLs:
 - `AGENT_WORKER_URL` — specialist agent plans and tool calls
 - `DESKTOP_AGENT_URL` — paired, authenticated Windows desktop agent
 - `YOUTUBE_WORKER_URL` — OAuth-backed YouTube publishing/analytics worker
+- `CHANNEL_WORKER_URL` — allowlisted Telegram, Discord, Slack, and WhatsApp channel worker
+- `REA_WORKER_URL` — isolated REA (`morluto/rea`) static artifact, JS bundle, and GGUF/safetensors inspection worker
 
-Only voice worker code is included as a concrete executable worker scaffold. The other services have API manifests/contracts and must be deployed/configured before their corresponding endpoints run. Keep all secrets in each hosting provider's secret/environment settings, never commit them to GitHub.
+Worker scaffolds are provided under `workers/` (`voice_worker`, `media_worker`, `youtube_worker`, `channel_worker`, `agent_worker`, `automation_worker`, `rea_worker`, and `windows_agent`) and orchestrated via `workers/docker-compose.yml`. Keep all secrets in each hosting provider's secret/environment settings, never commit them to GitHub.
+

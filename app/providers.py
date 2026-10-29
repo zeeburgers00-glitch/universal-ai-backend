@@ -9,6 +9,75 @@ PROVIDERS: dict[str, dict[str, Any]] = {
         "label": "Custom OpenAI-compatible endpoint", "base_env": "AI_BASE_URL", "key_env": "AI_API_KEY",
         "model_env": "AI_DEFAULT_MODEL", "default_base": None, "requires_key": True, "mode": "openai-compatible",
     },
+    "openai": {
+        "label": "OpenAI API", "base_env": "OPENAI_BASE_URL", "key_env": "OPENAI_API_KEY",
+        "model_env": "OPENAI_DEFAULT_MODEL", "default_base": "https://api.openai.com/v1", "requires_key": True, "mode": "openai-compatible",
+    },
+    "xai": {
+        "label": "xAI Grok API", "base_env": "XAI_BASE_URL", "key_env": "XAI_API_KEY",
+        "model_env": "XAI_DEFAULT_MODEL", "default_base": "https://api.x.ai/v1", "requires_key": True, "mode": "openai-compatible",
+    },
+    "perplexity": {
+        "label": "Perplexity Sonar API", "base_env": "PERPLEXITY_BASE_URL", "key_env": "PERPLEXITY_API_KEY",
+        "model_env": "PERPLEXITY_DEFAULT_MODEL", "default_base": "https://api.perplexity.ai", "requires_key": True, "mode": "openai-compatible",
+    },
+    "cohere": {
+        "label": "Cohere Compatibility API", "base_env": "COHERE_BASE_URL", "key_env": "COHERE_API_KEY",
+        "model_env": "COHERE_DEFAULT_MODEL", "default_base": "https://api.cohere.ai/compatibility/v1", "requires_key": True, "mode": "openai-compatible",
+    },
+    "moonshot": {
+        "label": "Moonshot / Kimi API", "base_env": "MOONSHOT_BASE_URL", "key_env": "MOONSHOT_API_KEY",
+        "model_env": "MOONSHOT_DEFAULT_MODEL", "default_base": "https://api.moonshot.ai/v1", "requires_key": True, "mode": "openai-compatible",
+    },
+    "zhipu": {
+        "label": "Zhipu AI / GLM API", "base_env": "ZHIPU_BASE_URL", "key_env": "ZHIPU_API_KEY",
+        "model_env": "ZHIPU_DEFAULT_MODEL", "default_base": "https://open.bigmodel.cn/api/paas/v4", "requires_key": True, "mode": "openai-compatible",
+    },
+    "minimax": {
+        "label": "MiniMax API", "base_env": "MINIMAX_BASE_URL", "key_env": "MINIMAX_API_KEY",
+        "model_env": "MINIMAX_DEFAULT_MODEL", "default_base": "https://api.minimax.io/v1", "requires_key": True, "mode": "openai-compatible",
+    },
+    "nvidia-nim": {
+        "label": "NVIDIA NIM API", "base_env": "NVIDIA_NIM_BASE_URL", "key_env": "NVIDIA_NIM_API_KEY",
+        "model_env": "NVIDIA_NIM_DEFAULT_MODEL", "default_base": "https://integrate.api.nvidia.com/v1", "requires_key": True, "mode": "openai-compatible",
+    },
+    "ai21": {
+        "label": "AI21 Studio API", "base_env": "AI21_BASE_URL", "key_env": "AI21_API_KEY",
+        "model_env": "AI21_DEFAULT_MODEL", "default_base": "https://api.ai21.com/studio/v1", "requires_key": True, "mode": "openai-compatible",
+    },
+    "baseten": {
+        "label": "Baseten Model API", "base_env": "BASETEN_BASE_URL", "key_env": "BASETEN_API_KEY",
+        "model_env": "BASETEN_DEFAULT_MODEL", "default_base": "https://inference.baseten.co/v1", "requires_key": True, "mode": "openai-compatible",
+    },
+    "friendli": {
+        "label": "FriendliAI Serverless", "base_env": "FRIENDLI_BASE_URL", "key_env": "FRIENDLI_API_KEY",
+        "model_env": "FRIENDLI_DEFAULT_MODEL", "default_base": "https://api.friendli.ai/serverless/v1", "requires_key": True, "mode": "openai-compatible",
+    },
+    "featherless": {
+        "label": "Featherless AI", "base_env": "FEATHERLESS_BASE_URL", "key_env": "FEATHERLESS_API_KEY",
+        "model_env": "FEATHERLESS_DEFAULT_MODEL", "default_base": "https://api.featherless.ai/v1", "requires_key": True, "mode": "openai-compatible",
+    },
+    "chutes": {
+        "label": "Chutes Serverless AI", "base_env": "CHUTES_BASE_URL", "key_env": "CHUTES_API_KEY",
+        "model_env": "CHUTES_DEFAULT_MODEL", "default_base": "https://llm.chutes.ai/v1", "requires_key": True, "mode": "openai-compatible",
+    },
+    "lambda-ai": {
+        "label": "Lambda Inference API", "base_env": "LAMBDA_AI_BASE_URL", "key_env": "LAMBDA_AI_API_KEY",
+        "model_env": "LAMBDA_AI_DEFAULT_MODEL", "default_base": "https://api.lambda.ai/v1", "requires_key": True, "mode": "openai-compatible",
+    },
+    "azure-openai": {
+        "label": "Azure OpenAI (v1 compatible)", "base_env": "AZURE_OPENAI_BASE_URL", "key_env": "AZURE_OPENAI_API_KEY",
+        "model_env": "AZURE_OPENAI_DEFAULT_MODEL", "default_base": None, "requires_key": True, "mode": "openai-compatible",
+    },
+    "bedrock-gateway": {
+        "label": "AWS Bedrock OpenAI Gateway", "base_env": "BEDROCK_GATEWAY_BASE_URL", "key_env": "BEDROCK_GATEWAY_API_KEY",
+        "model_env": "BEDROCK_GATEWAY_DEFAULT_MODEL", "default_base": None, "requires_key": True, "mode": "openai-compatible",
+    },
+    "cloudflare-ai": {
+        "label": "Cloudflare Workers AI", "base_env": "CLOUDFLARE_AI_BASE_URL", "key_env": "CLOUDFLARE_AI_API_KEY",
+        "model_env": "CLOUDFLARE_AI_DEFAULT_MODEL", "default_base": None, "requires_key": True, "mode": "openai-compatible",
+    },
+
     "groq": {
         "label": "Groq", "base_env": "GROQ_BASE_URL", "key_env": "GROQ_API_KEY",
         "model_env": "GROQ_DEFAULT_MODEL", "default_base": "https://api.groq.com/openai/v1", "requires_key": True, "mode": "openai-compatible",
@@ -97,6 +166,23 @@ PROVIDERS: dict[str, dict[str, Any]] = {
         "label": "LiteLLM gateway", "base_env": "LITELLM_BASE_URL", "key_env": "LITELLM_API_KEY",
         "model_env": "LITELLM_DEFAULT_MODEL", "default_base": None, "requires_key": False, "mode": "openai-compatible",
     },
+    "tgi": {
+        "label": "Hugging Face TGI server", "base_env": "TGI_BASE_URL", "key_env": "TGI_API_KEY",
+        "model_env": "TGI_DEFAULT_MODEL", "default_base": None, "requires_key": False, "mode": "openai-compatible",
+    },
+    "tabbyapi": {
+        "label": "ExLlamaV2 / TabbyAPI server", "base_env": "TABBYAPI_BASE_URL", "key_env": "TABBYAPI_API_KEY",
+        "model_env": "TABBYAPI_DEFAULT_MODEL", "default_base": None, "requires_key": False, "mode": "openai-compatible",
+    },
+    "koboldcpp": {
+        "label": "KoboldCpp server", "base_env": "KOBOLDCPP_BASE_URL", "key_env": "KOBOLDCPP_API_KEY",
+        "model_env": "KOBOLDCPP_DEFAULT_MODEL", "default_base": None, "requires_key": False, "mode": "openai-compatible",
+    },
+    "jan": {
+        "label": "Jan local API server", "base_env": "JAN_BASE_URL", "key_env": "JAN_API_KEY",
+        "model_env": "JAN_DEFAULT_MODEL", "default_base": None, "requires_key": False, "mode": "openai-compatible",
+    },
+
     "anthropic": {
         "label": "Anthropic Messages API", "base_env": "ANTHROPIC_BASE_URL", "key_env": "ANTHROPIC_API_KEY",
         "model_env": "ANTHROPIC_DEFAULT_MODEL", "default_base": "https://api.anthropic.com", "requires_key": True, "mode": "anthropic",

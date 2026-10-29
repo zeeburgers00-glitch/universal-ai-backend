@@ -15,6 +15,8 @@ ALLOWED_ACTIONS = {
     "youtube_publish",
     "channel_action",
     "desktop_action",
+    "rea_inspect",
+    "mcp_tool_plan",
     "coding_plan",
     "knowledge_query",
     "approval_required",

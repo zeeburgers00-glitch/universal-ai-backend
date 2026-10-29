@@ -6,13 +6,16 @@ API-only backend for an existing app. It is designed as an extensible integratio
 
 ## Features
 
-- FastAPI REST API with OpenAPI docs at `/docs`.
-- Expanded searchable catalog from multiple AI/self-hosting/LLMOps directories plus commercial/open-core candidates; exact count is exposed by `GET /v1/catalog/stats`. Repository references are metadata, not executed integrations.
-- Live GitHub discovery with filters: `GET /v1/discover/github?q=browser+automation&license_filter=mit&min_stars=100&sort=stars` fetches current public repo results, including license metadata when GitHub supplies it.
-- Configurable OpenAI-compatible chat adapter for endpoints such as OpenAI-compatible hosted providers and self-hosted inference services.
-- API-key protection for chat and catalog writes.
-- Vercel-compatible FastAPI entrypoint and local Windows instructions.
+- FastAPI REST API with OpenAPI docs at `/docs` and built-in interactive web dashboard at `/explorer`.
+- Global searchable AI & MCP catalog (`6,100+` unique open-source repositories, `1,760+` MCP servers/SDKs/gateways, LLMOps tools, voice/video/image/music models, and flagship commercial AI platforms across `85+` categories, plus `229` REA MCP reverse-engineering/AI-inspection tools); exact live counts are exposed by `GET /v1/catalog/stats`. Repository and platform references are metadata, not executed integrations.
+- REA (`morluto/rea` / `rea-agents`) MCP catalog (`GET /v1/rea/status`, `GET /v1/rea/tools`) **plus** an isolated, approval-gated REA inspection worker (`workers/rea_worker` via `POST /v1/rea/inspect`).
+- `45` configurable LLM & multimodal inference provider adapters (`GET /v1/models/providers`) including OpenAI, Anthropic, Google Gemini, xAI Grok, Groq, DeepSeek, Qwen/DashScope, Perplexity, Cohere, Moonshot/Kimi, Zhipu/GLM, MiniMax, NVIDIA NIM, OpenRouter, Together, Fireworks, Cerebras, Mistral, Azure OpenAI, Bedrock Gateway, Cloudflare AI, Ollama, vLLM, SGLang, TGI, TabbyAPI, KoboldCpp, Jan, LM Studio, and LiteLLM.
+- Live GitHub discovery with `30` built-in AI category presets (`GET /v1/discover/categories`) and filters: `GET /v1/discover/github?category_preset=mcp-servers&license_filter=mit&min_stars=100&sort=stars`.
+- API-key protection for chat, worker dispatches, and catalog writes.
+- Vercel-compatible FastAPI entrypoint and unified Docker Compose stack (`workers/docker-compose.yml`) for GPU/async workers.
 - Safe-by-default integration model: listing a repo never installs or executes its code.
+
+
 
 ## Quick start (Windows PowerShell)
 
@@ -42,18 +45,25 @@ Open `http://127.0.0.1:8000/docs`.
 ## API routes
 
 - `GET /` — service metadata
+- `GET /explorer` — interactive web explorer across all AI tools, REA MCP tools, providers, blueprints, and live discovery
 - `GET /health` — health check
-- `GET /v1/tools?q=voice&category=audio-voice` — search the registry
+- `GET /v1/tools?q=voice&category=audio-voice&min_stars=500&language=Python` — search the global AI & MCP registry
 - Filter candidate license states with `license_status=review_required` or a partial `source_classification` value
 - `GET /v1/tools/categories` — categories
-- `GET /v1/catalog/stats` — live counts of entries/categories/license-review statuses
+- `GET /v1/catalog/stats` — live counts of entries/categories/license-review statuses and REA MCP manifests
 - `GET /v1/catalog/sources` — catalog discovery sources and classification policy
+- `GET /v1/rea/status` — REA (`morluto/rea`) MCP server metadata, setup commands, verification Evidence IDs, and responsible-use policy
+- `GET /v1/rea/tools?ai_only=true` — search/filter REA's `229` MCP tools (`q`, `family`, `ai_only`, `read_only`, `destructive`)
+- `POST /v1/rea/inspect` — dispatch bounded static REA inspection to isolated `rea_worker` (requires `X-API-Key`, `authorized_target_confirmed=true`, `user_approved=true`)
 - `GET /v1/tools/{tool_id}` — one record
 - `GET /v1/skills?q=browser` — searchable skills/tool references
-- `GET /v1/providers` — provider configuration status (never returns secrets)
-- `POST /v1/chat/completions` — OpenAI-compatible chat proxy (requires `X-API-Key`)
+- `GET /v1/providers` & `GET /v1/models/providers` — `45` provider configuration states (never returns secrets)
+- `POST /v1/chat/completions` — multi-provider chat proxy (requires `X-API-Key`)
 - `POST /v1/tools` — add catalog metadata (requires `X-API-Key`; does not install or execute code)
-- `GET /v1/discover/github?q=computer+use` — find current GitHub repositories
+- `GET /v1/discover/categories` — `30` built-in global AI discovery presets and live catalog counts
+- `GET /v1/discover/github?q=computer+use` or `GET /v1/discover/github?category_preset=mcp-servers` — find current GitHub repositories
+
+
 
 ### Example chat call
 
@@ -91,18 +101,23 @@ This backend's code and each linked integration have their own licenses and term
 
 ## Expanded catalog and license policy
 
-The registry loads `catalog/tools.json`, `catalog/extended.json`, `catalog/commercial.json`, and `catalog/llmops.json`, merging duplicate repository URLs while preserving stable IDs from the original seed catalog. The seed is a curated set, not a claim to list every AI project in existence.
+The registry loads `catalog/tools.json`, `catalog/extended.json`, `catalog/commercial.json`, `catalog/llmops.json`, `catalog/voice_media.json`, `catalog/mcp_ecosystem.json`, and `catalog/global_ai_directory.json`, merging duplicate repository URLs while preserving stable IDs from the original seed catalog. REA's own MCP tool/prompt catalog is indexed separately in `catalog/rea_mcp_tools.json` and served via `/v1/rea/status` and `/v1/rea/tools`. The static catalog snapshots thousands of known open-source and commercial AI tools across `35+` categories, while `/v1/discover/github` provides live discovery over newly published repositories.
 
-Many candidate rows are deliberately marked `license_status=review_required`. The catalog includes open-source candidates as well as some source-available/fair-code and mixed-license projects, since commercial products sometimes expose only part of their code. Those classes are labeled separately when known. Do not treat source-available, an open-source SDK, model weights, and a vendor's hosted API as equivalent.
+Many candidate rows are deliberately marked `license_status=review_required`. The catalog includes open-source candidates, commercial/SaaS AI platforms, and source-available/fair-code or mixed-license projects. Those classes are labeled separately when known. Do not treat source-available, an open-source SDK, model weights, and a vendor's hosted API as equivalent.
 
-For the most current public GitHub metadata, use `/v1/discover/github` with filters. The API may be rate-limited without `GITHUB_TOKEN`. A GitHub SPDX field is helpful metadata, not legal advice or proof that every dependency, model, dataset, or enterprise feature has the same license.
+For the most current public GitHub metadata, use `/v1/discover/github` with filters or `category_preset`. The API may be rate-limited without `GITHUB_TOKEN`. A GitHub SPDX field is helpful metadata, not legal advice or proof that every dependency, model, dataset, or enterprise feature has the same license.
 
 ### Useful searches
 
 ```text
-GET /v1/tools?q=paid+cloud
+GET /v1/tools?category=mcp-servers
+GET /v1/tools?min_stars=10000&language=Python
+GET /v1/rea/status
+GET /v1/rea/tools?ai_only=true
+GET /v1/rea/tools?q=webmcp
+GET /v1/discover/categories
+GET /v1/discover/github?category_preset=ai-agents&min_stars=500
 GET /v1/tools?q=license&license_status=review_required
-GET /v1/discover/github?q=agent+framework&license_filter=apache-2.0&sort=stars
-GET /v1/discover/github?q=voice+tts&license_filter=mit&min_stars=100
 GET /v1/catalog/stats
 ```
+

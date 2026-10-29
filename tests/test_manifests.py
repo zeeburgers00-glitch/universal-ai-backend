@@ -43,10 +43,12 @@ def test_license_status_and_source_classification_filters():
 
 def test_default_registry_loads_expanded_catalogs():
     registry = Registry.from_file()
-    assert len(registry.items) >= 400
+    assert len(registry.items) >= 3000
     assert any(item.get("source_name") for item in registry.items)
     assert any(item.get("commercial_model") for item in registry.items)
     assert any(item.get("category") == "voice-cloning" for item in registry.items)
+    assert any(item.get("category") == "mcp-servers" for item in registry.items)
+    assert registry.get("mcp-morluto-rea") is not None
 
 
 def test_registry_repository_urls_are_unique_after_merge():
@@ -62,18 +64,26 @@ def test_registry_repository_urls_are_unique_after_merge():
 def test_all_manifests_are_valid_json_and_have_unique_ids():
     manifest_names = [
         "tools.json", "extended.json", "commercial.json", "llmops.json",
-        "voice_media.json", "channels.json", "workflows.json", "agents.json",
-        "provider_capabilities.json", "sources.json",
+        "voice_media.json", "mcp_ecosystem.json", "global_ai_directory.json",
+        "channels.json", "workflows.json", "agents.json",
+        "provider_capabilities.json", "sources.json", "rea_mcp_tools.json",
     ]
     for name in manifest_names:
         data = _read_json(CATALOG / name)
         if name == "sources.json":
             assert isinstance(data.get("sources"), list)
             continue
+        if name == "rea_mcp_tools.json":
+            tools = data.get("tools", [])
+            assert len(tools) >= 200
+            tool_ids = [item.get("id") for item in tools]
+            assert len(tool_ids) == len(set(tool_ids))
+            continue
         assert isinstance(data, list), name
         ids = [item.get("id") for item in data]
         assert all(isinstance(value, str) and value for value in ids), name
         assert len(ids) == len(set(ids)), name
+
 
 
 def test_creator_and_jarvis_workflows_are_approval_gated():

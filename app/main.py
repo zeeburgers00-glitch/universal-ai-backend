@@ -8,10 +8,11 @@ from uuid import uuid4
 
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from pydantic import BaseModel, Field
 
-from .github_discovery import search_github_repositories
+from .explorer_ui import EXPLORER_HTML
+from .github_discovery import list_discovery_presets, search_github_repositories
 from .providers import chat_with_provider, provider_status
 from .registry import Registry
 from .security import require_api_key
@@ -34,8 +35,8 @@ def load_manifest(filename: str) -> Any:
 
 app = FastAPI(
     title="Universal AI Backend",
-    description="API-only control plane for AI models, agents, media workers, creator workflows, channels, and paired JARVIS devices.",
-    version="0.4.0",
+    description="API-only control plane for AI models, agents, MCP servers, REA reverse-engineering inspection, media workers, creator workflows, channels, and paired JARVIS devices.",
+    version="0.6.0",
 )
 
 origins = [x.strip() for x in os.getenv("CORS_ORIGINS", "").split(",") if x.strip()]
@@ -170,6 +171,31 @@ class DesktopActionRequest(BaseModel):
     idempotency_key: str | None = Field(default=None, min_length=8, max_length=120, pattern=r"^[A-Za-z0-9_-]+$")
 
 
+class ReaInspectRequest(BaseModel):
+    operation: Literal[
+        "capabilities",
+        "doctor",
+        "inspect-desktop-application",
+        "analyze-javascript-application",
+        "inspect-model-artifact",
+        "inspect-gpu-code-objects",
+        "inspect-python-pyc",
+        "inspect-sqlite-database",
+        "inspect-pe-imports",
+        "inspect-pe-certificates",
+        "inspect-elf-notes",
+        "inspect-go-binary",
+        "inspect-rust-binary",
+        "inspect-wasm-artifact",
+    ] = "capabilities"
+    target_path: str | None = Field(default=None, max_length=400)
+    authorized_target_confirmed: bool = False
+    user_approved: bool = False
+    dry_run: bool = False
+    idempotency_key: str | None = Field(default=None, min_length=8, max_length=120, pattern=r"^[A-Za-z0-9_-]+$")
+
+
+
 def _page(items: list[dict[str, Any]], limit: int, offset: int) -> dict[str, Any]:
     safe_limit = min(max(limit, 1), 200)
     safe_offset = max(offset, 0)
@@ -201,23 +227,37 @@ def _worker_response(status_code: int, content_type: str, content: bytes) -> Res
 def root():
     return {
         "name": "Universal AI Backend",
-        "version": "0.4.0",
+        "version": "0.6.0",
         "status": "ok",
+        "explorer": "/explorer",
         "docs": "/docs",
         "health": "/health",
         "catalog": "/v1/tools",
+        "catalog_stats": "/v1/catalog/stats",
+        "rea_status": "/v1/rea/status",
+        "rea_tools": "/v1/rea/tools",
+        "rea_inspect": "/v1/rea/inspect",
+        "providers": "/v1/models/providers",
         "workflows": "/v1/workflows",
         "agents": "/v1/agents",
         "channels": "/v1/channels",
         "voice": "/v1/voice/providers",
         "discovery": "/v1/discover/github?q=voice+agent",
-        "note": "One repository/control plane. Heavy models and trusted Windows desktop actions execute on configured workers, not inside Vercel functions.",
+        "discovery_categories": "/v1/discover/categories",
+        "note": "One repository/control plane. Heavy models, REA artifact inspection, and trusted Windows desktop actions execute on configured workers, not inside Vercel functions.",
     }
+
+
+@app.get("/explorer", response_class=HTMLResponse)
+def explorer():
+    return HTMLResponse(content=EXPLORER_HTML)
 
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": "universal-ai-backend", "version": "0.4.0"}
+    return {"status": "ok", "service": "universal-ai-backend", "version": "0.6.0"}
+
+
 
 
 @app.get("/v1/runtime/capabilities")
@@ -246,11 +286,14 @@ def list_tools(
     capability: str | None = None,
     license_status: str | None = None,
     source_classification: str | None = None,
+    min_stars: int | None = Query(default=None, ge=0),
+    language: str | None = None,
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
 ):
     items = registry.list(q=q, category=category, status=status, kind=kind, capability=capability,
-                          license_status=license_status, source_classification=source_classification)
+                          license_status=license_status, source_classification=source_classification,
+                          min_stars=min_stars, language=language)
     return _page(items, limit, offset)
 
 
@@ -258,10 +301,12 @@ def list_tools(
 def list_skills(
     q: str | None = None, category: str | None = None, capability: str | None = None,
     license_status: str | None = None, source_classification: str | None = None,
+    min_stars: int | None = Query(default=None, ge=0), language: str | None = None,
     limit: int = Query(default=50, ge=1, le=200), offset: int = Query(default=0, ge=0),
 ):
     items = registry.list(q=q, category=category, capability=capability,
-                          license_status=license_status, source_classification=source_classification)
+                          license_status=license_status, source_classification=source_classification,
+                          min_stars=min_stars, language=language)
     return _page(items, limit, offset)
 
 
@@ -282,10 +327,18 @@ def catalog_stats():
         category_counts[category] = category_counts.get(category, 0) + 1
         license_counts[license_status] = license_counts.get(license_status, 0) + 1
         classification_counts[classification] = classification_counts.get(classification, 0) + 1
+    try:
+        rea_manifest = load_manifest("rea_mcp_tools.json")
+    except (ValueError, FileNotFoundError, json.JSONDecodeError):
+        rea_manifest = {}
     manifest_counts = {
         "workflows": len(_manifest_list("workflows.json")),
         "agent_blueprints": len(_manifest_list("agents.json")),
         "channel_manifests": len(_manifest_list("channels.json")),
+        "mcp_ecosystem_records": len(_manifest_list("mcp_ecosystem.json")),
+        "rea_mcp_tools": len(rea_manifest.get("tools", [])),
+        "rea_mcp_prompts": len(rea_manifest.get("prompts", [])),
+        "rea_cli_commands": len(rea_manifest.get("cli_commands", [])),
     }
     return {
         "total_tools": len(registry.items),
@@ -295,6 +348,7 @@ def catalog_stats():
         "separate_manifests": manifest_counts,
         "note": "Counts are catalog metadata; they are not counts of installed or verified executable integrations.",
     }
+
 
 
 @app.get("/v1/catalog/sources")
@@ -443,7 +497,8 @@ async def upload_voice_reference(request: VoiceAssetUploadRequest):
 async def synthesize_voice(request: VoiceTTSRequest):
     engine = request.engine.lower()
     valid_engines = {"f5-tts", "openvoice", "gpt-sovits", "cosyvoice", "fish-speech", "xtts-v2",
-                     "melo-tts", "kokoro", "styletts2", "piper", "elevenlabs", "cartesia", "deepgram", "azure"}
+                     "melo-tts", "kokoro", "styletts2", "piper", "chatterbox", "orpheus-tts",
+                     "zonos", "spark-tts", "dia", "elevenlabs", "cartesia", "deepgram", "azure"}
     if engine not in valid_engines:
         raise HTTPException(status_code=400, detail="Unsupported voice engine. Query /v1/voice/providers for the catalog.")
     if (request.reference_audio_asset_id or request.voice_profile_id) and not (
@@ -539,8 +594,11 @@ async def desktop_action(request: DesktopActionRequest):
 
 @app.get("/v1/tasks/{service}/{task_id}", dependencies=[Depends(require_api_key)])
 async def task_status(service: str, task_id: str):
-    service_alias = {"voice": "voice", "media": "media", "automation": "automation",
-                     "agents": "agents", "desktop": "desktop", "youtube": "youtube"}
+    service_alias = {
+        "voice": "voice", "media": "media", "automation": "automation",
+        "agents": "agents", "desktop": "desktop", "youtube": "youtube",
+        "channels": "channels", "rea": "rea",
+    }
     if service not in service_alias:
         raise HTTPException(status_code=404, detail="Unknown task service")
     if not re.fullmatch(r"[A-Za-z0-9._:-]{1,180}", task_id):
@@ -549,9 +607,115 @@ async def task_status(service: str, task_id: str):
     return _worker_response(status_code, content_type, body)
 
 
+@app.post("/v1/rea/inspect", dependencies=[Depends(require_api_key)])
+async def inspect_with_rea(request: ReaInspectRequest):
+    if not request.authorized_target_confirmed:
+        raise HTTPException(
+            status_code=400,
+            detail="REA inspection requires authorized_target_confirmed=true confirming ownership or legal authorization to inspect the target.",
+        )
+    if not request.user_approved:
+        raise HTTPException(status_code=409, detail="REA worker inspection requires explicit user_approved=true.")
+    if request.operation not in {"capabilities", "doctor"} and not request.target_path:
+        raise HTTPException(status_code=400, detail=f"target_path is required for REA operation {request.operation}")
+    payload = {
+        "task_id": request.idempotency_key or str(uuid4()),
+        "operation": request.operation,
+        "target_path": request.target_path,
+        "authorized_target_confirmed": request.authorized_target_confirmed,
+        "user_approved": request.user_approved,
+        "dry_run": request.dry_run,
+    }
+    status_code, content_type, body = await post_worker("rea", "/v1/rea/inspect", payload, timeout_seconds=25)
+    return _worker_response(status_code, content_type, body)
+
+
+
+@app.get("/v1/rea/status")
+def rea_status():
+    try:
+        manifest = load_manifest("rea_mcp_tools.json")
+    except (ValueError, FileNotFoundError, json.JSONDecodeError):
+        raise HTTPException(status_code=500, detail="REA MCP manifest unavailable")
+    ai_highlights = [t for t in manifest.get("tools", []) if t.get("ai_workflow_highlight")]
+    return {
+        "id": manifest.get("id"),
+        "name": manifest.get("name"),
+        "package_name": manifest.get("package_name"),
+        "mcp_registry_name": manifest.get("mcp_registry_name"),
+        "version": manifest.get("version"),
+        "repository_url": manifest.get("repository_url"),
+        "website_url": manifest.get("website_url"),
+        "license": manifest.get("license"),
+        "setup_commands": manifest.get("setup_commands", {}),
+        "counts": manifest.get("counts", {}),
+        "family_counts": manifest.get("family_counts", {}),
+        "ai_workflow_highlights": ai_highlights,
+        "prompts": manifest.get("prompts", []),
+        "discovery_evidence_runs": manifest.get("discovery_evidence_runs", []),
+        "responsible_use_policy": manifest.get("responsible_use_policy"),
+    }
+
+
+@app.get("/v1/rea/tools")
+def list_rea_tools(
+    q: str | None = None,
+    family: str | None = None,
+    ai_only: bool = False,
+    read_only: bool | None = None,
+    destructive: bool | None = None,
+    limit: int = Query(default=50, ge=1, le=250),
+    offset: int = Query(default=0, ge=0),
+):
+    try:
+        manifest = load_manifest("rea_mcp_tools.json")
+    except (ValueError, FileNotFoundError, json.JSONDecodeError):
+        raise HTTPException(status_code=500, detail="REA MCP manifest unavailable")
+    tools = list(manifest.get("tools", []))
+    if q:
+        needle = q.casefold()
+        tools = [t for t in tools if needle in json.dumps(t, ensure_ascii=False).casefold()]
+    if family:
+        wanted_fam = family.casefold()
+        tools = [t for t in tools if str(t.get("family", "")).casefold() == wanted_fam]
+    if ai_only:
+        tools = [t for t in tools if bool(t.get("ai_workflow_highlight"))]
+    if read_only is not None:
+        tools = [t for t in tools if bool(t.get("read_only")) is read_only]
+    if destructive is not None:
+        tools = [t for t in tools if bool(t.get("destructive")) is destructive]
+    return {
+        **_page(tools, limit, offset),
+        "rea_version": manifest.get("version"),
+        "families": manifest.get("family_counts", {}),
+    }
+
+
+@app.get("/v1/discover/categories")
+def discover_categories():
+    category_counts: dict[str, int] = {}
+    for item in registry.items:
+        cat = str(item.get("category", "uncategorized"))
+        category_counts[cat] = category_counts.get(cat, 0) + 1
+    presets = []
+    for preset in list_discovery_presets():
+        presets.append({
+            **preset,
+            "catalog_count": category_counts.get(preset["id"], 0),
+            "discover_url": f"/v1/discover/github?category_preset={preset['id']}",
+        })
+    return {
+        "total_presets": len(presets),
+        "total_catalog_categories": len(category_counts),
+        "presets": presets,
+        "catalog_category_counts": dict(sorted(category_counts.items())),
+    }
+
+
 @app.get("/v1/discover/github")
 async def discover_github(
-    q: str = Query(min_length=2, max_length=180, description="Capability/tool query, e.g. browser automation"),
+    q: str = Query(default="", max_length=180, description="Capability/tool query, e.g. browser automation"),
+    category_preset: str | None = Query(default=None, max_length=60, description="Optional built-in AI category preset from /v1/discover/categories"),
     per_page: int = Query(default=10, ge=1, le=30),
     page: int = Query(default=1, ge=1, le=10),
     license_filter: str | None = Query(default=None, pattern=r"^[A-Za-z0-9.+-]{1,40}$"),
@@ -560,9 +724,12 @@ async def discover_github(
     order: str = Query(default="desc", pattern=r"^(asc|desc)$"),
 ):
     try:
-        return await search_github_repositories(q=q, per_page=per_page, page=page, license_filter=license_filter,
-                                                min_stars=min_stars, sort=sort, order=order)
+        return await search_github_repositories(
+            q=q, per_page=per_page, page=page, license_filter=license_filter,
+            min_stars=min_stars, sort=sort, order=order, category_preset=category_preset,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"GitHub discovery failed: {type(exc).__name__}")
+

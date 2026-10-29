@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 from pathlib import Path
 from typing import Any
@@ -6,11 +8,23 @@ from typing import Any
 CATALOG_PATH = Path(__file__).resolve().parent.parent / "catalog" / "tools.json"
 
 
+def _normalize_repo_url(raw_url: Any) -> str:
+    url = str(raw_url or "").strip().lower().rstrip("/")
+    if url.endswith(".git"):
+        url = url[:-4].rstrip("/")
+    return url
+
+
+def _build_search_blob(item: dict[str, Any]) -> str:
+    return json.dumps(item, ensure_ascii=False).casefold()
+
+
 class Registry:
     """In-process catalog index. Persist registrations in a database for production."""
 
     def __init__(self, items: list[dict[str, Any]]):
-        self.items = items
+        self.items = [dict(x) for x in items]
+        self._search_blobs = [_build_search_blob(x) for x in self.items]
 
     @classmethod
     def from_file(cls, filename: str | Path = CATALOG_PATH) -> "Registry":
@@ -25,6 +39,8 @@ class Registry:
                 CATALOG_PATH.with_name("commercial.json"),
                 CATALOG_PATH.with_name("llmops.json"),
                 CATALOG_PATH.with_name("voice_media.json"),
+                CATALOG_PATH.with_name("mcp_ecosystem.json"),
+                CATALOG_PATH.with_name("global_ai_directory.json"),
             ]
             if default_catalog
             else [path]
@@ -42,8 +58,8 @@ class Registry:
             for raw_item in loaded:
                 if not isinstance(raw_item, dict) or not raw_item.get("id"):
                     continue
-                repo_url = str(raw_item.get("repository_url") or "").lower().rstrip("/")
-                key = repo_url.removesuffix(".git") if repo_url else f"id:{raw_item['id']}"
+                repo_url = _normalize_repo_url(raw_item.get("repository_url"))
+                key = repo_url if repo_url else f"id:{raw_item['id']}"
                 if key in merged:
                     stable_id = merged[key].get("id", raw_item["id"])
                     merged[key] = {**merged[key], **raw_item, "id": stable_id}
@@ -60,29 +76,37 @@ class Registry:
         capability: str | None = None,
         license_status: str | None = None,
         source_classification: str | None = None,
+        min_stars: int | None = None,
+        language: str | None = None,
     ) -> list[dict[str, Any]]:
-        result = self.items
+        indices = range(len(self.items))
         if q:
             needle = q.casefold()
-            result = [
-                item for item in result
-                if needle in json.dumps(item, ensure_ascii=False).casefold()
-            ]
+            indices = [i for i in indices if needle in self._search_blobs[i]]
+        result = [self.items[i] for i in indices]
         if category:
-            result = [item for item in result if item.get("category", "").casefold() == category.casefold()]
+            wanted_cat = category.casefold()
+            result = [item for item in result if str(item.get("category", "")).casefold() == wanted_cat]
         if status:
-            result = [item for item in result if item.get("status", "").casefold() == status.casefold()]
+            wanted_status = status.casefold()
+            result = [item for item in result if str(item.get("status", "")).casefold() == wanted_status]
         if kind:
-            result = [item for item in result if item.get("kind", "").casefold() == kind.casefold()]
+            wanted_kind = kind.casefold()
+            result = [item for item in result if str(item.get("kind", "")).casefold() == wanted_kind]
         if capability:
             cap = capability.casefold()
             result = [item for item in result if any(cap == str(x).casefold() for x in item.get("capabilities", []))]
         if license_status:
-            wanted = license_status.casefold()
-            result = [item for item in result if str(item.get("license_status", "unknown")).casefold() == wanted]
+            wanted_lic = license_status.casefold()
+            result = [item for item in result if str(item.get("license_status", "unknown")).casefold() == wanted_lic]
         if source_classification:
-            wanted = source_classification.casefold()
-            result = [item for item in result if wanted in str(item.get("source_classification", "")).casefold()]
+            wanted_src = source_classification.casefold()
+            result = [item for item in result if wanted_src in str(item.get("source_classification", "")).casefold()]
+        if min_stars is not None:
+            result = [item for item in result if int(item.get("stars_snapshot") or 0) >= min_stars]
+        if language:
+            wanted_lang = language.casefold()
+            result = [item for item in result if str(item.get("primary_language") or "").casefold() == wanted_lang]
         return [dict(item) for item in result]
 
     def get(self, tool_id: str) -> dict[str, Any] | None:
@@ -95,6 +119,8 @@ class Registry:
     def add(self, item: dict[str, Any]) -> dict[str, Any]:
         if self.get(item["id"]):
             raise ValueError("A tool with this id already exists")
-        self.items.append(dict(item))
+        record = dict(item)
+        self.items.append(record)
+        self._search_blobs.append(_build_search_blob(record))
         # Serverless memory may be discarded. Use managed PostgreSQL/Supabase for persistence.
-        return dict(item)
+        return dict(record)

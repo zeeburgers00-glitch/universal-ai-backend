@@ -201,6 +201,8 @@ services:
       YOUTUBE_WORKER_API_KEY: ${YOUTUBE_WORKER_API_KEY:?set YOUTUBE_WORKER_API_KEY}
       CHANNEL_WORKER_URL: http://channel-api:8300
       CHANNEL_WORKER_API_KEY: ${CHANNEL_WORKER_API_KEY:?set CHANNEL_WORKER_API_KEY}
+      REA_WORKER_URL: http://rea-api:8700
+      REA_WORKER_API_KEY: ${REA_WORKER_API_KEY:?set REA_WORKER_API_KEY}
       DESKTOP_AGENT_URL: ${DESKTOP_AGENT_URL:-}
       DESKTOP_AGENT_API_KEY: ${DESKTOP_AGENT_API_KEY:-}
     depends_on:
@@ -209,6 +211,33 @@ services:
       media-api: { condition: service_started }
       youtube-api: { condition: service_started }
       channel-api: { condition: service_started }
+      rea-api: { condition: service_started }
+    restart: unless-stopped
+    networks: [workers-private]
+
+  rea-api:
+    build: { context: ./rea_worker, dockerfile: Dockerfile }
+    command: ["uvicorn", "rea_worker.app:app", "--host", "0.0.0.0", "--port", "8700"]
+    environment:
+      REA_WORKER_API_KEY: ${REA_WORKER_API_KEY:?set REA_WORKER_API_KEY}
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/5
+      REA_ALLOWED_WORKSPACE_ROOT: /workspace/targets
+      REA_JOB_TIMEOUT_SECONDS: ${REA_JOB_TIMEOUT_SECONDS:-180}
+    volumes: [rea-targets:/workspace/targets:ro]
+    depends_on: { redis: { condition: service_healthy } }
+    ports: ["127.0.0.1:8700:8700"]
+    restart: unless-stopped
+    networks: [workers-private]
+
+  rea-runner:
+    build: { context: ./rea_worker, dockerfile: Dockerfile }
+    command: ["celery", "-A", "rea_worker.app.celery_app", "worker", "--loglevel=INFO", "--concurrency=2"]
+    environment:
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/5
+      REA_ALLOWED_WORKSPACE_ROOT: /workspace/targets
+      REA_JOB_TIMEOUT_SECONDS: ${REA_JOB_TIMEOUT_SECONDS:-180}
+    volumes: [rea-targets:/workspace/targets:ro]
+    depends_on: { redis: { condition: service_healthy } }
     restart: unless-stopped
     networks: [workers-private]
 
@@ -216,6 +245,8 @@ volumes:
   redis-data:
   voice-data:
   media-data:
+  rea-targets:
+
 
 networks:
   workers-private:

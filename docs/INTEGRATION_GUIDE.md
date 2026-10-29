@@ -32,7 +32,10 @@ You can also call `POST /v1/tools` with `X-API-Key`. This starter's in-memory wr
 
 ## Expanded catalog sources and license filters
 
-The API loads three catalogs in this order: `catalog/tools.json`, `catalog/extended.json`, `catalog/commercial.json`, and `catalog/llmops.json`. Duplicate repository URLs are merged and the original seed IDs are preserved.
+The API loads seven catalogs in this order: `catalog/tools.json`, `catalog/extended.json`, `catalog/commercial.json`, `catalog/llmops.json`, `catalog/voice_media.json`, `catalog/mcp_ecosystem.json`, and `catalog/global_ai_directory.json`. Duplicate repository URLs are merged and the original seed IDs are preserved.
+
+In addition, `catalog/rea_mcp_tools.json` captures the `229` MCP tools, `6` guided prompts, and `180` CLI commands exposed by [REA (`morluto/rea`)](https://github.com/morluto/rea), along with cryptographic Evidence IDs from static JavaScript application-graph verification of official MCP packages. Query REA metadata via `GET /v1/rea/status` and `GET /v1/rea/tools`. Always follow upstream `DISCLAIMER.md` responsible-use boundaries: only inspect software, bundles, websites, or model files you own or are authorized to analyze.
+
 
 - `GET /v1/catalog/stats` shows current entry totals, categories, and license review statuses.
 - `GET /v1/catalog/sources` lists the curated directories used for discovery and explains the classification policy.
