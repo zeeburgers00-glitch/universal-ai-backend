@@ -1,0 +1,773 @@
+[
+  {
+    "id": "youtube",
+    "name": "YouTube Data API",
+    "purpose": "video publishing, playlists, channel analytics, metadata, and permitted comment actions",
+    "auth_type": "Google OAuth 2.0",
+    "environment_variables": [
+      "YOUTUBE_CLIENT_ID",
+      "YOUTUBE_CLIENT_SECRET",
+      "YOUTUBE_REDIRECT_URI"
+    ],
+    "scopes": [
+      "youtube.upload",
+      "youtube.readonly",
+      "youtube.force-ssl"
+    ],
+    "supported_actions": [
+      "upload_video",
+      " schedule_video",
+      " update_metadata",
+      " list_channel_videos",
+      " playlist_manage",
+      " read_analytics"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Official hosted API with quotas and compliance requirements",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "telegram",
+    "name": "Telegram Bot API",
+    "purpose": "bot messaging and channel posting",
+    "auth_type": "Bot token",
+    "environment_variables": [
+      "TELEGRAM_BOT_TOKEN"
+    ],
+    "scopes": [
+      "bot_token"
+    ],
+    "supported_actions": [
+      "send_message",
+      " edit_message",
+      " send_media",
+      " channel_post",
+      " webhook"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Official hosted API; bot must have required chat/channel rights",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "discord",
+    "name": "Discord API",
+    "purpose": "bot messaging, community channels, events",
+    "auth_type": "OAuth2 bot token",
+    "environment_variables": [
+      "DISCORD_BOT_TOKEN",
+      "DISCORD_APPLICATION_ID"
+    ],
+    "scopes": [
+      "bot",
+      "applications.commands"
+    ],
+    "supported_actions": [
+      "send_message",
+      " edit_message",
+      " embeds",
+      " threads",
+      " slash_commands",
+      " moderation"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Official hosted API; apply rate limits and permission scopes",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "slack",
+    "name": "Slack API",
+    "purpose": "workspace messaging, threads, search where granted",
+    "auth_type": "OAuth2",
+    "environment_variables": [
+      "SLACK_CLIENT_ID",
+      "SLACK_CLIENT_SECRET",
+      "SLACK_SIGNING_SECRET"
+    ],
+    "scopes": [
+      "chat:write",
+      "channels:read",
+      "users:read"
+    ],
+    "supported_actions": [
+      "send_message",
+      " reply_thread",
+      " search_messages",
+      " read_channels",
+      " event_webhooks"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Official hosted API; workspace admin may approve scopes",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "whatsapp-cloud",
+    "name": "WhatsApp Business Cloud API",
+    "purpose": "business messaging and customer support",
+    "auth_type": "Meta OAuth / access token",
+    "environment_variables": [
+      "WHATSAPP_ACCESS_TOKEN",
+      "WHATSAPP_PHONE_NUMBER_ID",
+      "WHATSAPP_BUSINESS_ACCOUNT_ID"
+    ],
+    "scopes": [
+      "whatsapp_business_messaging",
+      "whatsapp_business_management"
+    ],
+    "supported_actions": [
+      "send_template_message",
+      " receive_webhooks",
+      " media_messages"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Meta business setup, templates, user opt-in, and pricing rules apply",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "instagram",
+    "name": "Instagram Graph API",
+    "purpose": "professional account publishing and insights",
+    "auth_type": "Meta OAuth",
+    "environment_variables": [
+      "META_APP_ID",
+      "META_APP_SECRET",
+      "META_ACCESS_TOKEN",
+      "INSTAGRAM_BUSINESS_ACCOUNT_ID"
+    ],
+    "scopes": [
+      "instagram_basic",
+      "instagram_content_publish",
+      "instagram_manage_comments",
+      "instagram_manage_insights"
+    ],
+    "supported_actions": [
+      "publish_media",
+      " read_insights",
+      " moderate_comments"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Requires eligible professional account and permitted permissions",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "facebook-pages",
+    "name": "Facebook Pages Graph API",
+    "purpose": "Page publishing, messages and insights",
+    "auth_type": "Meta OAuth",
+    "environment_variables": [
+      "META_APP_ID",
+      "META_APP_SECRET",
+      "META_ACCESS_TOKEN",
+      "FACEBOOK_PAGE_ID"
+    ],
+    "scopes": [
+      "pages_manage_posts",
+      "pages_read_engagement",
+      "pages_manage_metadata"
+    ],
+    "supported_actions": [
+      "publish_post",
+      " schedule_post",
+      " read_insights",
+      " page_webhooks"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "App review/permissions and platform policy apply",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "tiktok",
+    "name": "TikTok Content Posting API",
+    "purpose": "authorized short-video publishing",
+    "auth_type": "TikTok OAuth",
+    "environment_variables": [
+      "TIKTOK_CLIENT_KEY",
+      "TIKTOK_CLIENT_SECRET",
+      "TIKTOK_ACCESS_TOKEN"
+    ],
+    "scopes": [
+      "video.publish",
+      "video.upload"
+    ],
+    "supported_actions": [
+      "upload_video",
+      " publish_video",
+      " read_creator_info"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Requires approved app/access scopes; API restrictions and review apply",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "x",
+    "name": "X API",
+    "purpose": "posting, reading, and account operations according to access tier",
+    "auth_type": "OAuth 2.0 / OAuth 1.0a",
+    "environment_variables": [
+      "X_CLIENT_ID",
+      "X_CLIENT_SECRET",
+      "X_ACCESS_TOKEN"
+    ],
+    "scopes": [
+      "tweet.read",
+      "tweet.write",
+      "users.read",
+      "offline.access"
+    ],
+    "supported_actions": [
+      "create_post",
+      " reply",
+      " read_posts",
+      " account_info"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "API access and pricing/limits vary by current plan",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "linkedin",
+    "name": "LinkedIn API",
+    "purpose": "approved organization or personal publishing",
+    "auth_type": "OAuth 2.0",
+    "environment_variables": [
+      "LINKEDIN_CLIENT_ID",
+      "LINKEDIN_CLIENT_SECRET",
+      "LINKEDIN_ACCESS_TOKEN"
+    ],
+    "scopes": [
+      "w_member_social",
+      "r_organization_social",
+      "w_organization_social"
+    ],
+    "supported_actions": [
+      "publish_post",
+      " read_authorized_profile"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Product access and approval are required for some scopes",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "reddit",
+    "name": "Reddit API",
+    "purpose": "permitted community posting and moderation workflows",
+    "auth_type": "OAuth2",
+    "environment_variables": [
+      "REDDIT_CLIENT_ID",
+      "REDDIT_CLIENT_SECRET",
+      "REDDIT_REFRESH_TOKEN"
+    ],
+    "scopes": [
+      "identity",
+      "read",
+      "submit"
+    ],
+    "supported_actions": [
+      "submit_post",
+      " read_subreddit",
+      " read_comments",
+      " moderation_if_granted"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "API rules, app approval, and subreddit rules apply",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "github",
+    "name": "GitHub API",
+    "purpose": "repository, issue, pull request and workflow automation",
+    "auth_type": "GitHub App or fine-grained token",
+    "environment_variables": [
+      "GITHUB_APP_ID",
+      "GITHUB_PRIVATE_KEY",
+      "GITHUB_TOKEN"
+    ],
+    "scopes": [
+      "contents",
+      "issues",
+      "pull_requests",
+      "actions"
+    ],
+    "supported_actions": [
+      "create_issue",
+      " create_pr",
+      " inspect_repo",
+      " dispatch_workflow"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Use least privilege; keep tokens server-side",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "google-drive",
+    "name": "Google Drive API",
+    "purpose": "authorized file search, upload, export and organization",
+    "auth_type": "Google OAuth 2.0",
+    "environment_variables": [
+      "GOOGLE_CLIENT_ID",
+      "GOOGLE_CLIENT_SECRET",
+      "GOOGLE_REDIRECT_URI"
+    ],
+    "scopes": [
+      "drive.file",
+      "drive.readonly"
+    ],
+    "supported_actions": [
+      "search_files",
+      " read_file_metadata",
+      " upload_file",
+      " export_file"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "OAuth consent and Drive sharing permissions apply",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "gmail",
+    "name": "Gmail API",
+    "purpose": "drafting and sending email with explicit authorization",
+    "auth_type": "Google OAuth 2.0",
+    "environment_variables": [
+      "GOOGLE_CLIENT_ID",
+      "GOOGLE_CLIENT_SECRET",
+      "GOOGLE_REDIRECT_URI"
+    ],
+    "scopes": [
+      "gmail.readonly",
+      "gmail.compose",
+      "gmail.send"
+    ],
+    "supported_actions": [
+      "search_messages",
+      " create_draft",
+      " send_email",
+      " labels"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Sensitive/restricted scopes may require verification; send should require user approval",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "google-calendar",
+    "name": "Google Calendar API",
+    "purpose": "calendar read/write and scheduling",
+    "auth_type": "Google OAuth 2.0",
+    "environment_variables": [
+      "GOOGLE_CLIENT_ID",
+      "GOOGLE_CLIENT_SECRET",
+      "GOOGLE_REDIRECT_URI"
+    ],
+    "scopes": [
+      "calendar.events",
+      "calendar.readonly"
+    ],
+    "supported_actions": [
+      "list_events",
+      " create_event",
+      " update_event"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "OAuth consent and calendar permissions apply",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "notion",
+    "name": "Notion API",
+    "purpose": "workspace pages and database integration",
+    "auth_type": "OAuth2 / internal integration token",
+    "environment_variables": [
+      "NOTION_CLIENT_ID",
+      "NOTION_CLIENT_SECRET",
+      "NOTION_API_KEY"
+    ],
+    "scopes": [
+      "read_content",
+      "update_content",
+      "insert_content"
+    ],
+    "supported_actions": [
+      "search_pages",
+      " create_page",
+      " update_page",
+      " query_database"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Access only to explicitly shared workspaces/pages",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "linear",
+    "name": "Linear API",
+    "purpose": "issue and project management",
+    "auth_type": "OAuth2 / API key",
+    "environment_variables": [
+      "LINEAR_CLIENT_ID",
+      "LINEAR_CLIENT_SECRET",
+      "LINEAR_API_KEY"
+    ],
+    "scopes": [
+      "read",
+      "write"
+    ],
+    "supported_actions": [
+      "create_issue",
+      " update_issue",
+      " search_issues",
+      " add_comment"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Workspace role and token scopes apply",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "stripe",
+    "name": "Stripe API",
+    "purpose": "payments and subscription operations",
+    "auth_type": "Restricted server-side API key",
+    "environment_variables": [
+      "STRIPE_SECRET_KEY",
+      "STRIPE_WEBHOOK_SECRET"
+    ],
+    "scopes": [
+      "restricted_api_key"
+    ],
+    "supported_actions": [
+      "create_checkout_session",
+      " read_subscription",
+      " receive_webhooks"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Sensitive financial operations; never expose secret key; explicit approval for money movement",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "shopify",
+    "name": "Shopify Admin API",
+    "purpose": "store products, orders and content workflows",
+    "auth_type": "Shopify OAuth",
+    "environment_variables": [
+      "SHOPIFY_CLIENT_ID",
+      "SHOPIFY_CLIENT_SECRET",
+      "SHOPIFY_SHOP_DOMAIN"
+    ],
+    "scopes": [
+      "read_products",
+      "write_products",
+      "read_orders"
+    ],
+    "supported_actions": [
+      "read_products",
+      " update_product",
+      " inspect_orders"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Merchant install and granted scopes required",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "wordpress",
+    "name": "WordPress REST API",
+    "purpose": "content management and publishing",
+    "auth_type": "Application password or OAuth plugin",
+    "environment_variables": [
+      "WORDPRESS_BASE_URL",
+      "WORDPRESS_USERNAME",
+      "WORDPRESS_APP_PASSWORD"
+    ],
+    "scopes": [
+      "application-password"
+    ],
+    "supported_actions": [
+      "create_draft",
+      " update_post",
+      " publish_post",
+      " upload_media"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Publishing gated by approval; protect credentials",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "mastodon",
+    "name": "Mastodon API",
+    "purpose": "federated social posting and scheduling via client workflow",
+    "auth_type": "OAuth2",
+    "environment_variables": [
+      "MASTODON_INSTANCE_URL",
+      "MASTODON_CLIENT_ID",
+      "MASTODON_CLIENT_SECRET",
+      "MASTODON_ACCESS_TOKEN"
+    ],
+    "scopes": [
+      "write:statuses",
+      "read:accounts"
+    ],
+    "supported_actions": [
+      "create_status",
+      " upload_media",
+      " read_authorized_account"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Instance-specific limits/terms apply",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "matrix",
+    "name": "Matrix",
+    "purpose": "federated chat rooms and messages",
+    "auth_type": "Access token / OAuth",
+    "environment_variables": [
+      "MATRIX_HOMESERVER",
+      "MATRIX_ACCESS_TOKEN"
+    ],
+    "scopes": [
+      "room/message permissions"
+    ],
+    "supported_actions": [
+      "send_message",
+      " room_events",
+      " bot_commands"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Server admins control retention and permissions",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "signal",
+    "name": "Signal integration bridge",
+    "purpose": "personal messaging automation through compatible bridge software",
+    "auth_type": "Device-linked bridge credentials",
+    "environment_variables": [
+      "SIGNAL_BRIDGE_URL",
+      "SIGNAL_BRIDGE_TOKEN"
+    ],
+    "scopes": [
+      "bridge_configured"
+    ],
+    "supported_actions": [
+      "send_message",
+      " receive_message"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Not a universal official bot API; use a reviewed bridge and comply with platform terms",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "teams",
+    "name": "Microsoft Teams / Graph",
+    "purpose": "business chat, meetings, notifications",
+    "auth_type": "Microsoft OAuth",
+    "environment_variables": [
+      "MS_CLIENT_ID",
+      "MS_CLIENT_SECRET",
+      "MS_TENANT_ID"
+    ],
+    "scopes": [
+      "Chat.ReadWrite",
+      "ChannelMessage.Send",
+      "Calendars.ReadWrite"
+    ],
+    "supported_actions": [
+      "send_channel_message",
+      " calendar_workflows",
+      " read_authorized_messages"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Admin consent and tenant policy apply",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "zoom",
+    "name": "Zoom API",
+    "purpose": "meeting scheduling, webinar and recording metadata",
+    "auth_type": "OAuth / Server-to-Server OAuth",
+    "environment_variables": [
+      "ZOOM_CLIENT_ID",
+      "ZOOM_CLIENT_SECRET",
+      "ZOOM_ACCOUNT_ID"
+    ],
+    "scopes": [
+      "meeting:write",
+      "meeting:read"
+    ],
+    "supported_actions": [
+      "create_meeting",
+      " list_meetings",
+      " read_recording_metadata"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Grant minimum scopes and follow retention rules",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "twitch",
+    "name": "Twitch API",
+    "purpose": "authorized live stream metadata and moderation features",
+    "auth_type": "OAuth",
+    "environment_variables": [
+      "TWITCH_CLIENT_ID",
+      "TWITCH_CLIENT_SECRET",
+      "TWITCH_ACCESS_TOKEN"
+    ],
+    "scopes": [
+      "channel:manage:broadcast",
+      "moderator:manage:chat_messages"
+    ],
+    "supported_actions": [
+      "read_stream_info",
+      " update_stream_title",
+      " send_chat_message"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Permissions and rate limits apply",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "pinterest",
+    "name": "Pinterest API",
+    "purpose": "authorized pins and board publishing",
+    "auth_type": "OAuth2",
+    "environment_variables": [
+      "PINTEREST_APP_ID",
+      "PINTEREST_APP_SECRET",
+      "PINTEREST_ACCESS_TOKEN"
+    ],
+    "scopes": [
+      "pins:read",
+      "pins:write",
+      "boards:read"
+    ],
+    "supported_actions": [
+      "create_pin",
+      " list_boards",
+      " schedule_via_workflow"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "API access and review requirements apply",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "figma",
+    "name": "Figma API",
+    "purpose": "design-file metadata, comments and approved export workflows",
+    "auth_type": "OAuth / personal access token",
+    "environment_variables": [
+      "FIGMA_ACCESS_TOKEN"
+    ],
+    "scopes": [
+      "file_read",
+      "comment_write"
+    ],
+    "supported_actions": [
+      "read_file_metadata",
+      " read_comments",
+      " comment_if_granted"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Keep token private; read scopes vary by plan",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "hubspot",
+    "name": "HubSpot API",
+    "purpose": "CRM contacts, deals, forms and marketing workflows",
+    "auth_type": "OAuth / private app token",
+    "environment_variables": [
+      "HUBSPOT_ACCESS_TOKEN"
+    ],
+    "scopes": [
+      "crm.objects.contacts",
+      "crm.objects.deals"
+    ],
+    "supported_actions": [
+      "read_contacts",
+      " upsert_contact",
+      " create_task"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Consent/marketing laws and portal scopes apply",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "salesforce",
+    "name": "Salesforce API",
+    "purpose": "CRM data and approved record automation",
+    "auth_type": "OAuth2",
+    "environment_variables": [
+      "SALESFORCE_CLIENT_ID",
+      "SALESFORCE_CLIENT_SECRET",
+      "SALESFORCE_INSTANCE_URL"
+    ],
+    "scopes": [
+      "api",
+      "refresh_token"
+    ],
+    "supported_actions": [
+      "read_records",
+      " create_task",
+      " update_authorized_record"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Org policies and OAuth scopes apply",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  }
+]
