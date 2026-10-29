@@ -17,12 +17,37 @@ class Registry:
         path = Path(filename)
         if not path.is_absolute():
             path = Path(__file__).resolve().parent.parent / path
-        if not path.exists():
-            return cls([])
-        loaded = json.loads(path.read_text(encoding="utf-8"))
-        if not isinstance(loaded, list):
-            raise ValueError("Catalog root must be a JSON array")
-        return cls(loaded)
+        default_catalog = path.resolve() == CATALOG_PATH.resolve()
+        paths = (
+            [
+                CATALOG_PATH,
+                CATALOG_PATH.with_name("extended.json"),
+                CATALOG_PATH.with_name("commercial.json"),
+            ]
+            if default_catalog
+            else [path]
+        )
+        # Merge catalogs by upstream repository URL. Later catalogs can enrich license
+        # and commercial-model notes while preserving the original stable ID for
+        # backward compatibility with app clients.
+        merged: dict[str, dict[str, Any]] = {}
+        for catalog_path in paths:
+            if not catalog_path.exists():
+                continue
+            loaded = json.loads(catalog_path.read_text(encoding="utf-8"))
+            if not isinstance(loaded, list):
+                raise ValueError(f"Catalog root must be a JSON array: {catalog_path.name}")
+            for raw_item in loaded:
+                if not isinstance(raw_item, dict) or not raw_item.get("id"):
+                    continue
+                repo_url = str(raw_item.get("repository_url") or "").lower().rstrip("/")
+                key = repo_url.removesuffix(".git") if repo_url else f"id:{raw_item['id']}"
+                if key in merged:
+                    stable_id = merged[key].get("id", raw_item["id"])
+                    merged[key] = {**merged[key], **raw_item, "id": stable_id}
+                else:
+                    merged[key] = dict(raw_item)
+        return cls(list(merged.values()))
 
     def list(
         self,
@@ -31,6 +56,8 @@ class Registry:
         status: str | None = None,
         kind: str | None = None,
         capability: str | None = None,
+        license_status: str | None = None,
+        source_classification: str | None = None,
     ) -> list[dict[str, Any]]:
         result = self.items
         if q:
@@ -48,6 +75,12 @@ class Registry:
         if capability:
             cap = capability.casefold()
             result = [item for item in result if any(cap == str(x).casefold() for x in item.get("capabilities", []))]
+        if license_status:
+            wanted = license_status.casefold()
+            result = [item for item in result if str(item.get("license_status", "unknown")).casefold() == wanted]
+        if source_classification:
+            wanted = source_classification.casefold()
+            result = [item for item in result if wanted in str(item.get("source_classification", "")).casefold()]
         return [dict(item) for item in result]
 
     def get(self, tool_id: str) -> dict[str, Any] | None:
