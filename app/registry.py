@@ -24,6 +24,7 @@ class Registry:
                 CATALOG_PATH.with_name("extended.json"),
                 CATALOG_PATH.with_name("commercial.json"),
                 CATALOG_PATH.with_name("llmops.json"),
+                CATALOG_PATH.with_name("voice_media.json"),
             ]
             if default_catalog
             else [path]
