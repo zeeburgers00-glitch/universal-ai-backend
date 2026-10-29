@@ -62,6 +62,21 @@
       "name": "Model provider catalog",
       "url": "https://github.com/zeeburgers00-glitch/universal-ai-backend/blob/main/catalog/provider_capabilities.json",
       "purpose": "Hosted and self-hosted model API/provider configuration references."
+    },
+    {
+      "name": "REA — Reverse Engineer Anything",
+      "url": "https://github.com/morluto/rea",
+      "purpose": "Specialized local-first CLI/MCP for evidence-based reverse engineering of authorized applications and artifacts. MIT for REA-authored code; check third-party and proprietary-provider terms."
+    },
+    {
+      "name": "REA MCP contracts and transport",
+      "url": "https://github.com/morluto/rea/blob/main/docs/mcp-contracts.md",
+      "purpose": "Authoritative REA MCP schemas, stdio/HTTP transport behavior, tool families, limits and security boundaries."
+    },
+    {
+      "name": "REA security policy",
+      "url": "https://github.com/morluto/rea/blob/main/SECURITY.md",
+      "purpose": "REA bridge authentication details and explicit warning that runtime analysis is not a sandbox."
     }
   ],
   "classification_guide": {
