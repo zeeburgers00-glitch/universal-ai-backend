@@ -5,8 +5,11 @@ server-side environment variables and are never echoed in API responses or logs.
 """
 from __future__ import annotations
 
+import io
+import json
 import os
 import re
+import tarfile
 from typing import Any
 from uuid import uuid4
 
@@ -268,6 +271,176 @@ class Base44Client:
             timeout_s=timeout_s,
         )
         return data if isinstance(data, dict) else {}
+
+    async def mcp_request(self, method: str, params: dict[str, Any] | None = None, timeout_s: float = 120.0) -> Any:
+        url = f"{self._api_url}/mcp"
+        headers = {
+            **self._headers(),
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+        }
+        payload = {
+            "jsonrpc": "2.0",
+            "id": str(uuid4()),
+            "method": method,
+            "params": params or {},
+        }
+        timeout = httpx.Timeout(timeout_s, connect=10.0)
+        async with httpx.AsyncClient(timeout=timeout, follow_redirects=False) as client:
+            resp = await client.post(url, json=payload, headers=headers)
+        if resp.status_code >= 400:
+            return {"error_status": resp.status_code, "body": resp.text[:400]}
+        ctype = resp.headers.get("content-type", "")
+        text = resp.text
+        if "text/event-stream" in ctype or text.lstrip().startswith("event:") or "data: " in text:
+            events = []
+            for line in text.splitlines():
+                if line.startswith("data: "):
+                    raw = line[6:].strip()
+                    if raw:
+                        try:
+                            events.append(json.loads(raw))
+                        except ValueError:
+                            events.append({"raw": raw[:300]})
+            return events[-1] if events else {"raw": text[:400]}
+        try:
+            return resp.json()
+        except ValueError:
+            return {"raw": text[:400]}
+
+    async def sync_universal_agent(self, app_id: str) -> dict[str, Any]:
+        aid = _validate_app_id(app_id)
+        existing_resp = await self._request("GET", f"/api/apps/{aid}/agent-configs", timeout_s=30.0)
+        existing_items = existing_resp.get("items", []) if isinstance(existing_resp, dict) else []
+        preserved: list[dict[str, Any]] = []
+        for item in existing_items:
+            if isinstance(item, dict) and item.get("name") and item.get("name") != "universal_ai_hub_agent":
+                preserved.append(
+                    {
+                        "name": item["name"],
+                        "description": item.get("description") or f"Agent {item['name']}",
+                        "instructions": item.get("instructions") or "Assist the user.",
+                        "tool_configs": item.get("tool_configs") or [],
+                        "selected_skill_names": item.get("selected_skill_names") or [],
+                        **(
+                            {"memory_config": item["memory_config"]}
+                            if isinstance(item.get("memory_config"), dict)
+                            else {}
+                        ),
+                        **(
+                            {"whatsapp_greeting": item["whatsapp_greeting"]}
+                            if item.get("whatsapp_greeting") is not None
+                            else {}
+                        ),
+                    }
+                )
+        universal_agent = {
+            "name": "universal_ai_hub_agent",
+            "description": "Universal AI & REA Assistant connected to 6,122+ global AI & MCP tools, 229 REA reverse-engineering MCP tools, 45 LLM providers, 38 specialist agents, 27 workflows, and live GitHub discovery.",
+            "instructions": (
+                "You are connected to the live Universal AI Backend v0.6 via the `universalAiBackend` backend function. "
+                "Call `universalAiBackend` with `{ action, payload }` to search 6,122+ AI/MCP tools (`action: 'tools'`), "
+                "get catalog statistics (`action: 'stats'`), explore 229 REA reverse-engineering MCP tools (`action: 'rea_tools'` / `'rea_status'`), "
+                "check 45 LLM providers (`action: 'providers'`), list 38 specialist agent blueprints (`action: 'agents'`), "
+                "list 27 workflows (`action: 'workflows'`), discover live GitHub AI repos (`action: 'discover_github'`), "
+                "or run multi-provider chat (`action: 'chat'`). Always present clear, actionable answers with links."
+            ),
+            "tool_configs": [
+                {
+                    "function_name": "universalAiBackend",
+                    "description": "Invoke Universal AI Backend v0.6 (stats, tools, rea_status, rea_tools, providers, agents, workflows, channels, voice_models, discover_categories, discover_github, chat)",
+                }
+            ],
+            "selected_skill_names": [],
+        }
+        merged = preserved + [universal_agent]
+        sync_res = await self._request("PUT", f"/api/apps/{aid}/agent-configs", json_body=merged, timeout_s=60.0)
+        return {"existing_preserved": len(preserved), "sync_result": sync_res}
+
+    async def inspect_ejected_source(self, app_id: str) -> dict[str, Any]:
+        aid = _validate_app_id(app_id)
+        url = f"{self._api_url}/api/apps/{aid}/eject"
+        timeout = httpx.Timeout(90.0, connect=10.0)
+        async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+            resp = await client.get(url, headers=self._headers())
+        if resp.status_code >= 400:
+            return {"status": "error", "http_status": resp.status_code, "detail": resp.text[:300]}
+        raw_bytes = resp.content
+        files_list: list[str] = []
+        key_files: dict[str, str] = {}
+        wanted_suffixes = (
+            "package.json",
+            "vite.config.js",
+            "vite.config.ts",
+            "src/App.jsx",
+            "src/App.tsx",
+            "src/Layout.jsx",
+            "src/Layout.tsx",
+            "src/pages.config.js",
+            "src/pages.config.ts",
+        )
+        with tarfile.open(fileobj=io.BytesIO(raw_bytes), mode="r:*") as tf:
+            for member in tf.getmembers():
+                if not member.isfile():
+                    continue
+                norm = member.name.lstrip("./")
+                files_list.append(norm)
+                if any(norm == w or norm.endswith("/" + w) for w in wanted_suffixes):
+                    extracted = tf.extractfile(member)
+                    if extracted:
+                        key_files[norm] = extracted.read().decode("utf-8", errors="replace")[:12000]
+        return {
+            "status": "ok",
+            "archive_bytes": len(raw_bytes),
+            "file_count": len(files_list),
+            "files": sorted(files_list)[:200],
+            "key_files": key_files,
+        }
+
+    async def export_ejected_files_bundle(self, app_id: str) -> dict[str, Any]:
+        """Return text source files from `/eject` (excluding node_modules/dist/.env) so a builder can compile `dist.tar.gz`."""
+        aid = _validate_app_id(app_id)
+        url = f"{self._api_url}/api/apps/{aid}/eject"
+        timeout = httpx.Timeout(90.0, connect=10.0)
+        async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+            resp = await client.get(url, headers=self._headers())
+        if resp.status_code >= 400:
+            raise HTTPException(status_code=resp.status_code, detail=f"Eject failed ({resp.status_code})")
+        text_files: dict[str, str] = {}
+        with tarfile.open(fileobj=io.BytesIO(resp.content), mode="r:*") as tf:
+            for member in tf.getmembers():
+                if not member.isfile() or member.size > 400_000:
+                    continue
+                norm = member.name.lstrip("./")
+                if any(part in {"node_modules", "dist", ".git"} for part in norm.split("/")):
+                    continue
+                if os.path.basename(norm).startswith(".env"):
+                    continue
+                extracted = tf.extractfile(member)
+                if extracted:
+                    raw = extracted.read()
+                    try:
+                        text_files[norm] = raw.decode("utf-8")
+                    except UnicodeDecodeError:
+                        pass
+        return {"app_id": aid, "file_count": len(text_files), "files": text_files}
+
+    async def upload_site_dist(self, app_id: str, dist_tar_gz: bytes) -> dict[str, Any]:
+        aid = _validate_app_id(app_id)
+        url = f"{self._api_url}/api/apps/{aid}/deploy-dist"
+        timeout = httpx.Timeout(180.0, connect=15.0)
+        files = {"file": ("dist.tar.gz", dist_tar_gz, "application/gzip")}
+        async with httpx.AsyncClient(timeout=timeout, follow_redirects=False) as client:
+            resp = await client.post(url, headers=self._headers(), files=files)
+        if resp.status_code >= 400:
+            raise HTTPException(
+                status_code=502 if resp.status_code >= 500 else resp.status_code,
+                detail=f"Base44 deploy-dist returned {resp.status_code}: {resp.text[:300]}",
+            )
+        try:
+            return resp.json()
+        except ValueError:
+            return {"status": "uploaded", "http_status": resp.status_code}
 
 
 def build_base44_backend_function_code(default_backend_url: str | None = None) -> str:
@@ -1172,4 +1345,107 @@ async def bootstrap_all_base44_apps(target_app_id: str | None = None) -> dict[st
         "total_apps_found": len(apps),
         "apps": results,
     }
+
+
+async def run_base44_auto_provision(
+    mode: str = "inspect_and_agents",
+    app_id: str | None = None,
+    dist_url: str | None = None,
+) -> dict[str, Any]:
+    """End-to-end Base44 provisioning helper (agents, MCP edit, eject, deploy-dist)."""
+    client = Base44Client()
+
+    if mode == "inspect_and_agents":
+        mcp_init = await client.mcp_request(
+            "initialize",
+            {
+                "protocolVersion": "2025-06-18",
+                "capabilities": {},
+                "clientInfo": {"name": "universal-ai-backend", "version": "0.6.0"},
+            },
+            timeout_s=30.0,
+        )
+        mcp_tools = await client.mcp_request("tools/list", {}, timeout_s=30.0)
+        apps = await client.list_apps(limit=20)
+        if app_id:
+            apps = [a for a in apps if a["id"] == app_id]
+        app_reports = []
+        for item in apps:
+            aid = item["id"]
+            report: dict[str, Any] = {"id": aid, "name": item["name"]}
+            try:
+                report["agent_sync"] = await client.sync_universal_agent(aid)
+            except Exception as exc:
+                report["agent_sync_error"] = str(getattr(exc, "detail", exc))
+            try:
+                eject_info = await client.inspect_ejected_source(aid)
+                report["eject"] = {
+                    "status": eject_info.get("status"),
+                    "http_status": eject_info.get("http_status"),
+                    "archive_bytes": eject_info.get("archive_bytes"),
+                    "file_count": eject_info.get("file_count"),
+                    "files": eject_info.get("files"),
+                    "key_files": eject_info.get("key_files"),
+                }
+            except Exception as exc:
+                report["eject_error"] = str(getattr(exc, "detail", exc))
+            app_reports.append(report)
+        return {
+            "mode": mode,
+            "mcp_init": mcp_init,
+            "mcp_tools": mcp_tools,
+            "apps": app_reports,
+        }
+
+    if mode == "export_source":
+        if not app_id:
+            raise HTTPException(status_code=400, detail="app_id required for export_source")
+        return await client.export_ejected_files_bundle(app_id)
+
+    if mode == "mcp_edit":
+        if not app_id:
+            raise HTTPException(status_code=400, detail="app_id required for mcp_edit")
+        prompt = (
+            'The backend function "universalAiBackend" is already deployed with secrets configured — '
+            "do NOT modify or recreate any backend function. Create a new page `UniversalAiHub` and add a prominent "
+            '"Universal AI Hub" link in the main navigation/sidebar so users can open it with one click. '
+            'In `UniversalAiHub`, use `base44.functions.invoke("universalAiBackend", { action, payload })` (reading `res.data`) '
+            "with tabs for: (1) Global AI & MCP Catalog (`action: 'stats'` and `action: 'tools'` with search `q`, `category`, `mcp_only`), "
+            "(2) REA 229 Reverse-Engineering MCP Tools (`action: 'rea_status'` and `action: 'rea_tools'` with `q` and `family`), "
+            "(3) 45 LLM Providers & 38 Agents & 27 Workflows (`action: 'providers'`, `'agents'`, `'workflows'`), "
+            "(4) Live GitHub AI Discovery (`action: 'discover_categories'` and `action: 'discover_github'`), and "
+            "(5) Live AI Chat (`action: 'chat'` with `provider` and `prompt`)."
+        )
+        res = await client.mcp_request(
+            "tools/call",
+            {
+                "name": "edit_base44_app",
+                "arguments": {"app_id": app_id, "appId": app_id, "prompt": prompt, "instructions": prompt},
+            },
+            timeout_s=240.0,
+        )
+        return {"mode": mode, "app_id": app_id, "mcp_result": res}
+
+    if mode == "deploy_github_dist":
+        if not app_id or not dist_url:
+            raise HTTPException(status_code=400, detail="app_id and dist_url required")
+        if not dist_url.startswith("https://github.com/zeeburgers00-glitch/universal-ai-backend/") and not dist_url.startswith("https://objects.githubusercontent.com/"):
+            raise HTTPException(status_code=400, detail="dist_url must come from zeeburgers00-glitch/universal-ai-backend")
+        timeout = httpx.Timeout(90.0, connect=15.0)
+        async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as dl_client:
+            dl_resp = await dl_client.get(dist_url)
+            dl_resp.raise_for_status()
+            dist_bytes = dl_resp.content
+        deploy_res = await client.upload_site_dist(app_id, dist_bytes)
+        pub_url = await client.get_published_url(app_id)
+        return {
+            "mode": mode,
+            "app_id": app_id,
+            "uploaded_bytes": len(dist_bytes),
+            "deploy_result": deploy_res,
+            "published_url": pub_url,
+        }
+
+    raise HTTPException(status_code=400, detail=f"Unsupported mode {mode!r}")
+
 

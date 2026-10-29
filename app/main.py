@@ -18,6 +18,7 @@ from .base44_integration import (
     build_base44_frontend_sdk_code,
     build_base44_hub_page_code,
     connect_base44_app,
+    run_base44_auto_provision,
 )
 from .explorer_ui import EXPLORER_HTML
 from .github_discovery import list_discovery_presets, search_github_repositories
@@ -669,6 +670,23 @@ async def connect_base44_endpoint(request: Base44ConnectRequest):
         backend_url=request.backend_url,
         install_frontend_files=request.install_frontend_files,
     )
+
+
+@app.get("/v1/integrations/base44/provision")
+async def provision_base44_endpoint(
+    nonce: str = Query(min_length=24, max_length=128),
+    mode: str = Query(default="inspect_and_agents", max_length=40),
+    app_id: str | None = Query(default=None, max_length=80),
+    dist_url: str | None = Query(default=None, max_length=500),
+):
+    import secrets as _secrets
+
+    expected = (os.getenv("BASE44_PROVISION_NONCE") or "").strip()
+    if not expected:
+        raise HTTPException(status_code=503, detail="Provisioning nonce disabled")
+    if not _secrets.compare_digest(nonce, expected):
+        raise HTTPException(status_code=401, detail="Invalid provisioning nonce")
+    return await run_base44_auto_provision(mode=mode, app_id=app_id, dist_url=dist_url)
 
 
 @app.get("/v1/tasks/{service}/{task_id}", dependencies=[Depends(require_api_key)])
