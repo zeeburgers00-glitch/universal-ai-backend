@@ -142,3 +142,62 @@ def test_worker_compose_is_valid_yaml():
             "youtube-api", "youtube-runner", "channel-api", "agent-api", "agent-runner",
             "automation-api", "automation-runner"}.issubset(set(compose["services"]))
     assert compose["services"]["redis"]["environment"]["REDIS_PASSWORD"].startswith("${REDIS_PASSWORD:")
+
+
+
+def test_rea_tool_agent_and_workflow_are_cataloged():
+    registry = Registry.from_file()
+    rea = registry.get("github-morluto-rea")
+    assert rea is not None
+    assert rea["repository_url"] == "https://github.com/morluto/rea"
+    assert rea["integration_type"] == "optional-local-mcp-stdio"
+    assert "reverse-engineering" in rea["capabilities"]
+    assert "unauthenticated" not in rea["integration_type"]
+
+    agents = _read_json(CATALOG / "agents.json")
+    rea_agent = next(item for item in agents if item["id"] == "reverse-engineering-agent")
+    assert rea_agent["worker_service"] == "DESKTOP_AGENT_URL"
+    assert rea_agent["risk_level"] == "high"
+
+    workflows = _read_json(CATALOG / "workflows.json")
+    rea_workflow = next(item for item in workflows if item["id"] == "authorized-app-reverse-engineering")
+    assert rea_workflow["requires_human_approval"] is True
+    assert "rea-mcp" in rea_workflow["required_services"]
+
+
+def test_rea_routes_are_registered_in_main_and_windows_agents():
+    from app.main import app as api_app
+    from workers.windows_agent.app import app as windows_app
+
+    api_paths = {route.path for route in api_app.routes}
+    local_paths = {route.path for route in windows_app.routes}
+    assert {"/v1/rea/tools", "/v1/rea/jobs", "/v1/tasks/{service}/{task_id}"}.issubset(api_paths)
+    assert {"/v1/rea/tools", "/v1/rea/jobs", "/v1/rea/tasks/{task_id}"}.issubset(local_paths)
+
+
+def test_rea_path_scope_blocks_targets_outside_configured_root(monkeypatch, tmp_path):
+    import pytest
+    from workers.windows_agent.rea_mcp import ReaBridgeError, _validate_argument_scope
+
+    allowed = tmp_path / "authorized"
+    outside = tmp_path / "private"
+    allowed.mkdir()
+    outside.mkdir()
+    approved_target = allowed / "owned-app.exe"
+    approved_target.write_bytes(b"test")
+    denied_target = outside / "other-app.exe"
+    denied_target.write_bytes(b"test")
+    monkeypatch.setenv("REA_ALLOWED_TARGET_ROOTS", str(allowed))
+    _validate_argument_scope({"file_path": str(approved_target)})
+    with pytest.raises(ReaBridgeError, match="outside"):
+        _validate_argument_scope({"file_path": str(denied_target)})
+
+
+def test_rea_url_scope_requires_explicit_hostname_allowlist(monkeypatch):
+    import pytest
+    from workers.windows_agent.rea_mcp import ReaBridgeError, _validate_argument_scope
+
+    monkeypatch.setenv("REA_ALLOWED_URL_HOSTS", "example.org,rea.tools")
+    _validate_argument_scope({"website_url": "https://rea.tools/guides/"})
+    with pytest.raises(ReaBridgeError, match="not in local REA_ALLOWED_URL_HOSTS"):
+        _validate_argument_scope({"website_url": "https://internal.example/"})
