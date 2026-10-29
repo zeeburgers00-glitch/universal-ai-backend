@@ -2,6 +2,7 @@
 # Pin and validate CUDA/PyTorch/model dependencies before production releases.
 FROM pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime
 WORKDIR /srv
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certificates && rm -rf /var/lib/apt/lists/*
 ENV PYTHONUNBUFFERED=1 PYTHONPATH=/srv
 COPY requirements.txt /srv/requirements.txt
 RUN pip install --no-cache-dir -r /srv/requirements.txt
