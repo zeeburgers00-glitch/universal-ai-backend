@@ -1,0 +1,1150 @@
+[
+  {
+    "id": "youtube-shorts-factory",
+    "name": "YouTube Shorts factory",
+    "category": "youtube",
+    "description": "Turn an approved idea or source asset into a vertical short: script, voice, visuals, captions, render, human review, and YouTube upload/scheduling.",
+    "required_services": [
+      "youtube",
+      "voice",
+      "media",
+      "automation"
+    ],
+    "risk_level": "high",
+    "requires_human_approval": true,
+    "required_inputs": [
+      "topic_or_source_asset_id",
+      "channel_connection_id"
+    ],
+    "steps": [
+      {
+        "id": "research",
+        "agent_id": "research",
+        "description": "Gather allowed sources and rights notes"
+      },
+      {
+        "id": "script",
+        "agent_id": "youtube-producer",
+        "description": "Write a short script with a hook, narration, and CTA"
+      },
+      {
+        "id": "voice",
+        "agent_id": "voice-studio",
+        "description": "Create narration using an approved voice profile"
+      },
+      {
+        "id": "visuals",
+        "agent_id": "media-producer",
+        "description": "Generate or select licensed visuals"
+      },
+      {
+        "id": "captions",
+        "agent_id": "caption-editor",
+        "description": "Transcribe/align narration and create subtitles"
+      },
+      {
+        "id": "render",
+        "agent_id": "video-editor",
+        "description": "Render vertical video with audio, captions, and safe margins"
+      },
+      {
+        "id": "thumbnail",
+        "agent_id": "thumbnail-designer",
+        "description": "Generate an accurate thumbnail and metadata suggestions"
+      },
+      {
+        "id": "review",
+        "agent_id": "human-review",
+        "description": "Review content rights, truthfulness, captions, and final video"
+      },
+      {
+        "id": "publish",
+        "agent_id": "youtube-publisher",
+        "description": "Upload/schedule only after explicit approval"
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "async_worker",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "Workflow template only. Real execution requires the named worker/adapters, configured credentials, storage, and tests. Publishing, messaging, desktop changes, and voice cloning require explicit approval/authorization."
+  },
+  {
+    "id": "youtube-longform",
+    "name": "YouTube long-form production",
+    "category": "youtube",
+    "description": "Create a researched long video with narration, visuals, editing plan, captions, thumbnail, metadata, and approval-gated publishing.",
+    "required_services": [
+      "youtube",
+      "voice",
+      "media",
+      "automation"
+    ],
+    "risk_level": "high",
+    "requires_human_approval": true,
+    "required_inputs": [
+      "topic",
+      "channel_connection_id"
+    ],
+    "steps": [
+      {
+        "id": "research",
+        "agent_id": "research",
+        "description": "Research primary sources and retain source URLs"
+      },
+      {
+        "id": "outline",
+        "agent_id": "youtube-producer",
+        "description": "Build a sourced outline and narrative"
+      },
+      {
+        "id": "script",
+        "agent_id": "youtube-producer",
+        "description": "Draft long-form script and mark factual claims"
+      },
+      {
+        "id": "voice",
+        "agent_id": "voice-studio",
+        "description": "Generate approved narration"
+      },
+      {
+        "id": "visuals",
+        "agent_id": "media-producer",
+        "description": "Generate or select licensed visual assets"
+      },
+      {
+        "id": "edit",
+        "agent_id": "video-editor",
+        "description": "Assemble timeline, music, b-roll and lower thirds"
+      },
+      {
+        "id": "captions",
+        "agent_id": "caption-editor",
+        "description": "Generate SRT/VTT and align timestamps"
+      },
+      {
+        "id": "review",
+        "agent_id": "human-review",
+        "description": "Review factual accuracy, music/asset rights and final edit"
+      },
+      {
+        "id": "publish",
+        "agent_id": "youtube-publisher",
+        "description": "Publish or schedule through official API after approval"
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "async_worker",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "Workflow template only. Real execution requires the named worker/adapters, configured credentials, storage, and tests. Publishing, messaging, desktop changes, and voice cloning require explicit approval/authorization."
+  },
+  {
+    "id": "long-video-to-shorts",
+    "name": "Long video to Shorts",
+    "category": "youtube",
+    "description": "Find highlight windows from an owned/licensed source video, reframe, caption and export clips.",
+    "required_services": [
+      "youtube",
+      "media",
+      "automation"
+    ],
+    "risk_level": "high",
+    "requires_human_approval": true,
+    "required_inputs": [
+      "source_asset_id"
+    ],
+    "steps": [
+      {
+        "id": "transcribe",
+        "agent_id": "transcriber",
+        "description": "Transcribe owned/authorized source video"
+      },
+      {
+        "id": "highlights",
+        "agent_id": "clip-editor",
+        "description": "Rank self-contained highlight segments"
+      },
+      {
+        "id": "reframe",
+        "agent_id": "video-editor",
+        "description": "Reframe each segment for 9:16"
+      },
+      {
+        "id": "captions",
+        "agent_id": "caption-editor",
+        "description": "Add word-timed captions and speaker labels"
+      },
+      {
+        "id": "review",
+        "agent_id": "human-review",
+        "description": "Check context, copyright, privacy and crop"
+      },
+      {
+        "id": "publish",
+        "agent_id": "youtube-publisher",
+        "description": "Upload approved clips with unique metadata"
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "async_worker",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "Workflow template only. Real execution requires the named worker/adapters, configured credentials, storage, and tests. Publishing, messaging, desktop changes, and voice cloning require explicit approval/authorization."
+  },
+  {
+    "id": "youtube-channel-ops",
+    "name": "YouTube channel operations",
+    "category": "youtube",
+    "description": "Plan and track content calendar, review analytics, suggest titles, and draft community responses.",
+    "required_services": [
+      "youtube",
+      "automation"
+    ],
+    "risk_level": "medium",
+    "requires_human_approval": true,
+    "required_inputs": [
+      "channel_connection_id"
+    ],
+    "steps": [
+      {
+        "id": "analytics",
+        "agent_id": "channel-analyst",
+        "description": "Read authorized channel/analytics data"
+      },
+      {
+        "id": "planning",
+        "agent_id": "content-strategist",
+        "description": "Suggest content calendar and experiments"
+      },
+      {
+        "id": "seo",
+        "agent_id": "youtube-producer",
+        "description": "Draft title, description, chapters, and thumbnail ideas"
+      },
+      {
+        "id": "comments",
+        "agent_id": "community-manager",
+        "description": "Classify comments and draft potential responses"
+      },
+      {
+        "id": "review",
+        "agent_id": "human-review",
+        "description": "Approve editorial and audience-facing output"
+      },
+      {
+        "id": "schedule",
+        "agent_id": "youtube-publisher",
+        "description": "Schedule approved posts using API-supported capabilities"
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "async_worker",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "Workflow template only. Real execution requires the named worker/adapters, configured credentials, storage, and tests. Publishing, messaging, desktop changes, and voice cloning require explicit approval/authorization."
+  },
+  {
+    "id": "youtube-comment-assistant",
+    "name": "YouTube comment assistant",
+    "category": "youtube",
+    "description": "Classify comments, flag abuse, prepare replies and moderation recommendations; never mass-post automatically.",
+    "required_services": [
+      "youtube",
+      "automation"
+    ],
+    "risk_level": "high",
+    "requires_human_approval": true,
+    "required_inputs": [
+      "channel_connection_id"
+    ],
+    "steps": [
+      {
+        "id": "fetch",
+        "agent_id": "community-manager",
+        "description": "Read comments only through authorized API scope"
+      },
+      {
+        "id": "classify",
+        "agent_id": "moderation-agent",
+        "description": "Classify question, praise, spam, abuse, or escalation"
+      },
+      {
+        "id": "draft",
+        "agent_id": "community-manager",
+        "description": "Draft contextual reply without deceptive claims"
+      },
+      {
+        "id": "review",
+        "agent_id": "human-review",
+        "description": "Approve reply or moderation action"
+      },
+      {
+        "id": "apply",
+        "agent_id": "youtube-publisher",
+        "description": "Apply only explicitly approved supported action"
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "async_worker",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "Workflow template only. Real execution requires the named worker/adapters, configured credentials, storage, and tests. Publishing, messaging, desktop changes, and voice cloning require explicit approval/authorization."
+  },
+  {
+    "id": "podcast-production",
+    "name": "Podcast production pipeline",
+    "category": "audio",
+    "description": "Turn an approved outline into a scripted, narrated/recorded podcast with cleaned audio, chapters, transcript, and show notes.",
+    "required_services": [
+      "voice",
+      "media",
+      "automation"
+    ],
+    "risk_level": "medium",
+    "requires_human_approval": true,
+    "required_inputs": [
+      "topic",
+      "voice_profile_id"
+    ],
+    "steps": [
+      {
+        "id": "research",
+        "agent_id": "research",
+        "description": "Gather sources and outline"
+      },
+      {
+        "id": "script",
+        "agent_id": "podcast-producer",
+        "description": "Write conversational script and transitions"
+      },
+      {
+        "id": "audio",
+        "agent_id": "voice-studio",
+        "description": "Generate narration or prepare recording segments"
+      },
+      {
+        "id": "clean",
+        "agent_id": "audio-engineer",
+        "description": "Normalize, denoise and mix audio"
+      },
+      {
+        "id": "transcript",
+        "agent_id": "transcriber",
+        "description": "Create transcript and chapters"
+      },
+      {
+        "id": "show-notes",
+        "agent_id": "content-writer",
+        "description": "Create show notes and citations"
+      },
+      {
+        "id": "review",
+        "agent_id": "human-review",
+        "description": "Verify sources, rights, and final output"
+      },
+      {
+        "id": "deliver",
+        "agent_id": "asset-manager",
+        "description": "Store final audio and publishing metadata"
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "async_worker",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "Workflow template only. Real execution requires the named worker/adapters, configured credentials, storage, and tests. Publishing, messaging, desktop changes, and voice cloning require explicit approval/authorization."
+  },
+  {
+    "id": "multilingual-dubbing",
+    "name": "Multilingual dubbing",
+    "category": "audio",
+    "description": "Transcribe, translate, dub with authorized voices and align subtitles to an approved source asset.",
+    "required_services": [
+      "voice",
+      "media",
+      "automation"
+    ],
+    "risk_level": "high",
+    "requires_human_approval": true,
+    "required_inputs": [
+      "source_asset_id",
+      "target_languages",
+      "voice_profile_id"
+    ],
+    "steps": [
+      {
+        "id": "transcribe",
+        "agent_id": "transcriber",
+        "description": "Transcribe approved source"
+      },
+      {
+        "id": "translate",
+        "agent_id": "translator",
+        "description": "Translate with terminology and timing constraints"
+      },
+      {
+        "id": "dub",
+        "agent_id": "voice-studio",
+        "description": "Synthesize target-language narration with authorized voice profile"
+      },
+      {
+        "id": "align",
+        "agent_id": "caption-editor",
+        "description": "Align dubbed audio and subtitles"
+      },
+      {
+        "id": "review",
+        "agent_id": "human-review",
+        "description": "Review translation, pronunciation, voice consent and rights"
+      },
+      {
+        "id": "render",
+        "agent_id": "video-editor",
+        "description": "Mux audio tracks and captions into target deliverables"
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "async_worker",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "Workflow template only. Real execution requires the named worker/adapters, configured credentials, storage, and tests. Publishing, messaging, desktop changes, and voice cloning require explicit approval/authorization."
+  },
+  {
+    "id": "voice-clone-narration",
+    "name": "Authorized voice cloning and narration",
+    "category": "audio",
+    "description": "Create a voice profile from assets supplied with speaker authorization, then produce narration.",
+    "required_services": [
+      "voice"
+    ],
+    "risk_level": "high",
+    "requires_human_approval": true,
+    "required_inputs": [
+      "reference_audio_asset_id",
+      "reference_transcript",
+      "text_to_speak",
+      "speaker_consent_record_id"
+    ],
+    "steps": [
+      {
+        "id": "validate-consent",
+        "agent_id": "consent-guard",
+        "description": "Verify recorded permission and allowed usage scope"
+      },
+      {
+        "id": "prepare",
+        "agent_id": "voice-studio",
+        "description": "Normalize reference audio and validate language/quality"
+      },
+      {
+        "id": "clone",
+        "agent_id": "voice-studio",
+        "description": "Create private voice profile with chosen model and its license constraints"
+      },
+      {
+        "id": "synthesize",
+        "agent_id": "voice-studio",
+        "description": "Generate narration and watermarked/declared metadata if configured"
+      },
+      {
+        "id": "review",
+        "agent_id": "human-review",
+        "description": "Review audio quality, use rights, and content"
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "async_worker",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "Workflow template only. Real execution requires the named worker/adapters, configured credentials, storage, and tests. Publishing, messaging, desktop changes, and voice cloning require explicit approval/authorization."
+  },
+  {
+    "id": "social-repurpose",
+    "name": "Repurpose approved content for social channels",
+    "category": "social",
+    "description": "Turn one approved content item into channel-specific drafts for authorized social accounts.",
+    "required_services": [
+      "channels",
+      "media",
+      "automation"
+    ],
+    "risk_level": "high",
+    "requires_human_approval": true,
+    "required_inputs": [
+      "source_asset_id",
+      "target_channels"
+    ],
+    "steps": [
+      {
+        "id": "extract",
+        "agent_id": "content-writer",
+        "description": "Extract key ideas from user-owned or licensed source"
+      },
+      {
+        "id": "draft",
+        "agent_id": "social-manager",
+        "description": "Create platform-specific copy without engagement spam"
+      },
+      {
+        "id": "assets",
+        "agent_id": "media-producer",
+        "description": "Adapt aspect ratios and image/video assets"
+      },
+      {
+        "id": "review",
+        "agent_id": "human-review",
+        "description": "Approve claims, rights, links and platform-specific text"
+      },
+      {
+        "id": "publish",
+        "agent_id": "channel-publisher",
+        "description": "Publish through official connected APIs only after approval"
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "async_worker",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "Workflow template only. Real execution requires the named worker/adapters, configured credentials, storage, and tests. Publishing, messaging, desktop changes, and voice cloning require explicit approval/authorization."
+  },
+  {
+    "id": "cross-channel-calendar",
+    "name": "Cross-channel content calendar",
+    "category": "social",
+    "description": "Generate a consistent publishing calendar across connected YouTube, Instagram, Facebook, TikTok, LinkedIn and other permitted channels.",
+    "required_services": [
+      "channels",
+      "automation"
+    ],
+    "risk_level": "medium",
+    "requires_human_approval": true,
+    "required_inputs": [
+      "brand_profile_id",
+      "target_channels",
+      "campaign_goal"
+    ],
+    "steps": [
+      {
+        "id": "plan",
+        "agent_id": "content-strategist",
+        "description": "Propose content slots and channel-specific formats"
+      },
+      {
+        "id": "draft",
+        "agent_id": "social-manager",
+        "description": "Prepare platform-specific drafts"
+      },
+      {
+        "id": "validate",
+        "agent_id": "policy-checker",
+        "description": "Check duplication, claims, limits, asset rights and API capability"
+      },
+      {
+        "id": "review",
+        "agent_id": "human-review",
+        "description": "Approve calendar and each scheduled publish action"
+      },
+      {
+        "id": "schedule",
+        "agent_id": "channel-publisher",
+        "description": "Schedule only on connected channels that support it"
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "async_worker",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "Workflow template only. Real execution requires the named worker/adapters, configured credentials, storage, and tests. Publishing, messaging, desktop changes, and voice cloning require explicit approval/authorization."
+  },
+  {
+    "id": "channel-inbox-triage",
+    "name": "Unified channel inbox triage",
+    "category": "channels",
+    "description": "Normalize incoming authorized messages, group by urgency/intent, draft replies, and route sensitive cases to a human.",
+    "required_services": [
+      "channels",
+      "automation"
+    ],
+    "risk_level": "high",
+    "requires_human_approval": true,
+    "required_inputs": [
+      "connected_channel_ids"
+    ],
+    "steps": [
+      {
+        "id": "ingest",
+        "agent_id": "inbox-agent",
+        "description": "Fetch events through authorized channel webhooks/APIs"
+      },
+      {
+        "id": "classify",
+        "agent_id": "moderation-agent",
+        "description": "Classify urgency, sentiment, spam and escalation"
+      },
+      {
+        "id": "route",
+        "agent_id": "inbox-agent",
+        "description": "Route to support, sales, creator, or human review"
+      },
+      {
+        "id": "draft",
+        "agent_id": "social-manager",
+        "description": "Draft response using approved knowledge sources"
+      },
+      {
+        "id": "review",
+        "agent_id": "human-review",
+        "description": "Approve sensitive replies, moderation or external actions"
+      },
+      {
+        "id": "send",
+        "agent_id": "channel-publisher",
+        "description": "Send approved responses only"
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "async_worker",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "Workflow template only. Real execution requires the named worker/adapters, configured credentials, storage, and tests. Publishing, messaging, desktop changes, and voice cloning require explicit approval/authorization."
+  },
+  {
+    "id": "jarvis-voice-assistant",
+    "name": "JARVIS voice assistant",
+    "category": "jarvis",
+    "description": "Realtime voice assistant with wake word, speech recognition, planner, tools, voice synthesis, and confirmations for sensitive actions.",
+    "required_services": [
+      "voice",
+      "agents",
+      "desktop"
+    ],
+    "risk_level": "high",
+    "requires_human_approval": true,
+    "required_inputs": [
+      "user_session",
+      "voice_profile_id"
+    ],
+    "steps": [
+      {
+        "id": "listen",
+        "agent_id": "voice-runtime",
+        "description": "Capture consented user audio using trusted client/local agent"
+      },
+      {
+        "id": "transcribe",
+        "agent_id": "transcriber",
+        "description": "Convert audio to text"
+      },
+      {
+        "id": "plan",
+        "agent_id": "jarvis-orchestrator",
+        "description": "Interpret request and build a bounded action plan"
+      },
+      {
+        "id": "execute",
+        "agent_id": "tool-router",
+        "description": "Call only registered tools with scoped permissions"
+      },
+      {
+        "id": "confirm",
+        "agent_id": "approval-guard",
+        "description": "Ask for confirmation before external, destructive, or publishing actions"
+      },
+      {
+        "id": "respond",
+        "agent_id": "voice-studio",
+        "description": "Speak the result using an authorized voice"
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "async_worker",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "Workflow template only. Real execution requires the named worker/adapters, configured credentials, storage, and tests. Publishing, messaging, desktop changes, and voice cloning require explicit approval/authorization."
+  },
+  {
+    "id": "jarvis-windows-control",
+    "name": "JARVIS Windows desktop control",
+    "category": "jarvis",
+    "description": "Delegate approved UI, file and application tasks to a paired Windows agent running on the user's own PC.",
+    "required_services": [
+      "desktop",
+      "agents"
+    ],
+    "risk_level": "critical",
+    "requires_human_approval": true,
+    "required_inputs": [
+      "paired_device_id",
+      "objective"
+    ],
+    "steps": [
+      {
+        "id": "authorize",
+        "agent_id": "device-guard",
+        "description": "Check paired device, session and permitted capabilities"
+      },
+      {
+        "id": "plan",
+        "agent_id": "jarvis-orchestrator",
+        "description": "Break goal into reversible small steps"
+      },
+      {
+        "id": "execute",
+        "agent_id": "windows-agent",
+        "description": "Perform permitted file/UI/application actions on paired PC"
+      },
+      {
+        "id": "verify",
+        "agent_id": "windows-agent",
+        "description": "Check observable success and capture audit events"
+      },
+      {
+        "id": "confirm",
+        "agent_id": "approval-guard",
+        "description": "Require confirmation for deleting, installing, sending, publishing or changing system settings"
+      },
+      {
+        "id": "report",
+        "agent_id": "jarvis-orchestrator",
+        "description": "Report completion and exceptions"
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "async_worker",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "Workflow template only. Real execution requires the named worker/adapters, configured credentials, storage, and tests. Publishing, messaging, desktop changes, and voice cloning require explicit approval/authorization."
+  },
+  {
+    "id": "web-research-report",
+    "name": "Web research and source report",
+    "category": "research",
+    "description": "Search permitted sources, compare evidence, and produce a cited report or brief.",
+    "required_services": [
+      "agents",
+      "search"
+    ],
+    "risk_level": "medium",
+    "requires_human_approval": false,
+    "required_inputs": [
+      "research_question"
+    ],
+    "steps": [
+      {
+        "id": "plan",
+        "agent_id": "research",
+        "description": "Break question into search queries"
+      },
+      {
+        "id": "search",
+        "agent_id": "browser-agent",
+        "description": "Search public sources within the configured policy"
+      },
+      {
+        "id": "extract",
+        "agent_id": "research",
+        "description": "Extract claims and cited URLs"
+      },
+      {
+        "id": "verify",
+        "agent_id": "fact-checker",
+        "description": "Cross-check important claims and dates"
+      },
+      {
+        "id": "report",
+        "agent_id": "writer",
+        "description": "Write findings with uncertainties and source links"
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "async_worker",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "Workflow template only. Real execution requires the named worker/adapters, configured credentials, storage, and tests. Publishing, messaging, desktop changes, and voice cloning require explicit approval/authorization."
+  },
+  {
+    "id": "coding-agent-loop",
+    "name": "Coding agent task loop",
+    "category": "developer",
+    "description": "Inspect a repository, propose a minimal patch, run tests in a sandbox and prepare a reviewable diff.",
+    "required_services": [
+      "agents",
+      "desktop"
+    ],
+    "risk_level": "high",
+    "requires_human_approval": true,
+    "required_inputs": [
+      "repository",
+      "task_description"
+    ],
+    "steps": [
+      {
+        "id": "inspect",
+        "agent_id": "coding-agent",
+        "description": "Read repository structure and relevant files"
+      },
+      {
+        "id": "plan",
+        "agent_id": "coding-agent",
+        "description": "Create a bounded implementation plan"
+      },
+      {
+        "id": "patch",
+        "agent_id": "coding-agent",
+        "description": "Modify code in a separate branch or sandbox"
+      },
+      {
+        "id": "test",
+        "agent_id": "test-agent",
+        "description": "Run tests and security checks without production secrets"
+      },
+      {
+        "id": "review",
+        "agent_id": "human-review",
+        "description": "Review diff and risk before merge"
+      },
+      {
+        "id": "submit",
+        "agent_id": "git-agent",
+        "description": "Open a pull request after approval"
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "async_worker",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "Workflow template only. Real execution requires the named worker/adapters, configured credentials, storage, and tests. Publishing, messaging, desktop changes, and voice cloning require explicit approval/authorization."
+  },
+  {
+    "id": "rag-knowledge-assistant",
+    "name": "Knowledge-base RAG assistant",
+    "category": "knowledge",
+    "description": "Ingest authorized documents, chunk/index them, retrieve supporting evidence and answer with citations.",
+    "required_services": [
+      "rag",
+      "automation"
+    ],
+    "risk_level": "medium",
+    "requires_human_approval": false,
+    "required_inputs": [
+      "knowledge_source_ids",
+      "question"
+    ],
+    "steps": [
+      {
+        "id": "ingest",
+        "agent_id": "document-agent",
+        "description": "Read authorized source assets"
+      },
+      {
+        "id": "index",
+        "agent_id": "retrieval-agent",
+        "description": "Chunk and embed into configured vector store"
+      },
+      {
+        "id": "retrieve",
+        "agent_id": "retrieval-agent",
+        "description": "Retrieve relevant passages"
+      },
+      {
+        "id": "answer",
+        "agent_id": "knowledge-agent",
+        "description": "Compose an answer only from supporting context"
+      },
+      {
+        "id": "cite",
+        "agent_id": "fact-checker",
+        "description": "Attach source citations and disclose gaps"
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "async_worker",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "Workflow template only. Real execution requires the named worker/adapters, configured credentials, storage, and tests. Publishing, messaging, desktop changes, and voice cloning require explicit approval/authorization."
+  },
+  {
+    "id": "customer-support-resolution",
+    "name": "Customer support resolution",
+    "category": "support",
+    "description": "Classify tickets, search approved knowledge, draft a response, and escalate regulated/sensitive cases.",
+    "required_services": [
+      "channels",
+      "knowledge"
+    ],
+    "risk_level": "high",
+    "requires_human_approval": true,
+    "required_inputs": [
+      "ticket_id",
+      "connection_id"
+    ],
+    "steps": [
+      {
+        "id": "ingest",
+        "agent_id": "support-agent",
+        "description": "Fetch authorized ticket data"
+      },
+      {
+        "id": "classify",
+        "agent_id": "support-agent",
+        "description": "Categorize request and urgency"
+      },
+      {
+        "id": "retrieve",
+        "agent_id": "knowledge-agent",
+        "description": "Find approved policy and support guidance"
+      },
+      {
+        "id": "draft",
+        "agent_id": "support-agent",
+        "description": "Write suggested response"
+      },
+      {
+        "id": "review",
+        "agent_id": "human-review",
+        "description": "Escalate account, legal, safety, or refund issues and approve response"
+      },
+      {
+        "id": "reply",
+        "agent_id": "channel-publisher",
+        "description": "Send approved response through source channel"
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "async_worker",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "Workflow template only. Real execution requires the named worker/adapters, configured credentials, storage, and tests. Publishing, messaging, desktop changes, and voice cloning require explicit approval/authorization."
+  },
+  {
+    "id": "email-calendar-assistant",
+    "name": "Email and calendar assistant",
+    "category": "productivity",
+    "description": "Summarize authorized email, draft responses, and propose calendar events; sending/booking requires explicit approval.",
+    "required_services": [
+      "channels",
+      "agents"
+    ],
+    "risk_level": "high",
+    "requires_human_approval": true,
+    "required_inputs": [
+      "account_connection_id",
+      "request"
+    ],
+    "steps": [
+      {
+        "id": "read",
+        "agent_id": "productivity-agent",
+        "description": "Read only authorized messages/events"
+      },
+      {
+        "id": "summarize",
+        "agent_id": "productivity-agent",
+        "description": "Summarize relevant threads and next actions"
+      },
+      {
+        "id": "draft",
+        "agent_id": "productivity-agent",
+        "description": "Prepare drafts and proposed events"
+      },
+      {
+        "id": "review",
+        "agent_id": "human-review",
+        "description": "Approve external send or event changes"
+      },
+      {
+        "id": "apply",
+        "agent_id": "channel-publisher",
+        "description": "Apply explicitly approved changes"
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "async_worker",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "Workflow template only. Real execution requires the named worker/adapters, configured credentials, storage, and tests. Publishing, messaging, desktop changes, and voice cloning require explicit approval/authorization."
+  },
+  {
+    "id": "scheduled-workflow-monitor",
+    "name": "Scheduled workflow monitor",
+    "category": "automation",
+    "description": "Trigger approved workflows on schedule, record job status and alert on failures.",
+    "required_services": [
+      "automation"
+    ],
+    "risk_level": "medium",
+    "requires_human_approval": false,
+    "required_inputs": [
+      "workflow_id",
+      "schedule"
+    ],
+    "steps": [
+      {
+        "id": "validate",
+        "agent_id": "scheduler-agent",
+        "description": "Validate configuration, timezone and required connections"
+      },
+      {
+        "id": "trigger",
+        "agent_id": "workflow-engine",
+        "description": "Trigger the configured workflow through the durable worker"
+      },
+      {
+        "id": "monitor",
+        "agent_id": "workflow-monitor",
+        "description": "Track status, retries and timeout"
+      },
+      {
+        "id": "notify",
+        "agent_id": "channel-publisher",
+        "description": "Notify configured owner of result or failure"
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "async_worker",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "Workflow template only. Real execution requires the named worker/adapters, configured credentials, storage, and tests. Publishing, messaging, desktop changes, and voice cloning require explicit approval/authorization."
+  },
+  {
+    "id": "faceless-channel-pipeline",
+    "name": "Rights-aware faceless channel pipeline",
+    "category": "youtube",
+    "description": "Produce a faceless channel video using original writing and rights-cleared media, with explicit human approval before upload.",
+    "required_services": [
+      "youtube",
+      "voice",
+      "media"
+    ],
+    "risk_level": "critical",
+    "requires_human_approval": true,
+    "required_inputs": [
+      "topic",
+      "channel_connection_id",
+      "brand_profile_id"
+    ],
+    "steps": [
+      {
+        "id": "research",
+        "agent_id": "research",
+        "description": "Collect credible sources and angle"
+      },
+      {
+        "id": "script",
+        "agent_id": "youtube-producer",
+        "description": "Write original script and claims list"
+      },
+      {
+        "id": "rights",
+        "agent_id": "rights-agent",
+        "description": "Verify licenses and attribution for all music, images and footage"
+      },
+      {
+        "id": "narrate",
+        "agent_id": "voice-studio",
+        "description": "Generate narration with a permitted voice/model"
+      },
+      {
+        "id": "assemble",
+        "agent_id": "video-editor",
+        "description": "Build video, captions, title and thumbnail"
+      },
+      {
+        "id": "policy",
+        "agent_id": "policy-checker",
+        "description": "Check repeated/templated low-value content and platform requirements"
+      },
+      {
+        "id": "review",
+        "agent_id": "human-review",
+        "description": "Approve original quality, rights, accuracy and final cut"
+      },
+      {
+        "id": "publish",
+        "agent_id": "youtube-publisher",
+        "description": "Upload/schedule through official API only after approval"
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "async_worker",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "Workflow template only. Real execution requires the named worker/adapters, configured credentials, storage, and tests. Publishing, messaging, desktop changes, and voice cloning require explicit approval/authorization."
+  },
+  {
+    "id": "weekly-creator-report",
+    "name": "Weekly creator analytics report",
+    "category": "youtube",
+    "description": "Summarize authorized channel metrics and recommend experiments without promising outcomes.",
+    "required_services": [
+      "youtube",
+      "analytics"
+    ],
+    "risk_level": "medium",
+    "requires_human_approval": false,
+    "required_inputs": [
+      "channel_connection_id",
+      "date_range"
+    ],
+    "steps": [
+      {
+        "id": "fetch",
+        "agent_id": "channel-analyst",
+        "description": "Retrieve permitted channel/video analytics"
+      },
+      {
+        "id": "analyze",
+        "agent_id": "channel-analyst",
+        "description": "Compare views, watch time, retention and CTR where available"
+      },
+      {
+        "id": "recommend",
+        "agent_id": "content-strategist",
+        "description": "Suggest experiments with uncertainty notes"
+      },
+      {
+        "id": "report",
+        "agent_id": "writer",
+        "description": "Deliver a weekly summary with evidence"
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "async_worker",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "Workflow template only. Real execution requires the named worker/adapters, configured credentials, storage, and tests. Publishing, messaging, desktop changes, and voice cloning require explicit approval/authorization."
+  },
+  {
+    "id": "stream-to-clips",
+    "name": "Stream recording to clips",
+    "category": "media",
+    "description": "Transcribe an owned stream/recording, find high-signal segments, produce captioned clips and draft posts.",
+    "required_services": [
+      "media",
+      "voice",
+      "channels"
+    ],
+    "risk_level": "high",
+    "requires_human_approval": true,
+    "required_inputs": [
+      "recording_asset_id",
+      "target_channels"
+    ],
+    "steps": [
+      {
+        "id": "transcribe",
+        "agent_id": "transcriber",
+        "description": "Transcribe recording and diarize speakers where supported"
+      },
+      {
+        "id": "rank",
+        "agent_id": "clip-editor",
+        "description": "Identify coherent highlight segments"
+      },
+      {
+        "id": "render",
+        "agent_id": "video-editor",
+        "description": "Render clips and captions"
+      },
+      {
+        "id": "draft",
+        "agent_id": "social-manager",
+        "description": "Write per-channel copy"
+      },
+      {
+        "id": "review",
+        "agent_id": "human-review",
+        "description": "Review rights, context and audience suitability"
+      },
+      {
+        "id": "publish",
+        "agent_id": "channel-publisher",
+        "description": "Publish approved clips through authorized APIs"
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "async_worker",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "Workflow template only. Real execution requires the named worker/adapters, configured credentials, storage, and tests. Publishing, messaging, desktop changes, and voice cloning require explicit approval/authorization."
+  }
+]
