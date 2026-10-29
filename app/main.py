@@ -14,7 +14,6 @@ from pydantic import BaseModel, Field
 from .base44_integration import (
     Base44Client,
     base44_status,
-    bootstrap_all_base44_apps,
     build_base44_backend_function_code,
     build_base44_frontend_sdk_code,
     build_base44_hub_page_code,
@@ -670,18 +669,6 @@ async def connect_base44_endpoint(request: Base44ConnectRequest):
         backend_url=request.backend_url,
         install_frontend_files=request.install_frontend_files,
     )
-
-
-@app.get("/v1/integrations/base44/bootstrap")
-async def bootstrap_base44_endpoint(nonce: str = Query(min_length=24, max_length=128), app_id: str | None = None):
-    import secrets as _secrets
-
-    expected_nonce = (os.getenv("BASE44_BOOTSTRAP_NONCE") or "").strip()
-    if not expected_nonce:
-        raise HTTPException(status_code=503, detail="One-time Base44 bootstrap is disabled; use POST /v1/integrations/base44/connect with X-API-Key.")
-    if not _secrets.compare_digest(nonce, expected_nonce):
-        raise HTTPException(status_code=401, detail="Invalid bootstrap nonce")
-    return await bootstrap_all_base44_apps(target_app_id=app_id)
 
 
 @app.get("/v1/tasks/{service}/{task_id}", dependencies=[Depends(require_api_key)])
