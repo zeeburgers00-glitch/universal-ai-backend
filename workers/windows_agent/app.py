@@ -121,7 +121,7 @@ async def rea_tool_catalog():
 
 
 @app.post("/v1/rea/jobs", status_code=202, dependencies=[Depends(require_agent_key)])
-def create_rea_job(req: ReaToolCallRequest):
+async def create_rea_job(req: ReaToolCallRequest):
     _require_windows()
     configured_device = os.getenv("WINDOWS_AGENT_DEVICE_ID", "").strip()
     if not configured_device or req.paired_device_id != configured_device:
