@@ -1038,95 +1038,114 @@ export default function UniversalAiHub({ onCloseModal }) {
 `;
 }
 
-function buildFloatingMountCode() {
+function buildFloatingMountCode(hasNativeRoute = false) {
   return `import React, { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import UniversalAiHub from './pages/UniversalAiHub';
 
+const HAS_NATIVE_ROUTE = ${JSON.stringify(Boolean(hasNativeRoute))};
+
 function UniversalAiFloatingLauncher() {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    if (window.location.hash === '#universal-ai-hub') return true;
+    if (!HAS_NATIVE_ROUTE && window.location.pathname.toLowerCase().includes('universalaihub')) return true;
+    return false;
+  });
   const [pathname, setPathname] = useState(
     typeof window !== 'undefined' ? window.location.pathname : '/'
   );
 
   useEffect(() => {
-    const syncPath = () => setPathname(window.location.pathname);
+    const syncPath = () => {
+      const next = window.location.pathname;
+      setPathname(next);
+      if (!HAS_NATIVE_ROUTE && next.toLowerCase().includes('universalaihub')) {
+        setOpen(true);
+      }
+    };
     window.addEventListener('popstate', syncPath);
-    if (window.location.hash === '#universal-ai-hub') {
-      setOpen(true);
-    }
     return () => window.removeEventListener('popstate', syncPath);
   }, []);
 
-  if (pathname.toLowerCase().includes('universalaihub')) {
+  if (HAS_NATIVE_ROUTE && pathname.toLowerCase().includes('universalaihub')) {
     return null;
   }
 
-  const navigateToHubRoute = () => {
+  const openFullRoute = () => {
     window.history.pushState({}, '', '/UniversalAiHub');
     window.dispatchEvent(new PopStateEvent('popstate'));
     setPathname('/UniversalAiHub');
-    setTimeout(() => {
-      if (!document.body.innerText.includes('Universal AI Command Hub')) {
-        setOpen(true);
-      }
-    }, 250);
+    if (!HAS_NATIVE_ROUTE) {
+      setOpen(true);
+    }
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    if (window.location.pathname.toLowerCase().includes('universalaihub')) {
+      window.history.pushState({}, '', '/');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+      setPathname('/');
+    }
   };
 
   return (
     <>
-      <div
-        style={{
-          position: 'fixed',
-          right: '18px',
-          bottom: '18px',
-          zIndex: 9990,
-          display: 'flex',
-          gap: '6px',
-          alignItems: 'center',
-        }}
-      >
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          title="Open Universal AI Command Hub (6,351 AI & MCP Tools)"
+      {!open && (
+        <div
           style={{
+            position: 'fixed',
+            right: '18px',
+            bottom: '18px',
+            zIndex: 9990,
             display: 'flex',
+            gap: '6px',
             alignItems: 'center',
-            gap: '8px',
-            padding: '10px 15px',
-            borderRadius: '999px',
-            border: '1px solid rgba(129, 140, 248, 0.55)',
-            background: 'linear-gradient(135deg, #312e81 0%, #4f46e5 100%)',
-            color: '#ffffff',
-            fontFamily: 'Inter, system-ui, sans-serif',
-            fontSize: '13px',
-            fontWeight: 700,
-            boxShadow: '0 10px 28px rgba(79, 70, 229, 0.45)',
-            cursor: 'pointer',
           }}
         >
-          <span style={{ width: '8px', height: '8px', borderRadius: '999px', background: '#4ade80', boxShadow: '0 0 8px #4ade80' }} />
-          <span>Universal AI Hub</span>
-        </button>
-        <button
-          type="button"
-          onClick={navigateToHubRoute}
-          title="Open /UniversalAiHub full page"
-          style={{
-            padding: '10px 11px',
-            borderRadius: '999px',
-            border: '1px solid rgba(148, 163, 184, 0.35)',
-            background: 'rgba(15, 23, 42, 0.92)',
-            color: '#cbd5e1',
-            fontSize: '12px',
-            fontWeight: 700,
-            cursor: 'pointer',
-          }}
-        >
-          ↗
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            title="Open Universal AI Command Hub (6,351 AI & MCP Tools)"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 15px',
+              borderRadius: '999px',
+              border: '1px solid rgba(129, 140, 248, 0.55)',
+              background: 'linear-gradient(135deg, #312e81 0%, #4f46e5 100%)',
+              color: '#ffffff',
+              fontFamily: 'Inter, system-ui, sans-serif',
+              fontSize: '13px',
+              fontWeight: 700,
+              boxShadow: '0 10px 28px rgba(79, 70, 229, 0.45)',
+              cursor: 'pointer',
+            }}
+          >
+            <span style={{ width: '8px', height: '8px', borderRadius: '999px', background: '#4ade80', boxShadow: '0 0 8px #4ade80' }} />
+            <span>Universal AI Hub</span>
+          </button>
+          <button
+            type="button"
+            onClick={openFullRoute}
+            title="Open /UniversalAiHub"
+            style={{
+              padding: '10px 11px',
+              borderRadius: '999px',
+              border: '1px solid rgba(148, 163, 184, 0.35)',
+              background: 'rgba(15, 23, 42, 0.92)',
+              color: '#cbd5e1',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            ↗
+          </button>
+        </div>
+      )}
 
       {open && (
         <div
@@ -1135,10 +1154,10 @@ function UniversalAiFloatingLauncher() {
             inset: 0,
             zIndex: 9999,
             overflowY: 'auto',
-            background: 'rgba(5, 8, 17, 0.96)',
+            background: 'rgba(5, 8, 17, 0.98)',
           }}
         >
-          <UniversalAiHub onCloseModal={() => setOpen(false)} />
+          <UniversalAiHub onCloseModal={handleClose} />
         </div>
       )}
     </>
@@ -1174,12 +1193,6 @@ export function injectUniversalHubIntoViteApp(projectDir, backendUrl) {
     buildHubPageCode(),
     "utf8"
   );
-  fs.writeFileSync(
-    path.join(srcDir, "uaib-mount.jsx"),
-    buildFloatingMountCode(),
-    "utf8"
-  );
-
   // Patch src/pages.config.(js|jsx|ts|tsx) so /UniversalAiHub is a native route
   let patchedPagesConfig = false;
   for (const candidate of ["pages.config.js", "pages.config.jsx", "pages.config.ts", "pages.config.tsx"]) {
@@ -1188,14 +1201,14 @@ export function injectUniversalHubIntoViteApp(projectDir, backendUrl) {
     let content = fs.readFileSync(cfgPath, "utf8");
     if (!content.includes("UniversalAiHub")) {
       const importStmt = "import UniversalAiHub from './pages/UniversalAiHub';\n";
-      const pagesMatch = content.match(/export\s+const\s+PAGES\s*=\s*\{/);
+      const pagesMatch = content.match(/(?:export\s+)?const\s+PAGES\s*=\s*\{/);
       if (pagesMatch && pagesMatch.index !== undefined) {
         content =
           content.slice(0, pagesMatch.index) +
           importStmt +
           content.slice(pagesMatch.index).replace(
-            /export\s+const\s+PAGES\s*=\s*\{/,
-            'export const PAGES = {\n    "UniversalAiHub": UniversalAiHub,'
+            /(?:export\s+)?const\s+PAGES\s*=\s*\{/,
+            (m) => `${m}\n    "UniversalAiHub": UniversalAiHub,`
           );
         fs.writeFileSync(cfgPath, content, "utf8");
         patchedPagesConfig = true;
@@ -1205,6 +1218,12 @@ export function injectUniversalHubIntoViteApp(projectDir, backendUrl) {
     }
     break;
   }
+
+  fs.writeFileSync(
+    path.join(srcDir, "uaib-mount.jsx"),
+    buildFloatingMountCode(patchedPagesConfig),
+    "utf8"
+  );
 
   // Patch src/main.(jsx|tsx|js|ts) to mount the floating Universal AI Hub launcher
   let patchedEntry = false;
