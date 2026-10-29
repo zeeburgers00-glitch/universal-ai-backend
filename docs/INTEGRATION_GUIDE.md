@@ -65,6 +65,19 @@ The Compose file uses internal DNS for worker-to-worker calls. The Vercel contro
 - Dispatch responses may contain downstream task IDs. A response saying `dispatched` means an action has been queued/sent, not that a GPU render or public upload has completed.
 - Multi-account deployments should implement per-tenant authentication, encrypted OAuth stores and durable approval/audit records before external use. The starter uses server-side worker secrets and a single configured YouTube channel connection.
 
+## REA reverse-engineering bridge
+
+REA is integrated as an optional local MCP server for the paired Windows agent. It is appropriate for authorized app/binary inspection and evidence-backed feature reconstruction, not for voice synthesis. REA's authored code is MIT, but proprietary analyzers such as IDA/Hopper/JEB and other third-party components keep their own terms.
+
+1. Install a supported Node.js release on the Windows PC (REA upstream package metadata currently requires Node `^22.23.4 || ^24.22.1 || >=26.12.1`).
+2. Install `rea-agents@6.8.0` and configure `REA_ENTRY_SCRIPT` to the installed `scripts/rea.mjs`.
+3. Set `REA_MCP_ENABLED=true`, `REA_ALLOWED_TARGET_ROOTS` and `REA_ALLOWED_URL_HOSTS`, leave `REA_ALLOWED_TOOL_NAMES` empty initially, and restart the local Windows agent.
+4. Query `GET /v1/rea/tools` from the backend and inspect exact tool names, descriptions, input schemas and risk annotations.
+5. Manually allowlist only reviewed tool names. Every request requires explicit approval and an authorization-scope note. Use `POST /v1/rea/jobs`, then poll `GET /v1/tasks/rea/{task_id}`.
+6. Never expose REA's plain-HTTP MCP listener to the public internet. This bridge invokes the local stdio MCP process and restricts file/URL arguments to configured local roots/hosts.
+
+The bridge cannot guarantee that target analysis is sandboxed. Runtime execution, instrumentation, network capture and device operations need stricter review/approval than static file inspection. Analyze only targets you own or are authorized to examine. See https://github.com/morluto/rea/blob/main/SECURITY.md and https://github.com/morluto/rea/blob/main/docs/mcp-contracts.md.
+
 ## Registering another tool
 
 1. Search live GitHub metadata via `GET /v1/discover/github?q=...`.
