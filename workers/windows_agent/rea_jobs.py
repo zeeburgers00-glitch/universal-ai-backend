@@ -9,7 +9,10 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from rea_mcp import ReaBridgeError, call_rea_tool, close_rea_session, _allowed_tool_names, _configuration, _validate_argument_scope
+try:
+    from .rea_mcp import ReaBridgeError, call_rea_tool, close_rea_session, _allowed_tool_names, _configuration, _validate_argument_scope
+except ImportError:
+    from rea_mcp import ReaBridgeError, call_rea_tool, close_rea_session, _allowed_tool_names, _configuration, _validate_argument_scope
 
 _ACTIVE_JOBS: dict[str, asyncio.Task] = {}
 
