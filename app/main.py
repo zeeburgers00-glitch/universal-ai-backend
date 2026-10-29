@@ -1,4 +1,6 @@
+import json
 import os
+from pathlib import Path
 from typing import Any
 
 from fastapi import Depends, FastAPI, HTTPException, Query
@@ -91,10 +93,15 @@ def list_tools(
     status: str | None = None,
     kind: str | None = None,
     capability: str | None = None,
+    license_status: str | None = None,
+    source_classification: str | None = None,
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
 ):
-    items = registry.list(q=q, category=category, status=status, kind=kind, capability=capability)
+    items = registry.list(
+        q=q, category=category, status=status, kind=kind, capability=capability,
+        license_status=license_status, source_classification=source_classification,
+    )
     return _page(items, limit, offset)
 
 
@@ -103,17 +110,51 @@ def list_skills(
     q: str | None = None,
     category: str | None = None,
     capability: str | None = None,
+    license_status: str | None = None,
+    source_classification: str | None = None,
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
 ):
     """Skills are catalog entries with capability metadata; discovery does not execute code."""
-    items = registry.list(q=q, category=category, capability=capability)
+    items = registry.list(
+        q=q, category=category, capability=capability,
+        license_status=license_status, source_classification=source_classification,
+    )
     return _page(items, limit, offset)
 
 
 @app.get("/v1/tools/categories")
 def categories():
     return {"categories": registry.categories()}
+
+
+@app.get("/v1/catalog/stats")
+def catalog_stats():
+    category_counts: dict[str, int] = {}
+    license_counts: dict[str, int] = {}
+    classification_counts: dict[str, int] = {}
+    for item in registry.items:
+        category = str(item.get("category", "uncategorized"))
+        license_status = str(item.get("license_status", "not_recorded"))
+        classification = str(item.get("source_classification", "not_classified"))
+        category_counts[category] = category_counts.get(category, 0) + 1
+        license_counts[license_status] = license_counts.get(license_status, 0) + 1
+        classification_counts[classification] = classification_counts.get(classification, 0) + 1
+    return {
+        "total_tools": len(registry.items),
+        "categories": category_counts,
+        "license_review_status": license_counts,
+        "source_classification": classification_counts,
+        "note": "Catalog entries are references, not verified executable integrations. Check upstream licenses before commercial use.",
+    }
+
+
+@app.get("/v1/catalog/sources")
+def catalog_sources():
+    path = Path(__file__).resolve().parent.parent / "catalog" / "sources.json"
+    if not path.exists():
+        return {"sources": [], "note": "Source registry is not configured"}
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 @app.get("/v1/tools/{tool_id}")
@@ -166,9 +207,17 @@ async def chat(request: ChatRequest):
 async def discover_github(
     q: str = Query(min_length=2, max_length=180, description="Capability/tool query, e.g. browser automation"),
     per_page: int = Query(default=10, ge=1, le=30),
+    page: int = Query(default=1, ge=1, le=10),
+    license_filter: str | None = Query(default=None, pattern=r"^[A-Za-z0-9.+-]{1,40}$", description="GitHub SPDX-style filter, e.g. mit or apache-2.0"),
+    min_stars: int = Query(default=0, ge=0, le=100000000),
+    sort: str = Query(default="stars", pattern=r"^(stars|forks|updated|help-wanted-issues)$"),
+    order: str = Query(default="desc", pattern=r"^(asc|desc)$"),
 ):
     try:
-        return await search_github_repositories(q=q, per_page=per_page)
+        return await search_github_repositories(
+            q=q, per_page=per_page, page=page, license_filter=license_filter,
+            min_stars=min_stars, sort=sort, order=order,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:
