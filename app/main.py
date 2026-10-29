@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, Field
 
 from .github_discovery import search_github_repositories
-from .providers import chat_with_openai_compatible, provider_status
+from .providers import chat_with_provider, provider_status
 from .registry import Registry
 from .security import require_api_key
 from .task_gateway import get_worker, post_worker, service_status
@@ -52,7 +52,7 @@ app.add_middleware(
 
 
 class ChatRequest(BaseModel):
-    provider: str = Field(default="openai_compatible", min_length=1, max_length=80)
+    provider: str = Field(default="openai-compatible", min_length=1, max_length=80)
     model: str = Field(default="", max_length=200)
     messages: list[dict[str, Any]] = Field(min_length=1, max_length=200)
     temperature: float = Field(default=0.7, ge=0, le=2)
@@ -326,16 +326,29 @@ def providers():
     return {**provider_status(), "workers": service_status()}
 
 
+@app.get("/v1/models/providers")
+def model_provider_catalog():
+    try:
+        catalog = load_manifest("provider_capabilities.json")
+    except (ValueError, FileNotFoundError, json.JSONDecodeError):
+        catalog = []
+    status = provider_status()
+    states = {item["id"]: item for item in status.get("providers", [])}
+    enriched = []
+    for item in catalog:
+        enriched.append({**item, "runtime_status": states.get(item.get("id"), {"ready": False})})
+    return {"total": len(enriched), "items": enriched, "workers": service_status()}
+
+
 @app.post("/v1/chat/completions", dependencies=[Depends(require_api_key)])
 async def chat(request: ChatRequest):
-    if request.provider != "openai_compatible":
-        raise HTTPException(status_code=400, detail="This release implements provider='openai_compatible'. Configure AI_BASE_URL and AI_API_KEY.")
     for index, message in enumerate(request.messages):
         if not isinstance(message, dict) or not message.get("role"):
             raise HTTPException(status_code=422, detail=f"messages[{index}] must contain a role")
     try:
-        return await chat_with_openai_compatible(model=request.model, messages=request.messages,
-                                                temperature=request.temperature, max_tokens=request.max_tokens)
+        provider_id = request.provider.lower().replace("_", "-")
+        return await chat_with_provider(provider=provider_id, model=request.model, messages=request.messages,
+                                        temperature=request.temperature, max_tokens=request.max_tokens)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:
