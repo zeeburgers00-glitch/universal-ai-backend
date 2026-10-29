@@ -25,16 +25,29 @@ def _validate_payload(action_name: str, payload: dict[str, Any], user_approved: 
     # External posts/messages and all computer actions are always approval-gated.
     if action_name in {"youtube_publish", "channel_action", "desktop_action"} and not user_approved:
         raise PermissionError(f"{action_name} requires explicit user approval")
-    if action_name == "youtube_publish" and not payload.get("video_asset_id"):
-        raise ValueError("youtube_publish requires video_asset_id")
-    if action_name == "voice_clone" and not (
-        payload.get("speaker_consent_confirmed") and payload.get("speaker_consent_record_id")
-    ):
-        raise PermissionError("voice_clone requires explicit speaker consent and a consent record")
-    if action_name == "channel_action" and not payload.get("target_id"):
-        raise ValueError("channel_action requires a target_id")
-    if action_name == "desktop_action" and not payload.get("paired_device_id"):
-        raise ValueError("desktop_action requires a paired_device_id")
+    if action_name == "voice_tts" and not str(payload.get("text", "")).strip():
+        raise ValueError("voice_tts requires non-empty text")
+    if action_name == "voice_clone":
+        if not payload.get("reference_audio_asset_id"):
+            raise ValueError("voice_clone requires reference_audio_asset_id")
+        if not (payload.get("speaker_consent_confirmed") and payload.get("speaker_consent_record_id")):
+            raise PermissionError("voice_clone requires explicit speaker consent and a consent record")
+    if action_name == "media_job":
+        if payload.get("task_type") not in {"image", "video", "audio", "music", "lip_sync", "captions", "render", "transcribe", "thumbnail"}:
+            raise ValueError("media_job requires a supported task_type")
+    if action_name == "youtube_publish":
+        required = ["channel_connection_id", "video_asset_id", "title"]
+        if any(not payload.get(key) for key in required):
+            raise ValueError("youtube_publish requires channel_connection_id, video_asset_id and title")
+    if action_name == "channel_action":
+        required = ["channel_id", "connection_id", "action", "target_id"]
+        if any(not payload.get(key) for key in required):
+            raise ValueError("channel_action requires channel_id, connection_id, action and target_id")
+    if action_name == "desktop_action":
+        if not payload.get("paired_device_id") or not payload.get("action"):
+            raise ValueError("desktop_action requires paired_device_id and action")
+        if not isinstance(payload.get("parameters", {}), dict):
+            raise ValueError("desktop_action parameters must be an object")
 
 
 def _dispatch(action_name: str, payload: dict[str, Any], task_id: str, approved: bool) -> dict[str, Any]:
@@ -47,7 +60,7 @@ def _dispatch(action_name: str, payload: dict[str, Any], task_id: str, approved:
             "action": action_name, "status": "blocked_missing_worker",
             "required_environment": [url_env, key_env],
         }
-    body = {**payload, "task_id": payload.get("task_id") or f"{task_id}-{action_name}", "user_approved": approved}
+    body = {**payload, "task_id": task_id, "user_approved": approved}
     timeout = httpx.Timeout(20, connect=8)
     try:
         with httpx.Client(timeout=timeout, follow_redirects=False) as client:
@@ -127,8 +140,14 @@ def dispatch_workflow(self, payload: dict[str, Any]) -> dict[str, Any]:
         except (ValueError, PermissionError) as exc:
             result = {"action": action_name, "status": "blocked", "reason": str(exc)}
         results.append({"index": index, **result})
+    overall_status = (
+        "dispatched" if results and all(x.get("status") == "dispatched" for x in results)
+        else "blocked_missing_worker" if results and all(x.get("status") == "blocked_missing_worker" for x in results)
+        else "completed_with_errors" if any(x.get("status") in {"blocked", "rejected", "dispatch_error", "blocked_missing_worker", "invalid_action", "invalid_payload"} for x in results)
+        else "no_actions"
+    )
     return {
-        "status": "dispatched" if all(x.get("status") in {"dispatched", "blocked_missing_worker"} for x in results) else "completed_with_errors",
+        "status": overall_status,
         "task_id": task_id,
         "workflow_id": workflow.get("id"),
         "results": results,
