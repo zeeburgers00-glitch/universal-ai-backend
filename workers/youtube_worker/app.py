@@ -35,6 +35,7 @@ class PublishRequest(BaseModel):
     tags: list[str] = Field(default_factory=list, max_length=100)
     privacy_status: str = Field(default="private", pattern=r"^(private|unlisted|public)$")
     publish_at: str | None = Field(default=None, max_length=40)
+    self_declared_made_for_kids: bool | None = None
     user_approved: bool = False
     execution_mode: str = "async"
 
