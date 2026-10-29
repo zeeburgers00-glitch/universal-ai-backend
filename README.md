@@ -7,8 +7,8 @@ API-only backend for an existing app. It is designed as an extensible integratio
 ## Features
 
 - FastAPI REST API with OpenAPI docs at `/docs`.
-- Searchable catalog: `GET /v1/tools`, category filters, skill aliases, and individual records.
-- Live GitHub discovery: `GET /v1/discover/github?q=...` fetches current public repository search results, including description, URL, stars, topics, and license metadata when GitHub supplies it.
+- Expanded searchable catalog from multiple AI/self-hosting directories plus commercial/open-core candidates; exact count is exposed by `GET /v1/catalog/stats`. Repository references are metadata, not executed integrations.
+- Live GitHub discovery with filters: `GET /v1/discover/github?q=browser+automation&license_filter=mit&min_stars=100&sort=stars` fetches current public repo results, including license metadata when GitHub supplies it.
 - Configurable OpenAI-compatible chat adapter for endpoints such as OpenAI-compatible hosted providers and self-hosted inference services.
 - API-key protection for chat and catalog writes.
 - Vercel-compatible FastAPI entrypoint and local Windows instructions.
@@ -43,8 +43,11 @@ Open `http://127.0.0.1:8000/docs`.
 
 - `GET /` — service metadata
 - `GET /health` — health check
-- `GET /v1/tools?q=voice&category=audio` — search the curated registry
+- `GET /v1/tools?q=voice&category=audio-voice` — search the registry
+- Filter candidate license states with `license_status=review_required` or a partial `source_classification` value
 - `GET /v1/tools/categories` — categories
+- `GET /v1/catalog/stats` — live counts of entries/categories/license-review statuses
+- `GET /v1/catalog/sources` — catalog discovery sources and classification policy
 - `GET /v1/tools/{tool_id}` — one record
 - `GET /v1/skills?q=browser` — searchable skills/tool references
 - `GET /v1/providers` — provider configuration status (never returns secrets)
@@ -85,3 +88,21 @@ Do not add any secret to GitHub source files. A serverless filesystem and in-mem
 ## License and third-party projects
 
 This backend's code and each linked integration have their own licenses and terms. A link in the catalog does not grant permission to bundle, host, or redistribute that project's code or models. Always check the upstream repository's current `LICENSE`, model license, and service terms before integration.
+
+## Expanded catalog and license policy
+
+The registry loads `catalog/tools.json`, `catalog/extended.json`, and `catalog/commercial.json`, merging duplicate repository URLs while preserving stable IDs from the original seed catalog. The seed is a curated set, not a claim to list every AI project in existence.
+
+Many candidate rows are deliberately marked `license_status=review_required`. The catalog includes open-source candidates as well as some source-available/fair-code and mixed-license projects, since commercial products sometimes expose only part of their code. Those classes are labeled separately when known. Do not treat source-available, an open-source SDK, model weights, and a vendor's hosted API as equivalent.
+
+For the most current public GitHub metadata, use `/v1/discover/github` with filters. The API may be rate-limited without `GITHUB_TOKEN`. A GitHub SPDX field is helpful metadata, not legal advice or proof that every dependency, model, dataset, or enterprise feature has the same license.
+
+### Useful searches
+
+```text
+GET /v1/tools?q=paid+cloud
+GET /v1/tools?q=license&license_status=review_required
+GET /v1/discover/github?q=agent+framework&license_filter=apache-2.0&sort=stars
+GET /v1/discover/github?q=voice+tts&license_filter=mit&min_stars=100
+GET /v1/catalog/stats
+```
