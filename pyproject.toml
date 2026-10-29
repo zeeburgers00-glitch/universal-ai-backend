@@ -13,6 +13,9 @@ dependencies = [
 [tool.vercel]
 entrypoint = "app.main:app"
 
+[tool.vercel.scripts]
+build = "python scripts/vercel_build_hook.py"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]

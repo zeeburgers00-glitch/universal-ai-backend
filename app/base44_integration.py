@@ -524,13 +524,14 @@ export default async function (req) {{
       path = "/v1/tools" + buildQuery({{
         q: payload.q,
         category: payload.category,
+        kind: payload.mcp_only ? "mcp_server" : payload.kind,
         capability: payload.capability,
         license_status: payload.license_status,
         source_classification: payload.source_classification,
-        mcp_only: payload.mcp_only,
         min_stars: payload.min_stars,
         language: payload.language,
         limit: payload.limit || 60,
+        offset: payload.offset || 0,
       }});
       break;
     case "tool_detail":
@@ -568,7 +569,7 @@ export default async function (req) {{
       path = "/v1/models/providers";
       break;
     case "agents":
-      path = "/v1/catalog/agents";
+      path = "/v1/agents";
       break;
     case "agent_run":
       method = "POST";
@@ -582,7 +583,7 @@ export default async function (req) {{
       needsKey = true;
       break;
     case "workflows":
-      path = "/v1/catalog/workflows";
+      path = "/v1/workflows";
       break;
     case "workflow_run":
       method = "POST";
@@ -595,7 +596,7 @@ export default async function (req) {{
       needsKey = true;
       break;
     case "channels":
-      path = "/v1/catalog/channels";
+      path = "/v1/channels";
       break;
     case "channel_action":
       method = "POST";
@@ -604,7 +605,7 @@ export default async function (req) {{
       needsKey = true;
       break;
     case "voice_models":
-      path = "/v1/catalog/voice-models";
+      path = "/v1/voice/providers";
       break;
     case "voice_tts":
       method = "POST";

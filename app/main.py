@@ -18,8 +18,8 @@ from .base44_integration import (
     build_base44_frontend_sdk_code,
     build_base44_hub_page_code,
     connect_base44_app,
-    run_base44_auto_provision,
 )
+from .supabase_store import save_custom_tool, supabase_configured
 from .explorer_ui import EXPLORER_HTML
 from .github_discovery import list_discovery_presets, search_github_repositories
 from .providers import chat_with_provider, provider_status
@@ -311,6 +311,7 @@ def list_tools(
     category: str | None = None,
     status: str | None = None,
     kind: str | None = None,
+    mcp_only: bool = False,
     capability: str | None = None,
     license_status: str | None = None,
     source_classification: str | None = None,
@@ -319,7 +320,8 @@ def list_tools(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
 ):
-    items = registry.list(q=q, category=category, status=status, kind=kind, capability=capability,
+    effective_kind = "mcp_server" if mcp_only and not kind else kind
+    items = registry.list(q=q, category=category, status=status, kind=effective_kind, capability=capability,
                           license_status=license_status, source_classification=source_classification,
                           min_stars=min_stars, language=language)
     return _page(items, limit, offset)
@@ -396,12 +398,15 @@ def get_tool(tool_id: str):
 
 
 @app.post("/v1/tools", dependencies=[Depends(require_api_key)])
-def register_tool(item: ToolRegistration):
+async def register_tool(item: ToolRegistration):
     """Register metadata only. Does not download, install, or execute repository code."""
     try:
-        return registry.add(item.model_dump())
+        saved = registry.add(item.model_dump())
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
+    if supabase_configured():
+        await save_custom_tool(saved)
+    return saved
 
 
 @app.get("/v1/providers")
@@ -670,23 +675,6 @@ async def connect_base44_endpoint(request: Base44ConnectRequest):
         backend_url=request.backend_url,
         install_frontend_files=request.install_frontend_files,
     )
-
-
-@app.get("/v1/integrations/base44/provision")
-async def provision_base44_endpoint(
-    nonce: str = Query(min_length=24, max_length=128),
-    mode: str = Query(default="inspect_and_agents", max_length=40),
-    app_id: str | None = Query(default=None, max_length=80),
-    dist_url: str | None = Query(default=None, max_length=500),
-):
-    import secrets as _secrets
-
-    expected = (os.getenv("BASE44_PROVISION_NONCE") or "").strip()
-    if not expected:
-        raise HTTPException(status_code=503, detail="Provisioning nonce disabled")
-    if not _secrets.compare_digest(nonce, expected):
-        raise HTTPException(status_code=401, detail="Invalid provisioning nonce")
-    return await run_base44_auto_provision(mode=mode, app_id=app_id, dist_url=dist_url)
 
 
 @app.get("/v1/tasks/{service}/{task_id}", dependencies=[Depends(require_api_key)])
