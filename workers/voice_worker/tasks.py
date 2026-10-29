@@ -67,6 +67,53 @@ def _resolve_reference(payload: dict[str, Any]) -> tuple[str | None, str | None]
     return str(candidates[0]), transcript
 
 
+def _convert_audio(source_wav: Path, output_format: str, task_id: str) -> tuple[Path, str]:
+    mime_by_format = {"wav": "audio/wav", "mp3": "audio/mpeg", "ogg": "audio/ogg", "flac": "audio/flac"}
+    if output_format not in mime_by_format:
+        raise ValueError("output_format must be wav, mp3, ogg or flac")
+    if output_format == "wav":
+        return source_wav, mime_by_format["wav"]
+    import shutil
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffmpeg:
+        raise RuntimeError("FFmpeg is required for mp3/ogg/flac output; request wav or install FFmpeg")
+    converted = OUTPUT_ROOT / f"{task_id}.{output_format}"
+    args = [ffmpeg, "-y", "-i", str(source_wav)]
+    if output_format == "mp3":
+        args += ["-codec:a", "libmp3lame", "-b:a", "192k"]
+    elif output_format == "ogg":
+        args += ["-codec:a", "libvorbis", "-q:a", "5"]
+    else:
+        args += ["-codec:a", "flac"]
+    args.append(str(converted))
+    result = subprocess.run(args, check=False, capture_output=True, text=True, timeout=120)
+    if result.returncode != 0 or not converted.is_file():
+        raise RuntimeError(f"Audio conversion failed with exit code {result.returncode}")
+    source_wav.unlink(missing_ok=True)
+    return converted, mime_by_format[output_format]
+
+
+def _save_voice_output(task_id: str, generated_wav: Path, engine: str, payload: dict[str, Any]) -> dict[str, Any]:
+    requested_format = str(payload.get("output_format") or "wav").lower()
+    converted, mime_type = _convert_audio(generated_wav, requested_format, task_id)
+    import uuid
+    asset_id = "audio-" + uuid.uuid4().hex
+    final_path = OUTPUT_ROOT / f"{asset_id}.{requested_format}"
+    converted.replace(final_path)
+    metadata = {
+        "asset_id": asset_id,
+        "stored_filename": final_path.name,
+        "mime_type": mime_type,
+        "engine": engine,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "task_id": task_id,
+        "commercial_use": bool(payload.get("commercial_use")),
+        "voice_profile_id": payload.get("voice_profile_id"),
+    }
+    (OUTPUT_ROOT / f"{asset_id}.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+    return {"asset_id": asset_id, "mime_type": mime_type, "engine": engine}
+
+
 def _run_f5(task_id: str, payload: dict[str, Any]) -> dict[str, Any]:
     import shutil
     command = shutil.which("f5-tts_infer-cli")
@@ -90,9 +137,6 @@ def _run_f5(task_id: str, payload: dict[str, Any]) -> dict[str, Any]:
         args.extend(["--ref_audio", ref_audio])
         if ref_text:
             args.extend(["--ref_text", ref_text])
-    if payload.get("output_format", "wav") != "wav":
-        # The upstream inference CLI produces WAV; conversion is done by a separate ffmpeg step.
-        raise ValueError("This worker build currently returns WAV; request output_format='wav'")
     max_seconds = int(os.getenv("F5_TTS_JOB_TIMEOUT_SECONDS", "240"))
     completed = subprocess.run(args, check=False, capture_output=True, text=True, timeout=max_seconds)
     if completed.returncode != 0:
@@ -103,20 +147,7 @@ def _run_f5(task_id: str, payload: dict[str, Any]) -> dict[str, Any]:
         # Depending on installed CLI configuration, output_dir/output_file is the expected path.
         raise RuntimeError("F5-TTS completed without creating the expected WAV output")
     generated.replace(output_path)
-    asset_id = "audio-" + __import__("uuid").uuid4().hex
-    final_path = OUTPUT_ROOT / f"{asset_id}.wav"
-    output_path.replace(final_path)
-    metadata = {
-        "asset_id": asset_id,
-        "stored_filename": final_path.name,
-        "mime_type": "audio/wav",
-        "engine": "f5-tts",
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "task_id": task_id,
-        "commercial_use": bool(payload.get("commercial_use")),
-    }
-    (OUTPUT_ROOT / f"{asset_id}.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
-    return {"asset_id": asset_id, "mime_type": "audio/wav", "engine": "f5-tts"}
+    return _save_voice_output(task_id, output_path, "f5-tts", payload)
 
 
 def _run_melo(task_id: str, payload: dict[str, Any]) -> dict[str, Any]:
@@ -139,17 +170,4 @@ def _run_melo(task_id: str, payload: dict[str, Any]) -> dict[str, Any]:
     tts.tts_to_file(str(payload["text"]), speaker_id, str(task_output), speed=1.0)
     if not task_output.is_file():
         raise RuntimeError("MeloTTS completed without creating a WAV file")
-    asset_id = "audio-" + __import__("uuid").uuid4().hex
-    final_path = OUTPUT_ROOT / f"{asset_id}.wav"
-    task_output.replace(final_path)
-    metadata = {
-        "asset_id": asset_id,
-        "stored_filename": final_path.name,
-        "mime_type": "audio/wav",
-        "engine": "melo-tts",
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "task_id": task_id,
-        "commercial_use": bool(payload.get("commercial_use")),
-    }
-    (OUTPUT_ROOT / f"{asset_id}.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
-    return {"asset_id": asset_id, "mime_type": "audio/wav", "engine": "melo-tts"}
+    return _save_voice_output(task_id, task_output, "melo-tts", payload)
