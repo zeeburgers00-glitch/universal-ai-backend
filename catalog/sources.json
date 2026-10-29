@@ -37,6 +37,31 @@
       "name": "Awesome LLMOps Platforms",
       "url": "https://github.com/talhaanwarch/awesome-llmops-platforms",
       "purpose": "Upstream discovery list for LLM gateways, observability, evaluation, guardrails, and prompt-management tools; its reported license/status metadata still requires per-project verification."
+    },
+    {
+      "name": "Voice and media engine manifest",
+      "url": "https://github.com/zeeburgers00-glitch/universal-ai-backend/blob/main/catalog/voice_media.json",
+      "purpose": "Specialist voice, voice cloning, ASR, audio/video, avatars and media processing candidates; each model and asset license remains review-required."
+    },
+    {
+      "name": "Channel connector manifest",
+      "url": "https://github.com/zeeburgers00-glitch/universal-ai-backend/blob/main/catalog/channels.json",
+      "purpose": "Supported and planned social, messaging, productivity and business API connector catalog."
+    },
+    {
+      "name": "Agent and workflow blueprints",
+      "url": "https://github.com/zeeburgers00-glitch/universal-ai-backend/blob/main/catalog/agents.json",
+      "purpose": "Agent missions, required tool families, risk levels and approval policies."
+    },
+    {
+      "name": "Workflow blueprint catalog",
+      "url": "https://github.com/zeeburgers00-glitch/universal-ai-backend/blob/main/catalog/workflows.json",
+      "purpose": "Creator, YouTube, social, JARVIS, research, coding, RAG and business workflow templates."
+    },
+    {
+      "name": "Model provider catalog",
+      "url": "https://github.com/zeeburgers00-glitch/universal-ai-backend/blob/main/catalog/provider_capabilities.json",
+      "purpose": "Hosted and self-hosted model API/provider configuration references."
     }
   ],
   "classification_guide": {
