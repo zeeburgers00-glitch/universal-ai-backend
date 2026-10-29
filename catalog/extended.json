@@ -4289,5 +4289,45 @@
     "curation_source": "https://github.com/arcane-bear/awesome-self-hosted-agents",
     "source_name": "Awesome Self-Hosted Agents",
     "warning": "A repository is a candidate, not a verified executable integration. Some directories include source-available projects; verify the upstream license before commercial use."
+  },
+  {
+    "id": "github-morluto-rea",
+    "name": "REA — Reverse Engineer Anything",
+    "category": "reverse-engineering",
+    "kind": "github-repository-candidate",
+    "description": "Local-first CLI and MCP server for evidence-backed analysis of authorized desktop apps, JavaScript/Electron bundles, native binaries, .NET assemblies, Android APKs/devices, firmware, model artifacts, websites and captured network data. Supports static analysis and selected runtime observation through configured local providers.",
+    "repository_url": "https://github.com/morluto/rea",
+    "documentation_url": "https://github.com/morluto/rea/tree/main/docs",
+    "npm_package": "rea-agents",
+    "upstream_version_observed": "6.8.0",
+    "license": "MIT for REA-authored code; third-party dependencies, assets and proprietary analysis engines retain their own licensing terms.",
+    "license_status": "review_required",
+    "source_classification": "open_source_with_third_party_and_optional_proprietary_engine_constraints",
+    "commercial_model": "REA-authored code is MIT; commercial tools such as IDA/Hopper/JEB and some external providers must be obtained and licensed separately.",
+    "integration_type": "optional-local-mcp-stdio",
+    "status": "optional_local_mcp",
+    "capabilities": [
+      "reverse-engineering",
+      "javascript-electron-analysis",
+      "native-binary-analysis",
+      ".net-analysis",
+      "android-apk-analysis",
+      "firmware-analysis",
+      "model-artifact-inspection",
+      "website-observation",
+      "network-capture-analysis",
+      "evidence-backed-investigation",
+      "app-feature-reconstruction"
+    ],
+    "deployment_target": "paired-windows-or-developer-workstation",
+    "permissions": [
+      "Enable only on devices the user controls or is authorized to inspect.",
+      "Use explicit approval before runtime observation, launching targets, changing files, installing tools or interacting with devices.",
+      "Keep MCP on stdio/local process by default; do not expose REA's unauthenticated plain-HTTP mode to the public internet."
+    ],
+    "risk_level": "high",
+    "source_name": "REA — Reverse Engineer Anything",
+    "curation_source": "https://github.com/morluto/rea",
+    "warning": "Catalog/adapter integration does not install REA or its dependencies. REA needs supported Node.js/npm and may require local native-analysis providers. Runtime analysis is not a sandbox. Analyze only software/artifacts you own or are authorized to examine."
   }
 ]
