@@ -1,0 +1,58 @@
+services:
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?set REDIS_PASSWORD in the worker host environment}"]
+    volumes:
+      - voice-redis-data:/data
+    restart: unless-stopped
+    networks: [voice-private]
+
+  voice-api:
+    build:
+      context: ./voice_worker
+      dockerfile: Dockerfile
+    command: ["uvicorn", "voice_worker.app:app", "--host", "0.0.0.0", "--port", "8100"]
+    environment:
+      VOICE_WORKER_API_KEY: ${VOICE_WORKER_API_KEY:?set a strong worker API secret}
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      VOICE_DATA_ROOT: /data
+      F5_TTS_MODEL: ${F5_TTS_MODEL:-F5TTS_v1_Base}
+      F5_TTS_DEVICE: cuda
+      F5_TTS_MODEL_LICENSE_CLASS: ${F5_TTS_MODEL_LICENSE_CLASS:-noncommercial}
+      F5_TTS_JOB_TIMEOUT_SECONDS: ${F5_TTS_JOB_TIMEOUT_SECONDS:-240}
+    volumes:
+      - voice-data:/data
+    depends_on: [redis, voice-runner]
+    ports:
+      # Put behind HTTPS/reverse proxy or a private tunnel; do not expose this raw port publicly.
+      - "127.0.0.1:8100:8100"
+    restart: unless-stopped
+    networks: [voice-private]
+
+  voice-runner:
+    build:
+      context: ./voice_worker
+      dockerfile: Dockerfile
+    command: ["celery", "-A", "voice_worker.app.celery_app", "worker", "--loglevel=INFO", "--concurrency=1"]
+    environment:
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      VOICE_DATA_ROOT: /data
+      F5_TTS_MODEL: ${F5_TTS_MODEL:-F5TTS_v1_Base}
+      F5_TTS_DEVICE: cuda
+      F5_TTS_MODEL_LICENSE_CLASS: ${F5_TTS_MODEL_LICENSE_CLASS:-noncommercial}
+      F5_TTS_JOB_TIMEOUT_SECONDS: ${F5_TTS_JOB_TIMEOUT_SECONDS:-240}
+      MELOTTS_DEVICE: cuda
+    volumes:
+      - voice-data:/data
+    depends_on: [redis]
+    restart: unless-stopped
+    gpus: all
+    networks: [voice-private]
+
+volumes:
+  voice-redis-data:
+  voice-data:
+
+networks:
+  voice-private:
+    internal: true
