@@ -3,10 +3,10 @@ import re
 from pathlib import Path
 from typing import Any
 
-from celery import current_task
+from youtube_worker.app import celery_app
 
 
-@__import__("youtube_worker.app", fromlist=["celery_app"]).celery_app.task(bind=True, name="youtube_worker.publish_video", acks_late=True)
+@celery_app.task(bind=True, name="youtube_worker.publish_video", acks_late=True)
 def publish_video(self, payload: dict[str, Any]) -> dict[str, Any]:
     from google.auth.transport.requests import Request
     from google.oauth2.credentials import Credentials
@@ -53,8 +53,18 @@ def publish_video(self, payload: dict[str, Any]) -> dict[str, Any]:
     )
     creds.refresh(Request())
     youtube = build("youtube", "v3", credentials=creds, cache_discovery=False)
+    channel_check = youtube.channels().list(part="id", mine=True, maxResults=10).execute(num_retries=2)
+    configured_channel_id = os.getenv("YOUTUBE_CHANNEL_ID", "").strip()
+    authorized_channel_ids = {str(item.get("id", "")) for item in channel_check.get("items", [])}
+    if configured_channel_id not in authorized_channel_ids:
+        raise PermissionError("The OAuth token does not authorize the configured YouTube channel ID")
     privacy = payload.get("privacy_status", "private")
-    status_body: dict[str, Any] = {"privacyStatus": privacy, "selfDeclaredMadeForKids": False}
+    status_body: dict[str, Any] = {"privacyStatus": privacy}
+    made_for_kids = payload.get("self_declared_made_for_kids")
+    if made_for_kids is not None:
+        if not isinstance(made_for_kids, bool):
+            raise ValueError("self_declared_made_for_kids must be a boolean or null")
+        status_body["selfDeclaredMadeForKids"] = made_for_kids
     publish_at = payload.get("publish_at")
     if publish_at:
         # YouTube scheduling requires a future ISO 8601 time and a private status.
