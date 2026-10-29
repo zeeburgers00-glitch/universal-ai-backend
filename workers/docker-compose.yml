@@ -142,6 +142,76 @@ services:
     restart: unless-stopped
     networks: [workers-private]
 
+
+  agent-api:
+    build: { context: ./agent_worker, dockerfile: Dockerfile }
+    command: ["uvicorn", "agent_worker.app:app", "--host", "0.0.0.0", "--port", "8500"]
+    environment:
+      AGENT_WORKER_API_KEY: ${AGENT_WORKER_API_KEY:?set AGENT_WORKER_API_KEY}
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/3
+      AGENT_MODEL_BASE_URL: ${AGENT_MODEL_BASE_URL:-}
+      AGENT_MODEL_API_KEY: ${AGENT_MODEL_API_KEY:-}
+      AGENT_DEFAULT_MODEL: ${AGENT_DEFAULT_MODEL:-}
+      AI_BASE_URL: ${AI_BASE_URL:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_DEFAULT_MODEL: ${AI_DEFAULT_MODEL:-}
+      AGENT_ALLOW_INSECURE_HTTP: ${AGENT_ALLOW_INSECURE_HTTP:-false}
+    depends_on: { redis: { condition: service_healthy } }
+    ports: ["127.0.0.1:8500:8500"]
+    restart: unless-stopped
+    networks: [workers-private]
+
+  agent-runner:
+    build: { context: ./agent_worker, dockerfile: Dockerfile }
+    command: ["celery", "-A", "agent_worker.app.celery_app", "worker", "--loglevel=INFO", "--concurrency=2"]
+    environment:
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/3
+      AGENT_MODEL_BASE_URL: ${AGENT_MODEL_BASE_URL:-}
+      AGENT_MODEL_API_KEY: ${AGENT_MODEL_API_KEY:-}
+      AGENT_DEFAULT_MODEL: ${AGENT_DEFAULT_MODEL:-}
+      AI_BASE_URL: ${AI_BASE_URL:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_DEFAULT_MODEL: ${AI_DEFAULT_MODEL:-}
+      AGENT_ALLOW_INSECURE_HTTP: ${AGENT_ALLOW_INSECURE_HTTP:-false}
+    depends_on: { redis: { condition: service_healthy } }
+    restart: unless-stopped
+    networks: [workers-private]
+
+  automation-api:
+    build: { context: ./automation_worker, dockerfile: Dockerfile }
+    command: ["uvicorn", "automation_worker.app:app", "--host", "0.0.0.0", "--port", "8600"]
+    environment:
+      AUTOMATION_WORKER_API_KEY: ${AUTOMATION_WORKER_API_KEY:?set AUTOMATION_WORKER_API_KEY}
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/4
+    depends_on: { redis: { condition: service_healthy } }
+    ports: ["127.0.0.1:8600:8600"]
+    restart: unless-stopped
+    networks: [workers-private]
+
+  automation-runner:
+    build: { context: ./automation_worker, dockerfile: Dockerfile }
+    command: ["celery", "-A", "automation_worker.app.celery_app", "worker", "--loglevel=INFO", "--concurrency=2"]
+    environment:
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/4
+      VOICE_WORKER_URL: http://voice-api:8100
+      VOICE_WORKER_API_KEY: ${VOICE_WORKER_API_KEY:?set VOICE_WORKER_API_KEY}
+      MEDIA_WORKER_URL: http://media-api:8400
+      MEDIA_WORKER_API_KEY: ${MEDIA_WORKER_API_KEY:?set MEDIA_WORKER_API_KEY}
+      YOUTUBE_WORKER_URL: http://youtube-api:8200
+      YOUTUBE_WORKER_API_KEY: ${YOUTUBE_WORKER_API_KEY:?set YOUTUBE_WORKER_API_KEY}
+      CHANNEL_WORKER_URL: http://channel-api:8300
+      CHANNEL_WORKER_API_KEY: ${CHANNEL_WORKER_API_KEY:?set CHANNEL_WORKER_API_KEY}
+      DESKTOP_AGENT_URL: ${DESKTOP_AGENT_URL:-}
+      DESKTOP_AGENT_API_KEY: ${DESKTOP_AGENT_API_KEY:-}
+    depends_on:
+      redis: { condition: service_healthy }
+      voice-api: { condition: service_started }
+      media-api: { condition: service_started }
+      youtube-api: { condition: service_started }
+      channel-api: { condition: service_started }
+    restart: unless-stopped
+    networks: [workers-private]
+
 volumes:
   redis-data:
   voice-data:
