@@ -1,0 +1,884 @@
+[
+  {
+    "id": "jarvis-orchestrator",
+    "name": "JARVIS Orchestrator",
+    "mission": "Turns voice or text goals into bounded plans, routes to specialist agents, tracks progress, and explains results.",
+    "capabilities": [
+      "planning",
+      "intent-routing",
+      "agent-handoffs",
+      "memory-retrieval"
+    ],
+    "allowed_tool_families": [
+      "voice",
+      "task-router",
+      "approval-gate",
+      "audit-log"
+    ],
+    "required_context": "user-session",
+    "risk_level": "high",
+    "human_approval_rules": "Require confirmation for irreversible actions, publishing, communications, purchases and system changes.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "voice-studio",
+    "name": "Voice Studio Agent",
+    "mission": "Coordinates speech synthesis, authorized voice cloning, dubbing, transcription and audio quality checks.",
+    "capabilities": [
+      "tts",
+      "voice-cloning",
+      "dubbing",
+      "transcription"
+    ],
+    "allowed_tool_families": [
+      "voice-worker",
+      "asset-store",
+      "consent-records"
+    ],
+    "required_context": "audio-assets",
+    "risk_level": "high",
+    "human_approval_rules": "Voice-cloning requests require speaker authorization and compatible model license; never infer identity from a sample.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "youtube-producer",
+    "name": "YouTube Producer Agent",
+    "mission": "Plans channel content, drafts scripts, descriptions, chapters, titles and thumbnail prompts using cited research.",
+    "capabilities": [
+      "content-planning",
+      "scriptwriting",
+      "seo",
+      "chaptering"
+    ],
+    "allowed_tool_families": [
+      "research-agent",
+      "voice-studio",
+      "media-producer",
+      "youtube-api"
+    ],
+    "required_context": "channel-assets",
+    "risk_level": "high",
+    "human_approval_rules": "Human approves all final public content; include rights and factuality checks.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "youtube-publisher",
+    "name": "YouTube Publisher Agent",
+    "mission": "Performs authorized uploads, metadata updates and scheduling via official YouTube API after review.",
+    "capabilities": [
+      "upload",
+      "schedule",
+      "metadata",
+      "analytics"
+    ],
+    "allowed_tool_families": [
+      "youtube-oauth",
+      "asset-store",
+      "approval-gate"
+    ],
+    "required_context": "youtube-account",
+    "risk_level": "critical",
+    "human_approval_rules": "Requires OAuth with minimum scopes, quota checks and explicit approval for publication.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "channel-publisher",
+    "name": "Channel Publisher Agent",
+    "mission": "Publishes approved content to connected social/messaging platforms through official connectors.",
+    "capabilities": [
+      "multi-channel-publishing",
+      "scheduling",
+      "webhooks"
+    ],
+    "allowed_tool_families": [
+      "channel-oauth",
+      "approval-gate",
+      "rate-limiter",
+      "audit-log"
+    ],
+    "required_context": "connected-channels",
+    "risk_level": "critical",
+    "human_approval_rules": "No credential scraping, spam, artificial engagement, or unapproved mass messaging.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "social-manager",
+    "name": "Social Content Manager",
+    "mission": "Adapts approved content for each authorized social channel and produces publication-ready drafts.",
+    "capabilities": [
+      "post-copy",
+      "platform-adaptation",
+      "content-calendar"
+    ],
+    "allowed_tool_families": [
+      "channel-catalog",
+      "media-producer",
+      "policy-checker"
+    ],
+    "required_context": "brand-assets",
+    "risk_level": "high",
+    "human_approval_rules": "Platform APIs, rights, rate limits, disclosure, and user approval apply.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "video-editor",
+    "name": "Video Editor Agent",
+    "mission": "Builds editing plans, subtitles, aspect-ratio adaptations, audio mixing and render requests through media workers.",
+    "capabilities": [
+      "video-editing",
+      "captions",
+      "rendering",
+      "ffmpeg"
+    ],
+    "allowed_tool_families": [
+      "media-worker",
+      "asset-store",
+      "caption-editor"
+    ],
+    "required_context": "media-assets",
+    "risk_level": "high",
+    "human_approval_rules": "Only process authorized footage/music; final publishing needs approval.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "media-producer",
+    "name": "Generative Media Agent",
+    "mission": "Routes image/video/audio generation to configured model workers or approved hosted provider APIs.",
+    "capabilities": [
+      "image-generation",
+      "video-generation",
+      "audio-generation",
+      "assets"
+    ],
+    "allowed_tool_families": [
+      "media-worker",
+      "provider-registry",
+      "asset-store"
+    ],
+    "required_context": "media-assets",
+    "risk_level": "high",
+    "human_approval_rules": "Model weights and output rights vary; enforce policy, cost caps and license checks.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "research-agent",
+    "name": "Research Agent",
+    "mission": "Searches and compares public sources; provides citations, dates, uncertainty and a source trail.",
+    "capabilities": [
+      "web-search",
+      "source-extraction",
+      "fact-checking"
+    ],
+    "allowed_tool_families": [
+      "search-adapter",
+      "browser-worker",
+      "source-ledger"
+    ],
+    "required_context": "public-web",
+    "risk_level": "medium",
+    "human_approval_rules": "Respect robots, terms, copyright, privacy and site rate limits.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "browser-agent",
+    "name": "Browser Agent",
+    "mission": "Uses a reviewed browser automation worker to navigate pages and operate approved web apps.",
+    "capabilities": [
+      "browser-control",
+      "form-fill",
+      "web-research"
+    ],
+    "allowed_tool_families": [
+      "browser-worker",
+      "approval-gate",
+      "session-store"
+    ],
+    "required_context": "browser-session",
+    "risk_level": "critical",
+    "human_approval_rules": "No bypassing authentication, CAPTCHAs, access controls or user intent; confirm consequential submissions.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "windows-agent",
+    "name": "Windows Desktop Agent",
+    "mission": "Pairs with the user's Windows PC for explicit desktop, keyboard, file, app and OS automation tasks.",
+    "capabilities": [
+      "desktop-control",
+      "keyboard",
+      "mouse",
+      "file-operations",
+      "app-launch"
+    ],
+    "allowed_tool_families": [
+      "paired-device-agent",
+      "permission-policy",
+      "audit-log"
+    ],
+    "required_context": "paired-windows-device",
+    "risk_level": "critical",
+    "human_approval_rules": "Vercel cannot control a PC by itself. Requires a locally installed paired agent; destructive/system/security actions need confirmation.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "coding-agent",
+    "name": "Coding Agent",
+    "mission": "Inspects repositories, writes isolated patches, runs tests in a sandbox, and creates reviewable pull requests.",
+    "capabilities": [
+      "code-editing",
+      "tests",
+      "git",
+      "pr-creation"
+    ],
+    "allowed_tool_families": [
+      "github-app",
+      "sandbox",
+      "ci-runner",
+      "approval-gate"
+    ],
+    "required_context": "source-repositories",
+    "risk_level": "high",
+    "human_approval_rules": "Do not execute arbitrary code on the API process or expose secrets to model prompts.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "workflow-engine",
+    "name": "Workflow Engine Agent",
+    "mission": "Runs declared DAG workflows with retries, deadlines, idempotency, state, tracing and scheduling via a durable worker.",
+    "capabilities": [
+      "workflow-orchestration",
+      "scheduled-jobs",
+      "retries"
+    ],
+    "allowed_tool_families": [
+      "automation-worker",
+      "postgres-or-temporal",
+      "observability"
+    ],
+    "required_context": "workflow-store",
+    "risk_level": "high",
+    "human_approval_rules": "Do not use in-memory FastAPI state as a durable queue on Vercel.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "inbox-agent",
+    "name": "Unified Inbox Agent",
+    "mission": "Normalizes approved incoming channel events, labels them and routes them to a human or specialist agent.",
+    "capabilities": [
+      "inbox",
+      "classification",
+      "routing"
+    ],
+    "allowed_tool_families": [
+      "webhook-connectors",
+      "knowledge-agent",
+      "audit-log"
+    ],
+    "required_context": "connected-inboxes",
+    "risk_level": "high",
+    "human_approval_rules": "Scope each connector to the minimum required message data; protect sensitive content.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "community-manager",
+    "name": "Community Manager Agent",
+    "mission": "Summarizes channel comments and drafts human-sounding responses and moderation suggestions.",
+    "capabilities": [
+      "comment-triage",
+      "reply-drafts",
+      "moderation"
+    ],
+    "allowed_tool_families": [
+      "youtube-oauth",
+      "channel-connectors",
+      "policy-checker"
+    ],
+    "required_context": "connected-channel",
+    "risk_level": "high",
+    "human_approval_rules": "Replies and moderation actions are approval-gated; no bot-like spam.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "knowledge-agent",
+    "name": "Knowledge/RAG Agent",
+    "mission": "Answers using authorized documents and retrieved passages, citing sources and noting missing evidence.",
+    "capabilities": [
+      "rag",
+      "document-qa",
+      "citations"
+    ],
+    "allowed_tool_families": [
+      "document-worker",
+      "embedding-provider",
+      "vector-store"
+    ],
+    "required_context": "authorized-documents",
+    "risk_level": "medium",
+    "human_approval_rules": "Only index files the account is authorized to access; enforce retention and tenant boundaries.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "caption-editor",
+    "name": "Caption and Localization Agent",
+    "mission": "Creates transcripts, word-level captions, translations and SRT/VTT outputs for approved media.",
+    "capabilities": [
+      "asr",
+      "forced-alignment",
+      "translation",
+      "subtitles"
+    ],
+    "allowed_tool_families": [
+      "speech-worker",
+      "translation-provider",
+      "asset-store"
+    ],
+    "required_context": "media-assets",
+    "risk_level": "medium",
+    "human_approval_rules": "Use licensed models/voices and review language/identity-sensitive output.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "transcriber",
+    "name": "Transcription Agent",
+    "mission": "Converts supported audio/video inputs into transcripts, timestamps and optional diarization via configured ASR worker.",
+    "capabilities": [
+      "asr",
+      "diarization",
+      "transcript"
+    ],
+    "allowed_tool_families": [
+      "speech-worker",
+      "asset-store"
+    ],
+    "required_context": "audio-assets",
+    "risk_level": "medium",
+    "human_approval_rules": "Media must be authorized; diarization identity labels should be treated as uncertain unless confirmed.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "consent-guard",
+    "name": "Consent and Rights Guard",
+    "mission": "Checks explicit consent records and configured restrictions before voice cloning, face animation or publishing user identity.",
+    "capabilities": [
+      "voice-consent",
+      "asset-rights",
+      "license-gates"
+    ],
+    "allowed_tool_families": [
+      "consent-store",
+      "license-registry",
+      "audit-log"
+    ],
+    "required_context": "consent-records",
+    "risk_level": "critical",
+    "human_approval_rules": "A Boolean alone is not proof of legal permission; store evidence and scope of consent.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "approval-gate",
+    "name": "Human Approval Gate",
+    "mission": "Creates approval records for actions with external, destructive, financial, public or privacy consequences.",
+    "capabilities": [
+      "approval",
+      "review",
+      "audit"
+    ],
+    "allowed_tool_families": [
+      "approval-store",
+      "notifications",
+      "audit-log"
+    ],
+    "required_context": "approval-records",
+    "risk_level": "critical",
+    "human_approval_rules": "Approval must be bound to the exact action payload and expire when the payload changes.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "policy-checker",
+    "name": "Policy and Rights Checker",
+    "mission": "Checks source attribution, duplicates, platform constraints, user policy, content quality signals and required disclosures.",
+    "capabilities": [
+      "policy-review",
+      "license-check",
+      "content-validation"
+    ],
+    "allowed_tool_families": [
+      "rules-engine",
+      "source-ledger",
+      "asset-metadata"
+    ],
+    "required_context": "policy-rules",
+    "risk_level": "high",
+    "human_approval_rules": "Automated checks are advisory and cannot guarantee platform approval or legal compliance.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "channel-analyst",
+    "name": "Channel Analytics Agent",
+    "mission": "Summarizes authorized channel metrics and proposes evidence-based experiments.",
+    "capabilities": [
+      "analytics",
+      "reporting",
+      "trend-analysis"
+    ],
+    "allowed_tool_families": [
+      "official-channel-apis",
+      "report-store"
+    ],
+    "required_context": "connected-analytics",
+    "risk_level": "medium",
+    "human_approval_rules": "Only use authorized data and accurately label unavailable metrics.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "content-strategist",
+    "name": "Content Strategist Agent",
+    "mission": "Builds topic calendars, content briefs and experiments based on authorized metrics and audience needs.",
+    "capabilities": [
+      "calendar",
+      "content-ideation",
+      "seo"
+    ],
+    "allowed_tool_families": [
+      "analytics",
+      "search-adapter",
+      "brand-profile"
+    ],
+    "required_context": "brand-profile",
+    "risk_level": "medium",
+    "human_approval_rules": "Avoid guaranteed growth claims and reused low-value mass-produced content.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "productivity-agent",
+    "name": "Productivity Agent",
+    "mission": "Summarizes authorized mail/calendar data and drafts email replies and proposed events.",
+    "capabilities": [
+      "email-summarization",
+      "calendar-planning",
+      "drafts"
+    ],
+    "allowed_tool_families": [
+      "gmail-oauth",
+      "calendar-oauth",
+      "approval-gate"
+    ],
+    "required_context": "connected-productivity-accounts",
+    "risk_level": "critical",
+    "human_approval_rules": "Sending email, booking, cancelling or disclosing private data needs explicit approval.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "support-agent",
+    "name": "Customer Support Agent",
+    "mission": "Classifies authorized support tickets and drafts responses grounded in approved product documents.",
+    "capabilities": [
+      "ticket-triage",
+      "knowledge-retrieval",
+      "reply-drafts"
+    ],
+    "allowed_tool_families": [
+      "ticketing-connector",
+      "knowledge-agent",
+      "approval-gate"
+    ],
+    "required_context": "connected-support-platform",
+    "risk_level": "high",
+    "human_approval_rules": "Escalate payments, legal, account security, health, threats and uncertain refund cases.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "asset-manager",
+    "name": "Asset and Media Librarian",
+    "mission": "Tracks generated and uploaded files, rights evidence, provenance, checksums and provider output metadata.",
+    "capabilities": [
+      "asset-storage",
+      "metadata",
+      "provenance"
+    ],
+    "allowed_tool_families": [
+      "object-store",
+      "postgres",
+      "license-registry"
+    ],
+    "required_context": "media-assets",
+    "risk_level": "medium",
+    "human_approval_rules": "Use signed URLs and private buckets; never expose raw object-store credentials.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "fact-checker",
+    "name": "Fact Checker",
+    "mission": "Verifies claims against independent sources and tracks confidence and publication dates.",
+    "capabilities": [
+      "claim-extraction",
+      "cross-checking",
+      "citations"
+    ],
+    "allowed_tool_families": [
+      "search-adapter",
+      "source-ledger"
+    ],
+    "required_context": "research-results",
+    "risk_level": "medium",
+    "human_approval_rules": "Do not replace source evidence with model confidence.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "automation-operator",
+    "name": "Automation Operator",
+    "mission": "Monitors jobs, handles retry policies, and raises failures to the owner.",
+    "capabilities": [
+      "job-management",
+      "scheduling",
+      "retries",
+      "alerts"
+    ],
+    "allowed_tool_families": [
+      "durable-queue",
+      "worker-health",
+      "observability"
+    ],
+    "required_context": "workflow-store",
+    "risk_level": "high",
+    "human_approval_rules": "Idempotency and per-job cost/timeout ceilings are required.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "model-router",
+    "name": "Model and Provider Router",
+    "mission": "Routes requests to configured LLM providers by capability, latency, privacy, budget and availability.",
+    "capabilities": [
+      "llm-routing",
+      "fallback",
+      "usage-control"
+    ],
+    "allowed_tool_families": [
+      "provider-registry",
+      "secret-store",
+      "usage-meter"
+    ],
+    "required_context": "provider-config",
+    "risk_level": "high",
+    "human_approval_rules": "Only choose explicitly configured providers; do not promise a free tier or send sensitive data by default.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "memory-manager",
+    "name": "User Memory Manager",
+    "mission": "Manages scoped preferences and long-term notes with retention, read/edit/export/delete controls.",
+    "capabilities": [
+      "memory",
+      "profile",
+      "recall"
+    ],
+    "allowed_tool_families": [
+      "postgres",
+      "vector-store",
+      "retention-policy"
+    ],
+    "required_context": "user-profile",
+    "risk_level": "high",
+    "human_approval_rules": "Respect purpose limitation, tenant isolation and deletion requests.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  }
+]
