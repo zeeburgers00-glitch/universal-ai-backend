@@ -7,7 +7,7 @@ API-only backend for an existing app. It is designed as an extensible integratio
 ## Features
 
 - FastAPI REST API with OpenAPI docs at `/docs`.
-- Expanded searchable catalog from multiple AI/self-hosting directories plus commercial/open-core candidates; exact count is exposed by `GET /v1/catalog/stats`. Repository references are metadata, not executed integrations.
+- Expanded searchable catalog from multiple AI/self-hosting/LLMOps directories plus commercial/open-core candidates; exact count is exposed by `GET /v1/catalog/stats`. Repository references are metadata, not executed integrations.
 - Live GitHub discovery with filters: `GET /v1/discover/github?q=browser+automation&license_filter=mit&min_stars=100&sort=stars` fetches current public repo results, including license metadata when GitHub supplies it.
 - Configurable OpenAI-compatible chat adapter for endpoints such as OpenAI-compatible hosted providers and self-hosted inference services.
 - API-key protection for chat and catalog writes.
@@ -91,7 +91,7 @@ This backend's code and each linked integration have their own licenses and term
 
 ## Expanded catalog and license policy
 
-The registry loads `catalog/tools.json`, `catalog/extended.json`, and `catalog/commercial.json`, merging duplicate repository URLs while preserving stable IDs from the original seed catalog. The seed is a curated set, not a claim to list every AI project in existence.
+The registry loads `catalog/tools.json`, `catalog/extended.json`, `catalog/commercial.json`, and `catalog/llmops.json`, merging duplicate repository URLs while preserving stable IDs from the original seed catalog. The seed is a curated set, not a claim to list every AI project in existence.
 
 Many candidate rows are deliberately marked `license_status=review_required`. The catalog includes open-source candidates as well as some source-available/fair-code and mixed-license projects, since commercial products sometimes expose only part of their code. Those classes are labeled separately when known. Do not treat source-available, an open-source SDK, model weights, and a vendor's hosted API as equivalent.
 
