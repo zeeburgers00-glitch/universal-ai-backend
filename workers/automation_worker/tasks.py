@@ -14,6 +14,7 @@ ACTIONS = {
     "youtube_publish": ("youtube", "/v1/youtube/publish", "YOUTUBE_WORKER_URL", "YOUTUBE_WORKER_API_KEY"),
     "channel_action": ("channels", "/v1/channels/action", "CHANNEL_WORKER_URL", "CHANNEL_WORKER_API_KEY"),
     "desktop_action": ("desktop", "/v1/desktop/actions", "DESKTOP_AGENT_URL", "DESKTOP_AGENT_API_KEY"),
+    "rea_call": ("desktop", "/v1/rea/jobs", "DESKTOP_AGENT_URL", "DESKTOP_AGENT_API_KEY"),
 }
 
 
@@ -23,7 +24,7 @@ def _validate_payload(action_name: str, payload: dict[str, Any], user_approved: 
     if not isinstance(payload, dict) or len(str(payload)) > 50000:
         raise ValueError("Action payload must be a JSON object below 50 KB")
     # External posts/messages and all computer actions are always approval-gated.
-    if action_name in {"youtube_publish", "channel_action", "desktop_action"} and not user_approved:
+    if action_name in {"youtube_publish", "channel_action", "desktop_action", "rea_call"} and not user_approved:
         raise PermissionError(f"{action_name} requires explicit user approval")
     if action_name == "voice_tts" and not str(payload.get("text", "")).strip():
         raise ValueError("voice_tts requires non-empty text")
@@ -48,6 +49,14 @@ def _validate_payload(action_name: str, payload: dict[str, Any], user_approved: 
             raise ValueError("desktop_action requires paired_device_id and action")
         if not isinstance(payload.get("parameters", {}), dict):
             raise ValueError("desktop_action parameters must be an object")
+    if action_name == "rea_call":
+        required = ["paired_device_id", "tool_name", "authorization_scope_note"]
+        if any(not payload.get(key) for key in required):
+            raise ValueError("rea_call requires paired_device_id, tool_name, and authorization_scope_note")
+        if not payload.get("authorization_scope_confirmed"):
+            raise PermissionError("rea_call requires explicit confirmation of authorization scope")
+        if not isinstance(payload.get("arguments", {}), dict):
+            raise ValueError("rea_call arguments must be an object")
 
 
 def _dispatch(action_name: str, payload: dict[str, Any], task_id: str, approved: bool) -> dict[str, Any]:
