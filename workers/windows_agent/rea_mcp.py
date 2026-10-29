@@ -124,7 +124,11 @@ def _validate_argument_scope(value: Any, key: str = "") -> None:
         return
 
     field = re.sub(r"([a-z0-9])([A-Z])", r"\\1_\\2", key).casefold()
-    is_url_field = "url" in field or field in {"uri", "website", "webpage"}
+    is_url_field = (
+        "url" in field
+        or field in {"uri", "website", "webpage"}
+        or value.strip().lower().startswith(("http://", "https://"))
+    )
     if is_url_field:
         if not value.strip():
             return
