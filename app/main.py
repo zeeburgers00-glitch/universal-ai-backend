@@ -450,6 +450,8 @@ async def synthesize_voice(request: VoiceTTSRequest):
         request.speaker_consent_confirmed and request.speaker_consent_record_id
     ):
         raise HTTPException(status_code=400, detail="Using a cloned/reference voice requires speaker_consent_confirmed and a speaker_consent_record_id.")
+    if engine == "f5-tts" and not (request.reference_audio_asset_id or request.voice_profile_id):
+        raise HTTPException(status_code=400, detail="F5-TTS requires a consented reference audio asset or saved voice profile; select melo-tts for preset-speaker synthesis.")
     if engine == "f5-tts" and request.commercial_use and os.getenv("F5_TTS_MODEL_LICENSE_CLASS", "").lower() != "commercial_approved":
         raise HTTPException(status_code=403, detail="F5-TTS's standard pretrained weights are not a commercial default. Set F5_TTS_MODEL_LICENSE_CLASS=commercial_approved only after supplying a model/checkpoint with compatible commercial rights.")
     payload = {**request.model_dump(), "task_id": request.idempotency_key or str(uuid4()), "execution_mode": "async"}
