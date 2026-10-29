@@ -1,0 +1,152 @@
+services:
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?set REDIS_PASSWORD in workers/.env.workers}"]
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    networks: [workers-private]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$REDIS_PASSWORD\" ping | grep -q PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  voice-api:
+    build: { context: ./voice_worker, dockerfile: Dockerfile }
+    command: ["uvicorn", "voice_worker.app:app", "--host", "0.0.0.0", "--port", "8100"]
+    environment:
+      VOICE_WORKER_API_KEY: ${VOICE_WORKER_API_KEY:?set VOICE_WORKER_API_KEY}
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      VOICE_DATA_ROOT: /data
+      F5_TTS_MODEL: ${F5_TTS_MODEL:-F5TTS_v1_Base}
+      F5_TTS_DEVICE: cuda
+      F5_TTS_MODEL_LICENSE_CLASS: ${F5_TTS_MODEL_LICENSE_CLASS:-noncommercial}
+      F5_TTS_JOB_TIMEOUT_SECONDS: ${F5_TTS_JOB_TIMEOUT_SECONDS:-240}
+      MELOTTS_DEVICE: cuda
+    volumes: [voice-data:/data]
+    depends_on: { redis: { condition: service_healthy } }
+    ports: ["127.0.0.1:8100:8100"]
+    restart: unless-stopped
+    networks: [workers-private]
+
+  voice-runner:
+    build: { context: ./voice_worker, dockerfile: Dockerfile }
+    command: ["celery", "-A", "voice_worker.app.celery_app", "worker", "--loglevel=INFO", "--concurrency=1"]
+    environment:
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      VOICE_DATA_ROOT: /data
+      F5_TTS_MODEL: ${F5_TTS_MODEL:-F5TTS_v1_Base}
+      F5_TTS_DEVICE: cuda
+      F5_TTS_MODEL_LICENSE_CLASS: ${F5_TTS_MODEL_LICENSE_CLASS:-noncommercial}
+      F5_TTS_JOB_TIMEOUT_SECONDS: ${F5_TTS_JOB_TIMEOUT_SECONDS:-240}
+      MELOTTS_DEVICE: cuda
+    volumes: [voice-data:/data]
+    depends_on: { redis: { condition: service_healthy } }
+    restart: unless-stopped
+    gpus: all
+    networks: [workers-private]
+
+  media-api:
+    build: { context: ./media_worker, dockerfile: Dockerfile }
+    command: ["uvicorn", "media_worker.app:app", "--host", "0.0.0.0", "--port", "8400"]
+    environment:
+      MEDIA_WORKER_API_KEY: ${MEDIA_WORKER_API_KEY:?set MEDIA_WORKER_API_KEY}
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/2
+      MEDIA_DATA_ROOT: /data
+      MEDIA_MAX_UPLOAD_BYTES: ${MEDIA_MAX_UPLOAD_BYTES:-2147483648}
+      COMFYUI_BASE_URL: ${COMFYUI_BASE_URL:-}
+      COMFYUI_API_KEY: ${COMFYUI_API_KEY:-}
+      COMFYUI_JOB_TIMEOUT_SECONDS: ${COMFYUI_JOB_TIMEOUT_SECONDS:-900}
+      ASR_WORKER_URL: ${ASR_WORKER_URL:-}
+      ASR_WORKER_API_KEY: ${ASR_WORKER_API_KEY:-}
+    volumes: [media-data:/data]
+    depends_on: { redis: { condition: service_healthy } }
+    ports: ["127.0.0.1:8400:8400"]
+    restart: unless-stopped
+    networks: [workers-private]
+
+  media-runner:
+    build: { context: ./media_worker, dockerfile: Dockerfile }
+    command: ["celery", "-A", "media_worker.app.celery_app", "worker", "--loglevel=INFO", "--concurrency=2"]
+    environment:
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/2
+      MEDIA_DATA_ROOT: /data
+      COMFYUI_BASE_URL: ${COMFYUI_BASE_URL:-}
+      COMFYUI_API_KEY: ${COMFYUI_API_KEY:-}
+      COMFYUI_JOB_TIMEOUT_SECONDS: ${COMFYUI_JOB_TIMEOUT_SECONDS:-900}
+      ASR_WORKER_URL: ${ASR_WORKER_URL:-}
+      ASR_WORKER_API_KEY: ${ASR_WORKER_API_KEY:-}
+    volumes: [media-data:/data]
+    depends_on: { redis: { condition: service_healthy } }
+    restart: unless-stopped
+    networks: [workers-private]
+
+  youtube-api:
+    build: { context: ./youtube_worker, dockerfile: Dockerfile }
+    command: ["uvicorn", "youtube_worker.app:app", "--host", "0.0.0.0", "--port", "8200"]
+    environment:
+      YOUTUBE_WORKER_API_KEY: ${YOUTUBE_WORKER_API_KEY:?set YOUTUBE_WORKER_API_KEY}
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/1
+      YOUTUBE_CLIENT_ID: ${YOUTUBE_CLIENT_ID:-}
+      YOUTUBE_CLIENT_SECRET: ${YOUTUBE_CLIENT_SECRET:-}
+      YOUTUBE_REFRESH_TOKEN: ${YOUTUBE_REFRESH_TOKEN:-}
+      YOUTUBE_CHANNEL_ID: ${YOUTUBE_CHANNEL_ID:-}
+      YOUTUBE_CHANNEL_CONNECTION_ID: ${YOUTUBE_CHANNEL_CONNECTION_ID:-}
+      YOUTUBE_MEDIA_ASSET_ROOT: /data/assets/videos
+      YOUTUBE_DEFAULT_CATEGORY_ID: ${YOUTUBE_DEFAULT_CATEGORY_ID:-22}
+    volumes: [media-data:/data:ro]
+    depends_on: { redis: { condition: service_healthy } }
+    ports: ["127.0.0.1:8200:8200"]
+    restart: unless-stopped
+    networks: [workers-private]
+
+  youtube-runner:
+    build: { context: ./youtube_worker, dockerfile: Dockerfile }
+    command: ["celery", "-A", "youtube_worker.app.celery_app", "worker", "--loglevel=INFO", "--concurrency=1"]
+    environment:
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/1
+      YOUTUBE_CLIENT_ID: ${YOUTUBE_CLIENT_ID:-}
+      YOUTUBE_CLIENT_SECRET: ${YOUTUBE_CLIENT_SECRET:-}
+      YOUTUBE_REFRESH_TOKEN: ${YOUTUBE_REFRESH_TOKEN:-}
+      YOUTUBE_CHANNEL_ID: ${YOUTUBE_CHANNEL_ID:-}
+      YOUTUBE_CHANNEL_CONNECTION_ID: ${YOUTUBE_CHANNEL_CONNECTION_ID:-}
+      YOUTUBE_MEDIA_ASSET_ROOT: /data/assets/videos
+      YOUTUBE_DEFAULT_CATEGORY_ID: ${YOUTUBE_DEFAULT_CATEGORY_ID:-22}
+    volumes: [media-data:/data:ro]
+    depends_on: { redis: { condition: service_healthy } }
+    restart: unless-stopped
+    networks: [workers-private]
+
+  channel-api:
+    build: { context: ./channel_worker, dockerfile: Dockerfile }
+    command: ["uvicorn", "channel_worker.app:app", "--host", "0.0.0.0", "--port", "8300"]
+    environment:
+      CHANNEL_WORKER_API_KEY: ${CHANNEL_WORKER_API_KEY:?set CHANNEL_WORKER_API_KEY}
+      TELEGRAM_CONNECTION_ID: ${TELEGRAM_CONNECTION_ID:-}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_ALLOWED_TARGET_IDS: ${TELEGRAM_ALLOWED_TARGET_IDS:-}
+      DISCORD_CONNECTION_ID: ${DISCORD_CONNECTION_ID:-}
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN:-}
+      DISCORD_ALLOWED_TARGET_IDS: ${DISCORD_ALLOWED_TARGET_IDS:-}
+      SLACK_CONNECTION_ID: ${SLACK_CONNECTION_ID:-}
+      SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN:-}
+      SLACK_ALLOWED_TARGET_IDS: ${SLACK_ALLOWED_TARGET_IDS:-}
+      WHATSAPP_CONNECTION_ID: ${WHATSAPP_CONNECTION_ID:-}
+      WHATSAPP_ACCESS_TOKEN: ${WHATSAPP_ACCESS_TOKEN:-}
+      WHATSAPP_ALLOWED_TARGET_IDS: ${WHATSAPP_ALLOWED_TARGET_IDS:-}
+      WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID:-}
+      META_GRAPH_API_VERSION: ${META_GRAPH_API_VERSION:-}
+      WHATSAPP_TEMPLATE_LANGUAGE: ${WHATSAPP_TEMPLATE_LANGUAGE:-en_US}
+    ports: ["127.0.0.1:8300:8300"]
+    restart: unless-stopped
+    networks: [workers-private]
+
+volumes:
+  redis-data:
+  voice-data:
+  media-data:
+
+networks:
+  workers-private:
+    internal: true
