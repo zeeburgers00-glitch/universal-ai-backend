@@ -1,108 +1,129 @@
 # Universal AI Backend
 
-API-only backend for an existing app. It is designed as an extensible integration gateway and searchable catalog for AI models, agents, MCP servers, voice, image/video, search, RAG, coding assistants, and automation tools.
+**API-only backend** for an existing app. This repository brings together a searchable AI/software catalog, provider routing, worker-facing APIs, creator/channel workflows, specialist-agent blueprints, and a paired Windows JARVIS agent.
 
-> **Honest scope:** no single backend can contain every current tool, and no one can enumerate future tools that do not exist yet. This project combines a curated starter catalog with live GitHub repository discovery and a documented adapter boundary. A catalog entry is a reference, not proof that the tool has been installed, tested, or securely integrated.
+> **Architecture truth:** keep the code and deployment instructions in this single Git repository, but use the right runtime for each job. Vercel hosts the lightweight FastAPI control plane. GPU model inference, durable queues, media rendering and local Windows interaction run as worker services from this same repository. Vercel Functions are not a persistent GPU host. See the [Vercel Function limits](https://vercel.com/docs/functions/limitations).
 
-## Features
+## What's in this repository
 
-- FastAPI REST API with OpenAPI docs at `/docs`.
-- Expanded searchable catalog from multiple AI/self-hosting/LLMOps directories plus commercial/open-core candidates; exact count is exposed by `GET /v1/catalog/stats`. Repository references are metadata, not executed integrations.
-- Live GitHub discovery with filters: `GET /v1/discover/github?q=browser+automation&license_filter=mit&min_stars=100&sort=stars` fetches current public repo results, including license metadata when GitHub supplies it.
-- Configurable OpenAI-compatible chat adapter for endpoints such as OpenAI-compatible hosted providers and self-hosted inference services.
-- API-key protection for chat and catalog writes.
-- Vercel-compatible FastAPI entrypoint and local Windows instructions.
-- Safe-by-default integration model: listing a repo never installs or executes its code.
+- `app/`: FastAPI control plane, provider routing, API-key protection, manifest registry and safe outbound worker gateway.
+- `catalog/`: curated repository references plus separate manifests for providers, voice/media engines, agents, workflows and social/business channels.
+- `workers/voice_worker/`: asynchronous GPU voice worker with F5-TTS and MeloTTS adapters, consent-aware voice references, WAV/MP3/OGG/FLAC output and a Redis/Celery queue.
+- `workers/media_worker/`: authenticated asset store, fixed FFmpeg render presets, thumbnail/audio/subtitle handling, and dispatch to reviewed ComfyUI workflows.
+- `workers/youtube_worker/`: OAuth-backed official YouTube Data API video-upload worker with explicit approval and channel-ownership checks.
+- `workers/channel_worker/`: approval-gated message adapters for Telegram, Discord, Slack and WhatsApp Business approved templates.
+- `workers/agent_worker/`: asynchronous AI agent planner that returns a validated JSON action plan. It does not run arbitrary code or auto-execute plans.
+- `workers/automation_worker/`: durable workflow dispatcher with an allowlist of voice, media, YouTube, messaging and desktop action routes.
+- `workers/windows_agent/`: local paired Windows executor with app/URL allowlists, workspace-bounded file access and approvals for sensitive actions.
+- `workers/docker-compose.yml`: one Compose file for Redis and the Linux-hosted voice/media/YouTube/channel/agent/workflow services.
+- `tests/` and `.github/workflows/tests.yml`: catalog safety, manifest and Python compile checks.
 
-## Quick start (Windows PowerShell)
+## What is working vs. what needs a separate deployment
 
-Requires Python 3.11+.
+The API and worker source code are committed to the repository. A catalog entry, API contract or Dockerfile **does not mean the worker is already running**.
 
-```powershell
-py -3.11 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-Copy-Item .env.example .env
-# Edit .env and set BACKEND_API_KEY, AI_BASE_URL, AI_API_KEY
-uvicorn app.main:app --reload --env-file .env
+| Capability | Implemented in this repo | Needs configuration / deployment |
+|---|---|---|
+| Chat/provider routing | OpenAI-compatible adapters and Anthropic Messages adapter | Provider API keys/model IDs and compatible base URLs |
+| Voice TTS / voice cloning | F5-TTS CLI and MeloTTS worker paths, reference assets, profile metadata, async tasks | GPU host, model weights, queue, persistent storage and consent evidence |
+| Image/video/audio | FFmpeg preset jobs and ComfyUI API workflow runner | Media worker, persistent disk, configured ComfyUI server and reviewed workflow/model files |
+| YouTube publishing | Official OAuth/API upload task and approval checks | Google Cloud project, OAuth refresh token, quota, authorized channel and media asset |
+| Channel messaging | Telegram, Discord, Slack and WhatsApp template-message adapters | Tokens, allowlisted targets, permissions/scopes and worker host; other catalog connectors are manifest-only |
+| Agent planning | Async plan generation with configured chat model | Agent worker and model credentials; generated actions still require review |
+| Workflow dispatch | Async dispatcher for explicit, typed actions | Automation worker, downstream worker URLs/secrets and explicit approval |
+| Windows JARVIS | Paired local agent for selected computer actions | Install on your Windows PC and securely connect it to the control plane |
+| Everything else in the catalog | Searchable metadata and GitHub discovery | A reviewed adapter, credentials, licenses, dependencies and tests for each integration |
+
+This is an expandable integration hub, not a claim that every listed upstream project is installed, licensed for your use, or executable through the API. No repository can contain every tool that exists now, let alone future tools.
+
+## Main API endpoints
+
+After Vercel deploys this repository, open:
+
+- API root: `/`
+- Health: `/health`
+- Swagger/OpenAPI: `/docs`
+- Runtime and worker readiness: `/v1/runtime/capabilities`
+- Tool catalog: `/v1/tools?q=voice`
+- Skill catalog: `/v1/skills?q=browser`
+- Catalog totals and license review statuses: `/v1/catalog/stats`
+- Provider adapter status: `/v1/providers`
+- Provider catalog: `/v1/models/providers`
+- Voice engines and worker readiness: `/v1/voice/providers`
+- Workflow blueprints: `/v1/workflows`
+- Agent blueprints: `/v1/agents`
+- Channel connector manifests: `/v1/channels`
+- Live public repository discovery: `/v1/discover/github?q=browser+automation&license_filter=mit&min_stars=100`
+
+Protected action endpoints require `X-API-Key: <BACKEND_API_KEY>` from a trusted server. **Do not put `BACKEND_API_KEY` in frontend JavaScript or mobile app source.** For a real multi-user app, put a login/session layer in front of these routes and bind approvals, assets and credentials to authenticated users/tenants.
+
+### Action endpoints
+
+- `POST /v1/chat/completions` — route a chat request to a configured provider.
+- `POST /v1/voice/assets` — submit a small consented reference-audio asset to the voice worker.
+- `POST /v1/voice/tts` and `POST /v1/voice/clone` — queue TTS or register a consented reference voice profile.
+- `GET /v1/voice/results/{task_id}` — download generated voice audio.
+- `POST /v1/media/jobs` — dispatch an FFmpeg/ComfyUI/ASR job.
+- `POST /v1/agents/{agent_id}/run` — generate a safe action plan asynchronously; it does not execute model-proposed actions.
+- `POST /v1/workflows/{workflow_id}/run` — return a workflow plan or dispatch explicitly typed actions supplied via `inputs.actions`.
+- `POST /v1/channels/{channel_id}/actions` — run supported channel actions after approval.
+- `POST /v1/youtube/publish` — queue an approved YouTube upload.
+- `POST /v1/desktop/actions` — route approved actions to the paired Windows agent.
+- `GET /v1/tasks/{service}/{task_id}` — check a worker task's status.
+
+Large video/audio uploads should go directly to the secured media worker's `POST /v1/assets/upload` endpoint, not through a Vercel function. Use asset IDs in subsequent requests; do not pass arbitrary server file paths.
+
+## Deploy the control plane to Vercel
+
+This repository is already connected to a Vercel project. Every push to `main` triggers a new deployment.
+
+1. In Vercel Project Settings → Environment Variables, configure `BACKEND_API_KEY` with a strong random secret.
+2. Add only the model provider variables you will use: for example `GROQ_API_KEY`, `GROQ_DEFAULT_MODEL`, or `AI_BASE_URL`, `AI_API_KEY`, `AI_DEFAULT_MODEL`.
+3. Set `CORS_ORIGINS` to the exact origin of your existing app. Leave broad wildcard origins out of production.
+4. Set worker variables such as `VOICE_WORKER_URL` and `VOICE_WORKER_API_KEY` after the worker is securely reachable over HTTPS.
+5. Redeploy, then test `/health`, `/docs`, `/v1/catalog/stats` and `/v1/runtime/capabilities`.
+
+A `READY` Vercel build only confirms the control-plane deployment. It does not indicate that optional GPU/media/channel/desktop workers are running or configured.
+
+## Run the worker stack
+
+The worker API ports in Compose bind to loopback; do not expose those ports directly to the public internet. The worker host needs Docker Compose. For the voice GPU service, use a Linux host with an NVIDIA GPU, compatible driver and NVIDIA Container Toolkit.
+
+```bash
+cp workers/.env.workers.example workers/.env.workers
+# Edit workers/.env.workers: set unique secrets and only the OAuth/provider keys you need.
+docker compose --env-file workers/.env.workers -f workers/docker-compose.yml up --build -d
+docker compose --env-file workers/.env.workers -f workers/docker-compose.yml ps
 ```
 
-Open `http://127.0.0.1:8000/docs`.
+Then expose each selected worker through a private network or an HTTPS reverse proxy/tunnel with strong access controls. Configure these Vercel environment variables with the corresponding secure URLs and matching secrets:
 
-## Environment variables
+- `VOICE_WORKER_URL` / `VOICE_WORKER_API_KEY`
+- `MEDIA_WORKER_URL` / `MEDIA_WORKER_API_KEY`
+- `YOUTUBE_WORKER_URL` / `YOUTUBE_WORKER_API_KEY`
+- `CHANNEL_WORKER_URL` / `CHANNEL_WORKER_API_KEY`
+- `AGENT_WORKER_URL` / `AGENT_WORKER_API_KEY`
+- `AUTOMATION_WORKER_URL` / `AUTOMATION_WORKER_API_KEY`
 
-- `BACKEND_API_KEY`: long random secret required by protected endpoints. Do not put it in the frontend bundle.
-- `AI_BASE_URL`: base URL ending at an OpenAI-compatible API root, e.g. `https://api.groq.com/openai/v1`.
-- `AI_API_KEY`: server-side model provider key.
-- `AI_DEFAULT_MODEL`: optional model used when the request omits a model.
-- `GITHUB_TOKEN`: optional GitHub token to improve GitHub API rate limits for repository discovery.
-- `CORS_ORIGINS`: comma-separated web origins; use your app's exact origin for production.
+Set `AGENT_MODEL_BASE_URL`, `AGENT_MODEL_API_KEY` and `AGENT_DEFAULT_MODEL` in the worker host environment for the agent planner. The Windows desktop agent is not part of the Linux Compose stack; install `workers/windows_agent` locally on your own Windows PC and expose it only through a protected HTTPS tunnel/private network.
 
-## API routes
+### Model and license safety
 
-- `GET /` — service metadata
-- `GET /health` — health check
-- `GET /v1/tools?q=voice&category=audio-voice` — search the registry
-- Filter candidate license states with `license_status=review_required` or a partial `source_classification` value
-- `GET /v1/tools/categories` — categories
-- `GET /v1/catalog/stats` — live counts of entries/categories/license-review statuses
-- `GET /v1/catalog/sources` — catalog discovery sources and classification policy
-- `GET /v1/tools/{tool_id}` — one record
-- `GET /v1/skills?q=browser` — searchable skills/tool references
-- `GET /v1/providers` — provider configuration status (never returns secrets)
-- `POST /v1/chat/completions` — OpenAI-compatible chat proxy (requires `X-API-Key`)
-- `POST /v1/tools` — add catalog metadata (requires `X-API-Key`; does not install or execute code)
-- `GET /v1/discover/github?q=computer+use` — find current GitHub repositories
+F5-TTS is included as an engine adapter, but its source-code license and model-weight license are separate. The upstream F5-TTS project says the standard pretrained model weights are CC-BY-NC; the worker blocks commercial generation until a compatible checkpoint with commercial rights has been selected and reviewed. The `F5_TTS_MODEL_LICENSE_CLASS=commercial_approved` environment value is an operator attestation, not proof of rights. See the [F5-TTS repository](https://github.com/SWivid/F5-TTS).
 
-### Example chat call
+Voice cloning, voice conversion and talking-avatar workflows require consent and rights to the reference voice/identity. The worker records a consent ID and checks that it matches; a production app must maintain genuine consent evidence, user identity, retention and revocation controls. Do not impersonate people without authorization.
 
-```powershell
-$headers = @{ "X-API-Key" = "YOUR_BACKEND_API_KEY"; "Content-Type" = "application/json" }
-$body = @{
-  provider = "openai_compatible"
-  model = "YOUR_MODEL"
-  messages = @(@{ role = "user"; content = "Hello" })
-} | ConvertTo-Json -Depth 10
-Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/v1/chat/completions" -Headers $headers -Body $body
-```
+The official [YouTube videos.insert endpoint](https://developers.google.com/youtube/v3/docs/videos/insert) requires OAuth, quotas and applicable YouTube API terms. The YouTube worker is configured for a single authorized channel connection at a time; multi-account production use needs a persistent encrypted OAuth connection store and per-tenant authorization.
 
-## Add the next tool safely
+## Commercial/open-source license classification
 
-1. Search GitHub via `/v1/discover/github?q=your+capability`.
-2. Review repository activity, maintainer, dependency tree, security posture, hardware needs, and upstream license.
-3. Add a metadata record to `catalog/tools.json` or submit it to `POST /v1/tools`.
-4. If actual execution is needed, implement a dedicated adapter under `app/`, add authentication and permission checks, tests, and explicit timeouts.
-5. Never auto-install arbitrary GitHub code in a live server. Run untrusted integrations in a separate sandbox/worker and require approval for side effects such as file changes, computer control, account changes, publishing, or spending.
+The catalog intentionally includes three different kinds of records:
+- projects reported as open-source candidates;
+- source-available/open-core/mixed-license projects whose enterprise edition or some components may have restrictions;
+- hosted proprietary APIs with open-source SDKs.
 
-## Deployment on Vercel
+Every catalog candidate still carries `license_status=review_required`. Verify the current code license, model weights, training data, bundled custom nodes, voice assets, dependencies, commercial/hosted-service terms and target platform policies before deployment. A free or open-source SDK does not make the connected hosted AI service free or open-source.
 
-1. Import this GitHub repository at https://vercel.com/new.
-2. Let Vercel detect the FastAPI app (the entrypoint is configured in `pyproject.toml`).
-3. Set `BACKEND_API_KEY`, `AI_BASE_URL`, `AI_API_KEY`, and `CORS_ORIGINS` in Vercel Project Settings → Environment Variables.
-4. Optionally set `AI_DEFAULT_MODEL` and `GITHUB_TOKEN`.
-5. Deploy, then test `/health`, `/docs`, and `/v1/tools`.
+## Tests
 
-Do not add any secret to GitHub source files. A serverless filesystem and in-memory registration are not durable databases; use managed PostgreSQL/Supabase or another persistent store before relying on users registering tools in production.
-
-## License and third-party projects
-
-This backend's code and each linked integration have their own licenses and terms. A link in the catalog does not grant permission to bundle, host, or redistribute that project's code or models. Always check the upstream repository's current `LICENSE`, model license, and service terms before integration.
-
-## Expanded catalog and license policy
-
-The registry loads `catalog/tools.json`, `catalog/extended.json`, `catalog/commercial.json`, and `catalog/llmops.json`, merging duplicate repository URLs while preserving stable IDs from the original seed catalog. The seed is a curated set, not a claim to list every AI project in existence.
-
-Many candidate rows are deliberately marked `license_status=review_required`. The catalog includes open-source candidates as well as some source-available/fair-code and mixed-license projects, since commercial products sometimes expose only part of their code. Those classes are labeled separately when known. Do not treat source-available, an open-source SDK, model weights, and a vendor's hosted API as equivalent.
-
-For the most current public GitHub metadata, use `/v1/discover/github` with filters. The API may be rate-limited without `GITHUB_TOKEN`. A GitHub SPDX field is helpful metadata, not legal advice or proof that every dependency, model, dataset, or enterprise feature has the same license.
-
-### Useful searches
-
-```text
-GET /v1/tools?q=paid+cloud
-GET /v1/tools?q=license&license_status=review_required
-GET /v1/discover/github?q=agent+framework&license_filter=apache-2.0&sort=stars
-GET /v1/discover/github?q=voice+tts&license_filter=mit&min_stars=100
-GET /v1/catalog/stats
-```
+GitHub Actions runs Python compile checks and catalog/manifest tests on pushes and pull requests. Worker images and GPU inference still need to be built and tested on a suitable worker host; the CI runner does not have the user's GPU, OAuth accounts or external worker credentials.
