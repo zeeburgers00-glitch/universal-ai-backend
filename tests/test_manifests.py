@@ -107,3 +107,38 @@ def test_channel_manifest_does_not_claim_every_connector_is_live():
     channels = _read_json(CATALOG / "channels.json")
     assert len(channels) >= 25
     assert all(item.get("integration_status") == "manifest_only" for item in channels)
+
+
+
+def test_control_plane_imports_and_exposes_worker_routes():
+    # Importing the module also validates FastAPI/Pydantic route registration.
+    from app.main import app
+
+    paths = {route.path for route in app.routes}
+    required = {
+        "/health",
+        "/v1/runtime/capabilities",
+        "/v1/models/providers",
+        "/v1/voice/providers",
+        "/v1/voice/tts",
+        "/v1/voice/clone",
+        "/v1/media/jobs",
+        "/v1/workflows/{workflow_id}/run",
+        "/v1/agents/{agent_id}/run",
+        "/v1/channels/{channel_id}/actions",
+        "/v1/youtube/publish",
+        "/v1/desktop/actions",
+        "/v1/discover/github",
+    }
+    assert required.issubset(paths)
+
+
+def test_worker_compose_is_valid_yaml():
+    import yaml
+
+    with (ROOT / "workers" / "docker-compose.yml").open("r", encoding="utf-8") as handle:
+        compose = yaml.safe_load(handle)
+    assert {"redis", "voice-api", "voice-runner", "media-api", "media-runner",
+            "youtube-api", "youtube-runner", "channel-api", "agent-api", "agent-runner",
+            "automation-api", "automation-runner"}.issubset(set(compose["services"]))
+    assert compose["services"]["redis"]["environment"]["REDIS_PASSWORD"].startswith("${REDIS_PASSWORD:")
