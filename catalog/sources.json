@@ -1,0 +1,38 @@
+{
+  "generated_for": "Universal AI Backend catalog expansion",
+  "generated_at": "2026-10-29",
+  "methodology": "Repository references are derived from curated public AI and self-hosting lists plus a separate manually curated commercial-project catalog. Candidate records are metadata only, marked review_required, and are never installed or executed automatically.",
+  "sources": [
+    {
+      "name": "Open AI Developer Tools",
+      "url": "https://github.com/Sami-Uysal/awesome-open-ai-developer-tools",
+      "purpose": "Discovery source only. Review every project's own LICENSE and any model/data/service terms."
+    },
+    {
+      "name": "Open AI Alternatives",
+      "url": "https://github.com/JeevaVenkidu/awesome-open-ai-alternatives",
+      "purpose": "Discovery source only. Review every project's own LICENSE and any model/data/service terms."
+    },
+    {
+      "name": "AI Agents Ecosystem",
+      "url": "https://github.com/awesome-llms-labs/awesome-ai-agents",
+      "purpose": "Discovery source only. Review every project's own LICENSE and any model/data/service terms."
+    },
+    {
+      "name": "Awesome Self-Hosted AI",
+      "url": "https://github.com/frechdi/awesome-self-hosted-ai",
+      "purpose": "Discovery source only. Review every project's own LICENSE and any model/data/service terms."
+    },
+    {
+      "name": "Awesome Self-Hosted Agents",
+      "url": "https://github.com/arcane-bear/awesome-self-hosted-agents",
+      "purpose": "Discovery source only. Review every project's own LICENSE and any model/data/service terms."
+    }
+  ],
+  "classification_guide": {
+    "reported_open_source_candidate": "A project commonly documented as open-source; current component-level licenses and edition boundaries must still be verified.",
+    "source_available_or_restricted_terms": "Source may be available under restrictions; do not assume it is OSI-approved open source.",
+    "unverified_open_source_or_source_available_candidate": "Discovery candidate only; license is unverified.",
+    "hosted_service_warning": "An open-source client or server does not make the vendor's hosted API, model weights, datasets, or service terms open-source or free."
+  }
+}
