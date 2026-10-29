@@ -211,6 +211,8 @@ def submit_tts_job(request: VoiceJob):
         if not (request.speaker_consent_confirmed and request.speaker_consent_record_id):
             raise HTTPException(status_code=400, detail="Using a reference voice requires a consent record")
         _check_consent(request.reference_audio_asset_id, request.speaker_consent_record_id)
+    if engine == "f5-tts" and not (request.reference_audio_asset_id or request.voice_profile_id):
+        raise HTTPException(status_code=400, detail="F5-TTS requires a reference audio asset or saved voice profile")
     if request.voice_profile_id:
         if not (request.speaker_consent_confirmed and request.speaker_consent_record_id):
             raise HTTPException(status_code=400, detail="Using a saved voice profile requires an explicit consent record")
