@@ -80,7 +80,7 @@ class WorkflowRunRequest(BaseModel):
     inputs: dict[str, Any] = Field(default_factory=dict)
     user_approved: bool = False
     dry_run: bool = False
-    idempotency_key: str | None = Field(default=None, min_length=8, max_length=120)
+    idempotency_key: str | None = Field(default=None, min_length=8, max_length=120, pattern=r"^[A-Za-z0-9_-]+$")
 
 
 class AgentRunRequest(BaseModel):
@@ -91,8 +91,18 @@ class AgentRunRequest(BaseModel):
     idempotency_key: str | None = Field(default=None, min_length=8, max_length=120)
 
 
+
+class VoiceAssetUploadRequest(BaseModel):
+    filename: str = Field(min_length=1, max_length=180)
+    mime_type: Literal["audio/wav", "audio/mpeg", "audio/mp3", "audio/ogg", "audio/flac", "audio/x-wav"]
+    content_base64: str = Field(min_length=40, max_length=4_000_000)
+    speaker_consent_confirmed: bool = False
+    speaker_consent_record_id: str = Field(min_length=8, max_length=300)
+    consent_scope: str = Field(default="voice_cloning_and_tts", min_length=3, max_length=160)
+
+
 class VoiceTTSRequest(BaseModel):
-    engine: str = Field(default="openvoice", min_length=2, max_length=60, pattern=r"^[a-zA-Z0-9._-]+$")
+    engine: str = Field(default="melo-tts", min_length=2, max_length=60, pattern=r"^[a-zA-Z0-9._-]+$")
     text: str = Field(min_length=1, max_length=12000)
     language: str | None = Field(default=None, max_length=40)
     voice_profile_id: str | None = Field(default=None, max_length=200)
@@ -106,7 +116,7 @@ class VoiceTTSRequest(BaseModel):
 
 
 class VoiceCloneRequest(BaseModel):
-    engine: str = Field(default="openvoice", min_length=2, max_length=60, pattern=r"^[a-zA-Z0-9._-]+$")
+    engine: str = Field(default="f5-tts", min_length=2, max_length=60, pattern=r"^[a-zA-Z0-9._-]+$")
     reference_audio_asset_id: str = Field(min_length=3, max_length=300)
     reference_transcript: str | None = Field(default=None, max_length=5000)
     speaker_consent_confirmed: bool = False
@@ -395,6 +405,15 @@ def voice_providers():
     }
 
 
+@app.post("/v1/voice/assets", status_code=201, dependencies=[Depends(require_api_key)])
+async def upload_voice_reference(request: VoiceAssetUploadRequest):
+    if not request.speaker_consent_confirmed:
+        raise HTTPException(status_code=400, detail="Voice-reference uploads require explicit speaker authorization.")
+    payload = request.model_dump()
+    status_code, content_type, body = await post_worker("voice", "/v1/voice/assets", payload, timeout_seconds=25)
+    return _worker_response(status_code, content_type, body)
+
+
 @app.post("/v1/voice/tts", dependencies=[Depends(require_api_key)])
 async def synthesize_voice(request: VoiceTTSRequest):
     engine = request.engine.lower()
@@ -408,6 +427,14 @@ async def synthesize_voice(request: VoiceTTSRequest):
         raise HTTPException(status_code=403, detail="F5-TTS's standard pretrained weights are not a commercial default. Set F5_TTS_MODEL_LICENSE_CLASS=commercial_approved only after supplying a model/checkpoint with compatible commercial rights.")
     payload = {**request.model_dump(), "task_id": request.idempotency_key or str(uuid4()), "execution_mode": "async"}
     status_code, content_type, body = await post_worker("voice", "/v1/voice/tts", payload, timeout_seconds=25)
+    return _worker_response(status_code, content_type, body)
+
+
+@app.get("/v1/voice/results/{task_id}", dependencies=[Depends(require_api_key)])
+async def get_voice_result(task_id: str):
+    if not re.fullmatch(r"[A-Za-z0-9_-]{8,120}", task_id):
+        raise HTTPException(status_code=400, detail="Invalid task identifier")
+    status_code, content_type, body = await get_worker("voice", f"/v1/voice/results/{task_id}", timeout_seconds=25)
     return _worker_response(status_code, content_type, body)
 
 
