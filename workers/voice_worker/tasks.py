@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from voice_worker.app import ASSET_ROOT, OUTPUT_ROOT, celery_app
+from voice_worker.app import ASSET_ROOT, OUTPUT_ROOT, PROFILE_ROOT, celery_app
 
 
 @celery_app.task(bind=True, name="voice_worker.synthesize", acks_late=True)
@@ -29,6 +29,28 @@ def synthesize(self, payload: dict[str, Any]) -> dict[str, Any]:
 
 def _resolve_reference(payload: dict[str, Any]) -> tuple[str | None, str | None]:
     asset_id = payload.get("reference_audio_asset_id")
+    transcript = str(payload.get("reference_transcript") or "")
+    consent_id = str(payload.get("speaker_consent_record_id") or "")
+
+    # A saved voice profile points to the consented reference sample; it does not
+    # imply that model weights were fine-tuned or that consent has unlimited scope.
+    profile_id = payload.get("voice_profile_id")
+    if profile_id:
+        if not re.fullmatch(r"voice-profile-[a-f0-9]{32}", str(profile_id)):
+            raise ValueError("Invalid voice profile ID")
+        profile_path = PROFILE_ROOT / f"{profile_id}.json"
+        if not profile_path.is_file():
+            raise ValueError("Voice profile was not found")
+        profile = json.loads(profile_path.read_text(encoding="utf-8"))
+        if not profile.get("speaker_consent_confirmed"):
+            raise PermissionError("Voice profile has no active consent")
+        profile_consent = str(profile.get("speaker_consent_record_id") or "")
+        if consent_id and consent_id != profile_consent:
+            raise PermissionError("Voice profile consent record does not match request")
+        consent_id = profile_consent
+        asset_id = profile.get("reference_audio_asset_id")
+        transcript = transcript or str(profile.get("reference_transcript") or "")
+
     if not asset_id:
         return None, None
     if not re.fullmatch(r"voice-ref-[a-f0-9]{32}", str(asset_id)):
@@ -37,14 +59,12 @@ def _resolve_reference(payload: dict[str, Any]) -> tuple[str | None, str | None]
     if not meta_path.is_file():
         raise ValueError("Reference audio asset is missing")
     meta = json.loads(meta_path.read_text(encoding="utf-8"))
-    expected = str(payload.get("speaker_consent_record_id") or "")
-    if not meta.get("speaker_consent_confirmed") or not expected or meta.get("consent_record_id") != expected:
-        raise ValueError("Voice reference does not have a matching consent record")
-    candidates = list(ASSET_ROOT.glob(f"{asset_id}.*"))
-    candidates = [x for x in candidates if x.suffix.lower() in {".wav", ".mp3", ".ogg", ".flac"}]
+    if not meta.get("speaker_consent_confirmed") or not consent_id or meta.get("consent_record_id") != consent_id:
+        raise PermissionError("Voice reference does not have a matching consent record")
+    candidates = [x for x in ASSET_ROOT.glob(f"{asset_id}.*") if x.suffix.lower() in {".wav", ".mp3", ".ogg", ".flac"}]
     if len(candidates) != 1:
         raise ValueError("Reference audio file is missing or ambiguous")
-    return str(candidates[0]), str(payload.get("reference_transcript") or "")
+    return str(candidates[0]), transcript
 
 
 def _run_f5(task_id: str, payload: dict[str, Any]) -> dict[str, Any]:
