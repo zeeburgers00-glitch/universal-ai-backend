@@ -1,8 +1,33 @@
 {
-  "generated_for": "Universal AI Backend catalog expansion",
+  "generated_for": "Universal AI Backend global catalog & REA MCP expansion",
   "generated_at": "2026-10-29",
-  "methodology": "Repository references are derived from curated public AI and self-hosting lists plus a separate manually curated commercial-project catalog. Candidate records are metadata only, marked review_required, and are never installed or executed automatically.",
+  "methodology": "Repository and platform references combine REA (morluto/rea) MCP/static-JS application graph analysis, multi-category GitHub Search API snapshots, curated public AI/MCP directories, and manually curated commercial/flagship AI platform records. Candidate records are metadata only, marked review_required, and are never installed or executed automatically.",
   "sources": [
+    {
+      "name": "REA: Reverse Engineer Anything (rea-agents v6.8.0)",
+      "url": "https://github.com/morluto/rea",
+      "purpose": "Live MCP tool/prompt catalog extraction (229 MCP tools, 6 prompts, 180 CLI commands) and static JavaScript application-graph verification of official MCP server repositories. Use strictly under upstream MIT license and DISCLAIMER.md responsible-use rules."
+    },
+    {
+      "name": "Model Context Protocol Official Servers & SDKs",
+      "url": "https://github.com/modelcontextprotocol/servers",
+      "purpose": "Official MCP reference servers and language SDKs inspected via REA static JS application graph analysis. Verify per-package licenses and runtime permissions."
+    },
+    {
+      "name": "Awesome MCP Servers Community",
+      "url": "https://github.com/punkpeye/awesome-mcp-servers",
+      "purpose": "Comprehensive community & official MCP server discovery source (together with appcypher/awesome-mcp-servers). Review every server's own LICENSE, maintainer, and requested host/API permissions before running."
+    },
+    {
+      "name": "Awesome AI Tools (ikaijua, steven2358 & mahseema)",
+      "url": "https://github.com/ikaijua/Awesome-AITools",
+      "purpose": "Categorized global open-source and commercial/hosted AI directories (together with steven2358/awesome-generative-ai, mahseema/awesome-ai-tools, kyrolabs/awesome-langchain, Hannibal046/Awesome-LLM, and filipecalegario/awesome-vibe-coding)."
+    },
+    {
+      "name": "GitHub Search API Multi-Category AI Snapshot",
+      "url": "https://api.github.com/search/repositories",
+      "purpose": "Top-starred non-archived public repositories across 30+ AI domains (agents, MCP, coding, LLM runtimes, RAG, vector DBs, browser/computer-use, voice, image, video, music, fine-tuning, LLMOps, security, vision, robotics, 3D, OCR, analytics, bio/medical, fintech, gaming, reverse engineering). SPDX hints require manual upstream verification."
+    },
     {
       "name": "Open AI Developer Tools",
       "url": "https://github.com/Sami-Uysal/awesome-open-ai-developer-tools",
@@ -19,6 +44,11 @@
       "purpose": "Discovery source only. Review every project's own LICENSE and any model/data/service terms."
     },
     {
+      "name": "E2B Awesome AI Agents & Awesome LLM Apps",
+      "url": "https://github.com/e2b-dev/awesome-ai-agents",
+      "purpose": "Curated discovery lists for open-source and commercial AI agent frameworks and applications."
+    },
+    {
       "name": "Awesome Self-Hosted AI",
       "url": "https://github.com/frechdi/awesome-self-hosted-ai",
       "purpose": "Discovery source only. Review every project's own LICENSE and any model/data/service terms."
@@ -29,6 +59,11 @@
       "purpose": "Discovery source only. Review every project's own LICENSE and any model/data/service terms."
     },
     {
+      "name": "Awesome Generative AI & Global AI Tools Directories",
+      "url": "https://github.com/steven2358/awesome-generative-ai",
+      "purpose": "Curated generative AI and hosted web AI tool references (together with mahseema/awesome-ai-tools and flagship commercial AI platforms). Hosted tools are governed by vendor Terms of Service and pricing."
+    },
+    {
       "name": "Commercial / open-core candidate review list",
       "url": "https://github.com/zeeburgers00-glitch/universal-ai-backend/blob/main/catalog/commercial.json",
       "purpose": "Manually curated projects that have or may have paid cloud/enterprise services, open-source community code, source-available code, or open-source SDKs. License and pricing claims are deliberately marked for upstream verification."
@@ -37,52 +72,13 @@
       "name": "Awesome LLMOps Platforms",
       "url": "https://github.com/talhaanwarch/awesome-llmops-platforms",
       "purpose": "Upstream discovery list for LLM gateways, observability, evaluation, guardrails, and prompt-management tools; its reported license/status metadata still requires per-project verification."
-    },
-    {
-      "name": "Voice and media engine manifest",
-      "url": "https://github.com/zeeburgers00-glitch/universal-ai-backend/blob/main/catalog/voice_media.json",
-      "purpose": "Specialist voice, voice cloning, ASR, audio/video, avatars and media processing candidates; each model and asset license remains review-required."
-    },
-    {
-      "name": "Channel connector manifest",
-      "url": "https://github.com/zeeburgers00-glitch/universal-ai-backend/blob/main/catalog/channels.json",
-      "purpose": "Supported and planned social, messaging, productivity and business API connector catalog."
-    },
-    {
-      "name": "Agent and workflow blueprints",
-      "url": "https://github.com/zeeburgers00-glitch/universal-ai-backend/blob/main/catalog/agents.json",
-      "purpose": "Agent missions, required tool families, risk levels and approval policies."
-    },
-    {
-      "name": "Workflow blueprint catalog",
-      "url": "https://github.com/zeeburgers00-glitch/universal-ai-backend/blob/main/catalog/workflows.json",
-      "purpose": "Creator, YouTube, social, JARVIS, research, coding, RAG and business workflow templates."
-    },
-    {
-      "name": "Model provider catalog",
-      "url": "https://github.com/zeeburgers00-glitch/universal-ai-backend/blob/main/catalog/provider_capabilities.json",
-      "purpose": "Hosted and self-hosted model API/provider configuration references."
-    },
-    {
-      "name": "REA — Reverse Engineer Anything",
-      "url": "https://github.com/morluto/rea",
-      "purpose": "Specialized local-first CLI/MCP for evidence-based reverse engineering of authorized applications and artifacts. MIT for REA-authored code; check third-party and proprietary-provider terms."
-    },
-    {
-      "name": "REA MCP contracts and transport",
-      "url": "https://github.com/morluto/rea/blob/main/docs/mcp-contracts.md",
-      "purpose": "Authoritative REA MCP schemas, stdio/HTTP transport behavior, tool families, limits and security boundaries."
-    },
-    {
-      "name": "REA security policy",
-      "url": "https://github.com/morluto/rea/blob/main/SECURITY.md",
-      "purpose": "REA bridge authentication details and explicit warning that runtime analysis is not a sandbox."
     }
   ],
   "classification_guide": {
     "reported_open_source_candidate": "A project commonly documented as open-source; current component-level licenses and edition boundaries must still be verified.",
     "source_available_or_restricted_terms": "Source may be available under restrictions; do not assume it is OSI-approved open source.",
     "unverified_open_source_or_source_available_candidate": "Discovery candidate only; license is unverified.",
+    "hosted_commercial_or_web_ai_service": "Proprietary or hosted commercial SaaS/API tool; review vendor Terms of Service, privacy/data policies, and pricing.",
     "hosted_service_warning": "An open-source client or server does not make the vendor's hosted API, model weights, datasets, or service terms open-source or free."
   }
 }

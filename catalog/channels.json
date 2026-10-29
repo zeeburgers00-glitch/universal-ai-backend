@@ -16,11 +16,11 @@
     ],
     "supported_actions": [
       "upload_video",
-      " schedule_video",
-      " update_metadata",
-      " list_channel_videos",
-      " playlist_manage",
-      " read_analytics"
+      "schedule_video",
+      "update_metadata",
+      "list_channel_videos",
+      "playlist_manage",
+      "read_analytics"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -41,10 +41,10 @@
     ],
     "supported_actions": [
       "send_message",
-      " edit_message",
-      " send_media",
-      " channel_post",
-      " webhook"
+      "edit_message",
+      "send_media",
+      "channel_post",
+      "webhook"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -67,11 +67,11 @@
     ],
     "supported_actions": [
       "send_message",
-      " edit_message",
-      " embeds",
-      " threads",
-      " slash_commands",
-      " moderation"
+      "edit_message",
+      "embeds",
+      "threads",
+      "slash_commands",
+      "moderation"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -96,10 +96,10 @@
     ],
     "supported_actions": [
       "send_message",
-      " reply_thread",
-      " search_messages",
-      " read_channels",
-      " event_webhooks"
+      "reply_thread",
+      "search_messages",
+      "read_channels",
+      "event_webhooks"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -123,8 +123,8 @@
     ],
     "supported_actions": [
       "send_template_message",
-      " receive_webhooks",
-      " media_messages"
+      "receive_webhooks",
+      "media_messages"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -151,8 +151,8 @@
     ],
     "supported_actions": [
       "publish_media",
-      " read_insights",
-      " moderate_comments"
+      "read_insights",
+      "moderate_comments"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -178,9 +178,9 @@
     ],
     "supported_actions": [
       "publish_post",
-      " schedule_post",
-      " read_insights",
-      " page_webhooks"
+      "schedule_post",
+      "read_insights",
+      "page_webhooks"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -204,8 +204,8 @@
     ],
     "supported_actions": [
       "upload_video",
-      " publish_video",
-      " read_creator_info"
+      "publish_video",
+      "read_creator_info"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -231,9 +231,9 @@
     ],
     "supported_actions": [
       "create_post",
-      " reply",
-      " read_posts",
-      " account_info"
+      "reply",
+      "read_posts",
+      "account_info"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -258,7 +258,7 @@
     ],
     "supported_actions": [
       "publish_post",
-      " read_authorized_profile"
+      "read_authorized_profile"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -283,9 +283,9 @@
     ],
     "supported_actions": [
       "submit_post",
-      " read_subreddit",
-      " read_comments",
-      " moderation_if_granted"
+      "read_subreddit",
+      "read_comments",
+      "moderation_if_granted"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -311,9 +311,9 @@
     ],
     "supported_actions": [
       "create_issue",
-      " create_pr",
-      " inspect_repo",
-      " dispatch_workflow"
+      "create_pr",
+      "inspect_repo",
+      "dispatch_workflow"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -337,9 +337,9 @@
     ],
     "supported_actions": [
       "search_files",
-      " read_file_metadata",
-      " upload_file",
-      " export_file"
+      "read_file_metadata",
+      "upload_file",
+      "export_file"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -364,9 +364,9 @@
     ],
     "supported_actions": [
       "search_messages",
-      " create_draft",
-      " send_email",
-      " labels"
+      "create_draft",
+      "send_email",
+      "labels"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -390,8 +390,8 @@
     ],
     "supported_actions": [
       "list_events",
-      " create_event",
-      " update_event"
+      "create_event",
+      "update_event"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -416,9 +416,9 @@
     ],
     "supported_actions": [
       "search_pages",
-      " create_page",
-      " update_page",
-      " query_database"
+      "create_page",
+      "update_page",
+      "query_database"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -442,9 +442,9 @@
     ],
     "supported_actions": [
       "create_issue",
-      " update_issue",
-      " search_issues",
-      " add_comment"
+      "update_issue",
+      "search_issues",
+      "add_comment"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -466,8 +466,8 @@
     ],
     "supported_actions": [
       "create_checkout_session",
-      " read_subscription",
-      " receive_webhooks"
+      "read_subscription",
+      "receive_webhooks"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -492,8 +492,8 @@
     ],
     "supported_actions": [
       "read_products",
-      " update_product",
-      " inspect_orders"
+      "update_product",
+      "inspect_orders"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -516,9 +516,9 @@
     ],
     "supported_actions": [
       "create_draft",
-      " update_post",
-      " publish_post",
-      " upload_media"
+      "update_post",
+      "publish_post",
+      "upload_media"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -543,8 +543,8 @@
     ],
     "supported_actions": [
       "create_status",
-      " upload_media",
-      " read_authorized_account"
+      "upload_media",
+      "read_authorized_account"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -566,8 +566,8 @@
     ],
     "supported_actions": [
       "send_message",
-      " room_events",
-      " bot_commands"
+      "room_events",
+      "bot_commands"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -589,7 +589,7 @@
     ],
     "supported_actions": [
       "send_message",
-      " receive_message"
+      "receive_message"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -614,8 +614,8 @@
     ],
     "supported_actions": [
       "send_channel_message",
-      " calendar_workflows",
-      " read_authorized_messages"
+      "calendar_workflows",
+      "read_authorized_messages"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -639,8 +639,8 @@
     ],
     "supported_actions": [
       "create_meeting",
-      " list_meetings",
-      " read_recording_metadata"
+      "list_meetings",
+      "read_recording_metadata"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -664,8 +664,8 @@
     ],
     "supported_actions": [
       "read_stream_info",
-      " update_stream_title",
-      " send_chat_message"
+      "update_stream_title",
+      "send_chat_message"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -690,8 +690,8 @@
     ],
     "supported_actions": [
       "create_pin",
-      " list_boards",
-      " schedule_via_workflow"
+      "list_boards",
+      "schedule_via_workflow"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -713,8 +713,8 @@
     ],
     "supported_actions": [
       "read_file_metadata",
-      " read_comments",
-      " comment_if_granted"
+      "read_comments",
+      "comment_if_granted"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -736,8 +736,8 @@
     ],
     "supported_actions": [
       "read_contacts",
-      " upsert_contact",
-      " create_task"
+      "upsert_contact",
+      "create_task"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
@@ -761,13 +761,181 @@
     ],
     "supported_actions": [
       "read_records",
-      " create_task",
-      " update_authorized_record"
+      "create_task",
+      "update_authorized_record"
     ],
     "access_state": "not_configured",
     "integration_status": "manifest_only",
     "hosted_api": true,
     "commercial_notes": "Org policies and OAuth scopes apply",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "bluesky",
+    "name": "Bluesky AT Protocol",
+    "purpose": "social posts, feeds, and replies on Bluesky",
+    "auth_type": "App Password / OAuth",
+    "environment_variables": [
+      "BLUESKY_HANDLE",
+      "BLUESKY_APP_PASSWORD"
+    ],
+    "scopes": [
+      "atproto",
+      "com.atproto.repo.createRecord"
+    ],
+    "supported_actions": [
+      "publish_post",
+      "reply_post",
+      "read_feed"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Subject to upstream platform API rate limits, app review, and service terms.",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "threads",
+    "name": "Meta Threads API",
+    "purpose": "authorized Threads text/media publishing and insights",
+    "auth_type": "OAuth2",
+    "environment_variables": [
+      "THREADS_APP_ID",
+      "THREADS_APP_SECRET",
+      "THREADS_ACCESS_TOKEN"
+    ],
+    "scopes": [
+      "threads_basic",
+      "threads_content_publish"
+    ],
+    "supported_actions": [
+      "publish_post",
+      "publish_media",
+      "read_insights"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Subject to upstream platform API rate limits, app review, and service terms.",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "line",
+    "name": "LINE Messaging API",
+    "purpose": "official account push/reply messages and rich menus",
+    "auth_type": "Channel Access Token",
+    "environment_variables": [
+      "LINE_CHANNEL_SECRET",
+      "LINE_CHANNEL_ACCESS_TOKEN"
+    ],
+    "scopes": [
+      "messaging:push",
+      "messaging:reply"
+    ],
+    "supported_actions": [
+      "send_message",
+      "send_template_message"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Subject to upstream platform API rate limits, app review, and service terms.",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "feishu-lark",
+    "name": "Feishu / Lark Open Platform",
+    "purpose": "enterprise chat messages, docs notifications, and approval cards",
+    "auth_type": "Tenant Access Token",
+    "environment_variables": [
+      "LARK_APP_ID",
+      "LARK_APP_SECRET"
+    ],
+    "scopes": [
+      "im:message",
+      "im:chat:readonly"
+    ],
+    "supported_actions": [
+      "send_message",
+      "send_approval_card"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Subject to upstream platform API rate limits, app review, and service terms.",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "jira",
+    "name": "Atlassian Jira Cloud API",
+    "purpose": "ticket creation, sprint tracking, and incident links",
+    "auth_type": "OAuth2 / API Token",
+    "environment_variables": [
+      "JIRA_BASE_URL",
+      "JIRA_EMAIL",
+      "JIRA_API_TOKEN"
+    ],
+    "scopes": [
+      "read:jira-work",
+      "write:jira-work"
+    ],
+    "supported_actions": [
+      "create_issue",
+      "update_issue",
+      "post_comment"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Subject to upstream platform API rate limits, app review, and service terms.",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "zendesk",
+    "name": "Zendesk Support API",
+    "purpose": "customer support ticket drafts and internal agent notes",
+    "auth_type": "OAuth2 / API Token",
+    "environment_variables": [
+      "ZENDESK_SUBDOMAIN",
+      "ZENDESK_EMAIL",
+      "ZENDESK_API_TOKEN"
+    ],
+    "scopes": [
+      "tickets:read",
+      "tickets:write"
+    ],
+    "supported_actions": [
+      "read_ticket",
+      "add_internal_note",
+      "publish_reply"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Subject to upstream platform API rate limits, app review, and service terms.",
+    "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
+  },
+  {
+    "id": "mcp-remote-bridge",
+    "name": "Remote MCP Streamable HTTP Bridge",
+    "purpose": "connects authorized remote Model Context Protocol servers with scoped bearer credentials",
+    "auth_type": "Bearer / OAuth2",
+    "environment_variables": [
+      "MCP_REMOTE_SERVER_URL",
+      "MCP_REMOTE_BEARER_TOKEN"
+    ],
+    "scopes": [
+      "tools:list",
+      "tools:call"
+    ],
+    "supported_actions": [
+      "list_remote_tools",
+      "invoke_approved_tool"
+    ],
+    "access_state": "not_configured",
+    "integration_status": "manifest_only",
+    "hosted_api": true,
+    "commercial_notes": "Subject to upstream platform API rate limits, app review, and service terms.",
     "security_note": "Do not store credentials in Git. Connect using least-privilege OAuth or server-side secrets. High-impact actions must require user approval."
   }
 ]

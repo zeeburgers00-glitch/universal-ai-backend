@@ -1,7 +1,7 @@
 [project]
 name = "universal-ai-backend"
-version = "0.2.0"
-description = "API-only extensible AI provider gateway and tool/skill discovery catalog"
+version = "0.6.0"
+description = "API-only extensible AI provider gateway, global AI/MCP catalog, and REA reverse-engineering control plane"
 requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.115,<1.0",
@@ -12,6 +12,9 @@ dependencies = [
 
 [tool.vercel]
 entrypoint = "app.main:app"
+
+[tool.vercel.scripts]
+build = "python scripts/vercel_build_hook.py"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

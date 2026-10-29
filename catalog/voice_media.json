@@ -925,5 +925,183 @@
     "risk_level": "medium",
     "consent_required": false,
     "warning": "This is a catalog/integration manifest, not proof that the upstream engine is installed. Check the precise model/checkpoint license, source rights, dependencies, and provider terms before activation."
+  },
+  {
+    "id": "media-chatterbox-tts",
+    "name": "Chatterbox TTS",
+    "category": "voice-cloning",
+    "kind": "quality-media-tool",
+    "repository_url": "https://github.com/resemble-ai/chatterbox",
+    "description": "Open-weight expressive TTS and zero-shot voice synthesis engine by Resemble AI.",
+    "license": "NOT VERIFIED — inspect repository LICENSE and separate model-weight terms before commercial use.",
+    "license_status": "review_required",
+    "source_classification": "reported_open_source_candidate",
+    "deployment_target": "gpu-worker",
+    "readiness": "catalog_and_adapter_plan",
+    "integration_type": "worker-adapter",
+    "status": "catalog_only",
+    "capabilities": [
+      "tts",
+      "voice-cloning",
+      "expressive-speech"
+    ],
+    "risk_level": "high",
+    "consent_required": true,
+    "warning": "Catalog manifest only, not proof that model weights are installed. Confirm speaker/likeness consent and checkpoint license before commercial deployment."
+  },
+  {
+    "id": "media-orpheus-tts",
+    "name": "Orpheus TTS",
+    "category": "speech-synthesis",
+    "kind": "quality-media-tool",
+    "repository_url": "https://github.com/canopyai/Orpheus-TTS",
+    "description": "LLM-backed expressive speech synthesis supporting emotion tags and streaming.",
+    "license": "NOT VERIFIED — inspect repository LICENSE and separate model-weight terms before commercial use.",
+    "license_status": "review_required",
+    "source_classification": "reported_open_source_candidate",
+    "deployment_target": "gpu-worker",
+    "readiness": "catalog_and_adapter_plan",
+    "integration_type": "worker-adapter",
+    "status": "catalog_only",
+    "capabilities": [
+      "tts",
+      "streaming-speech"
+    ],
+    "risk_level": "high",
+    "consent_required": true,
+    "warning": "Catalog manifest only, not proof that model weights are installed. Confirm speaker/likeness consent and checkpoint license before commercial deployment."
+  },
+  {
+    "id": "media-zonos-tts",
+    "name": "Zonos TTS",
+    "category": "voice-cloning",
+    "kind": "quality-media-tool",
+    "repository_url": "https://github.com/Zyphra/Zonos",
+    "description": "Open-weight multilingual voice cloning and high-fidelity speech synthesis model by Zyphra.",
+    "license": "NOT VERIFIED — inspect repository LICENSE and separate model-weight terms before commercial use.",
+    "license_status": "review_required",
+    "source_classification": "reported_open_source_candidate",
+    "deployment_target": "gpu-worker",
+    "readiness": "catalog_and_adapter_plan",
+    "integration_type": "worker-adapter",
+    "status": "catalog_only",
+    "capabilities": [
+      "tts",
+      "voice-cloning",
+      "multilingual"
+    ],
+    "risk_level": "high",
+    "consent_required": true,
+    "warning": "Catalog manifest only, not proof that model weights are installed. Confirm speaker/likeness consent and checkpoint license before commercial deployment."
+  },
+  {
+    "id": "media-spark-tts",
+    "name": "Spark-TTS",
+    "category": "voice-cloning",
+    "kind": "quality-media-tool",
+    "repository_url": "https://github.com/SparkAudio/Spark-TTS",
+    "description": "BiCodec-based controllable speech synthesis and zero-shot voice cloning engine.",
+    "license": "NOT VERIFIED — inspect repository LICENSE and separate model-weight terms before commercial use.",
+    "license_status": "review_required",
+    "source_classification": "reported_open_source_candidate",
+    "deployment_target": "gpu-worker",
+    "readiness": "catalog_and_adapter_plan",
+    "integration_type": "worker-adapter",
+    "status": "catalog_only",
+    "capabilities": [
+      "tts",
+      "voice-cloning"
+    ],
+    "risk_level": "high",
+    "consent_required": true,
+    "warning": "Catalog manifest only, not proof that model weights are installed. Confirm speaker/likeness consent and checkpoint license before commercial deployment."
+  },
+  {
+    "id": "media-dia-tts",
+    "name": "Dia Dialogue TTS",
+    "category": "speech-synthesis",
+    "kind": "quality-media-tool",
+    "repository_url": "https://github.com/nari-labs/dia",
+    "description": "Multi-speaker dialogue text-to-speech model with non-verbal audio cues.",
+    "license": "NOT VERIFIED — inspect repository LICENSE and separate model-weight terms before commercial use.",
+    "license_status": "review_required",
+    "source_classification": "reported_open_source_candidate",
+    "deployment_target": "gpu-worker",
+    "readiness": "catalog_and_adapter_plan",
+    "integration_type": "worker-adapter",
+    "status": "catalog_only",
+    "capabilities": [
+      "tts",
+      "multi-speaker-dialogue"
+    ],
+    "risk_level": "medium",
+    "consent_required": false,
+    "warning": "Catalog manifest only, not proof that model weights are installed. Confirm speaker/likeness consent and checkpoint license before commercial deployment."
+  },
+  {
+    "id": "media-kokoro-onnx",
+    "name": "Kokoro-82M TTS",
+    "category": "speech-synthesis",
+    "kind": "quality-media-tool",
+    "repository_url": "https://github.com/hexgrad/kokoro",
+    "description": "Lightweight 82M-parameter open-weight text-to-speech engine suitable for fast CPU/GPU deployment.",
+    "license": "NOT VERIFIED — inspect repository LICENSE and separate model-weight terms before commercial use.",
+    "license_status": "review_required",
+    "source_classification": "reported_open_source_candidate",
+    "deployment_target": "gpu-worker",
+    "readiness": "catalog_and_adapter_plan",
+    "integration_type": "worker-adapter",
+    "status": "catalog_only",
+    "capabilities": [
+      "tts",
+      "fast-inference"
+    ],
+    "risk_level": "medium",
+    "consent_required": false,
+    "warning": "Catalog manifest only, not proof that model weights are installed. Confirm speaker/likeness consent and checkpoint license before commercial deployment."
+  },
+  {
+    "id": "media-hunyuan-video",
+    "name": "HunyuanVideo",
+    "category": "video-generation",
+    "kind": "quality-media-tool",
+    "repository_url": "https://github.com/Tencent/HunyuanVideo",
+    "description": "Large open-weight text-to-video generation model and inference pipeline.",
+    "license": "NOT VERIFIED — inspect repository LICENSE and separate model-weight terms before commercial use.",
+    "license_status": "review_required",
+    "source_classification": "reported_open_source_candidate",
+    "deployment_target": "gpu-worker",
+    "readiness": "catalog_and_adapter_plan",
+    "integration_type": "worker-adapter",
+    "status": "catalog_only",
+    "capabilities": [
+      "video-generation",
+      "text-to-video"
+    ],
+    "risk_level": "medium",
+    "consent_required": false,
+    "warning": "Catalog manifest only, not proof that model weights are installed. Confirm speaker/likeness consent and checkpoint license before commercial deployment."
+  },
+  {
+    "id": "media-yue-music",
+    "name": "YuE Singing & Music",
+    "category": "music-generation",
+    "kind": "quality-media-tool",
+    "repository_url": "https://github.com/multimodal-art-projection/YuE",
+    "description": "Open-source full-song lyrics-to-song generation model family.",
+    "license": "NOT VERIFIED — inspect repository LICENSE and separate model-weight terms before commercial use.",
+    "license_status": "review_required",
+    "source_classification": "reported_open_source_candidate",
+    "deployment_target": "gpu-worker",
+    "readiness": "catalog_and_adapter_plan",
+    "integration_type": "worker-adapter",
+    "status": "catalog_only",
+    "capabilities": [
+      "music-generation",
+      "vocal-synthesis"
+    ],
+    "risk_level": "medium",
+    "consent_required": false,
+    "warning": "Catalog manifest only, not proof that model weights are installed. Confirm speaker/likeness consent and checkpoint license before commercial deployment."
   }
 ]

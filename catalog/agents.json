@@ -882,6 +882,214 @@
     ]
   },
   {
+    "id": "rea-reverse-engineering-discovery",
+    "name": "REA Reverse-Engineering & AI Discovery Agent",
+    "mission": "Uses REA (morluto/rea) MCP and CLI tools on authorized targets to inspect JavaScript/Electron bundles, WebMCP tool declarations, GGUF/safetensors AI model headers, GPU code objects, and HAR captures for RL AgentEnv environments.",
+    "capabilities": [
+      "reverse-engineering",
+      "webmcp-discovery",
+      "javascript-bundle-analysis",
+      "gguf-safetensors-inspection",
+      "rl-environment-builder"
+    ],
+    "allowed_tool_families": [
+      "rea-mcp",
+      "github-discovery",
+      "catalog-registry",
+      "approval-gate",
+      "audit-log"
+    ],
+    "required_context": "authorized-target-scope",
+    "risk_level": "critical",
+    "human_approval_rules": "Only inspect binaries, bundles, websites, or model artifacts the operator owns or is explicitly authorized to analyze. Require explicit human approval before runtime observation, browser CDP attachment, device access, or catalog registration.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "mcp-tool-router",
+    "name": "MCP Ecosystem Router Agent",
+    "mission": "Selects, scopes, and plans calls across cataloged MCP servers with strict permission and schema validation.",
+    "capabilities": [
+      "mcp-routing",
+      "schema-validation",
+      "permission-scoping"
+    ],
+    "allowed_tool_families": [
+      "mcp-registry",
+      "approval-gate",
+      "audit-log"
+    ],
+    "required_context": "mcp-session",
+    "risk_level": "high",
+    "human_approval_rules": "Require explicit user approval before invoking any MCP tool that mutates files, networks, databases, or external accounts.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "rag-knowledge-architect",
+    "name": "RAG & GraphRAG Knowledge Architect",
+    "mission": "Plans document chunking, OCR parsing, embedding indexing, hybrid vector/graph retrieval, and cited synthesis.",
+    "capabilities": [
+      "rag",
+      "graphrag",
+      "ocr-routing",
+      "citation-verification"
+    ],
+    "allowed_tool_families": [
+      "document-parser",
+      "vector-store",
+      "reranker"
+    ],
+    "required_context": "knowledge-corpus",
+    "risk_level": "medium",
+    "human_approval_rules": "Verify document access permissions and tenant isolation before indexing or retrieving private files.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "ai-security-guardrail-auditor",
+    "name": "AI Security & Guardrail Auditor",
+    "mission": "Evaluates prompts, agent plans, MCP schemas, and outputs for prompt injection, secret leakage, and unsafe tool calls.",
+    "capabilities": [
+      "prompt-security",
+      "red-teaming",
+      "pii-redaction",
+      "policy-audit"
+    ],
+    "allowed_tool_families": [
+      "guardrails",
+      "rea-mcp",
+      "audit-log"
+    ],
+    "required_context": "security-policy",
+    "risk_level": "critical",
+    "human_approval_rules": "Never execute exploit payloads against unauthorized systems; require explicit operator sign-off for active red-team runs.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "data-sql-analyst",
+    "name": "Text-to-SQL & Analytics Agent",
+    "mission": "Translates analytical questions into read-only SQL/dataframe plans, validates schemas, and summarizes findings.",
+    "capabilities": [
+      "text-to-sql",
+      "data-analysis",
+      "forecasting"
+    ],
+    "allowed_tool_families": [
+      "read-only-db",
+      "chart-spec",
+      "audit-log"
+    ],
+    "required_context": "database-schema",
+    "risk_level": "medium",
+    "human_approval_rules": "Enforce read-only database roles by default; block DDL/DML mutations without explicit approval.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "model-finetuning-planner",
+    "name": "Fine-Tuning, RL & Post-Training Planner",
+    "mission": "Designs LoRA/QLoRA/DPO/GRPO training configs, dataset hygiene checks, and REA AgentEnv RL evaluation loops.",
+    "capabilities": [
+      "fine-tuning",
+      "rl-environments",
+      "eval-design"
+    ],
+    "allowed_tool_families": [
+      "dataset-validator",
+      "gpu-scheduler",
+      "rea-mcp"
+    ],
+    "required_context": "training-spec",
+    "risk_level": "high",
+    "human_approval_rules": "Require human approval before allocating paid GPU clusters, exporting datasets, or publishing model checkpoints.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "edge-ondevice-packager",
+    "name": "Edge & On-Device AI Packager",
+    "mission": "Plans quantization (GGUF/AWQ/ONNX/MLX/WebGPU), REA model-header verification, and latency/memory budgets.",
+    "capabilities": [
+      "quantization",
+      "gguf-inspection",
+      "edge-deployment"
+    ],
+    "allowed_tool_families": [
+      "rea-mcp",
+      "model-registry"
+    ],
+    "required_context": "hardware-target",
+    "risk_level": "medium",
+    "human_approval_rules": "Verify base model license and redistribution terms before exporting quantized weights.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
     "id": "reverse-engineering-agent",
     "name": "Reverse Engineering and Evidence Agent",
     "mission": "Use a locally paired REA MCP runtime to analyze authorized application artifacts, distinguish observed facts from hypotheses, maintain an evidence trail and produce a reconstruction brief for the coding agent.",

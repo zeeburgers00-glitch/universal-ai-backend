@@ -1148,6 +1148,159 @@
     "warning": "Workflow template only. Real execution requires the named worker/adapters, configured credentials, storage, and tests. Publishing, messaging, desktop changes, and voice cloning require explicit approval/authorization."
   },
   {
+    "id": "rea-webmcp-and-ai-tool-discovery",
+    "name": "REA WebMCP, Bundle & AI Tool Discovery",
+    "category": "discovery",
+    "description": "Inspect an authorized web bundle, MCP package, or GGUF/safetensors model artifact using REA (morluto/rea), combine findings with GitHub discovery, review licenses, and register approved metadata into the catalog.",
+    "required_services": [
+      "agents",
+      "automation"
+    ],
+    "risk_level": "high",
+    "requires_human_approval": true,
+    "required_inputs": [
+      "authorized_target_path_or_repo",
+      "authorization_attestation"
+    ],
+    "steps": [
+      {
+        "id": "scope-check",
+        "agent_id": "rea-reverse-engineering-discovery",
+        "description": "Verify target authorization, responsible-use compliance, and static-only vs runtime scope"
+      },
+      {
+        "id": "rea-static-inspect",
+        "agent_id": "rea-reverse-engineering-discovery",
+        "description": "Run REA static analysis (analyze_javascript_application, analyze_web_bundle, or inspect_model_artifact) and retain cryptographic Evidence"
+      },
+      {
+        "id": "github-correlate",
+        "agent_id": "research",
+        "description": "Correlate discovered MCP/WebMCP tools and packages with upstream GitHub repositories and license metadata"
+      },
+      {
+        "id": "human-review",
+        "agent_id": "human-review",
+        "description": "Review upstream LICENSE, model/data terms, security posture, and permissions before catalog registration"
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "async_worker",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "Workflow template only. REA inspection must only target software, bundles, websites, or model files you own or are authorized to examine."
+  },
+  {
+    "id": "rea-model-artifact-audit",
+    "name": "REA GGUF / Safetensors Model Artifact Audit",
+    "category": "security",
+    "description": "Inspect local GGUF or safetensors model headers and GPU code objects via the isolated REA worker without deserializing pickle or executing weights.",
+    "required_services": [
+      "rea",
+      "agents"
+    ],
+    "risk_level": "high",
+    "requires_human_approval": true,
+    "required_inputs": [
+      "model_artifact_path",
+      "authorization_attestation"
+    ],
+    "steps": [
+      {
+        "id": "authorize",
+        "agent_id": "ai-security-guardrail-auditor",
+        "description": "Confirm operator ownership/authorization and model provenance"
+      },
+      {
+        "id": "inspect-header",
+        "agent_id": "edge-ondevice-packager",
+        "description": "Run REA inspect-model-artifact header check on staged file"
+      },
+      {
+        "id": "license-review",
+        "agent_id": "human-review",
+        "description": "Verify upstream model weights license and commercial-use terms"
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "async_worker",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "Workflow template only. Requires configured workers, credentials, and explicit human approval for consequential steps."
+  },
+  {
+    "id": "rea-rl-agentenv-builder",
+    "name": "REA Web Session to RL AgentEnv Pipeline",
+    "category": "training",
+    "description": "Turn an authorized recorded HAR session into an offline AgentEnv reinforcement-learning environment bundle using REA.",
+    "required_services": [
+      "rea",
+      "automation"
+    ],
+    "risk_level": "high",
+    "requires_human_approval": true,
+    "required_inputs": [
+      "authorized_har_capture_path",
+      "environment_name"
+    ],
+    "steps": [
+      {
+        "id": "pii-scrub",
+        "agent_id": "ai-security-guardrail-auditor",
+        "description": "Verify capture authorization and strip credentials/cookies/PII"
+      },
+      {
+        "id": "environment-build",
+        "agent_id": "model-finetuning-planner",
+        "description": "Project state-backed read/write tools using REA environment-build"
+      },
+      {
+        "id": "human-signoff",
+        "agent_id": "human-review",
+        "description": "Review exported environment manifest and reward checks before training"
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "async_worker",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "Workflow template only. Requires configured workers, credentials, and explicit human approval for consequential steps."
+  },
+  {
+    "id": "enterprise-rag-ingestion",
+    "name": "Enterprise Document OCR & GraphRAG Ingestion",
+    "category": "rag",
+    "description": "Parse PDFs/docs, verify access ACLs, build vector + knowledge-graph indexes, and run retrieval accuracy evals.",
+    "required_services": [
+      "agents",
+      "automation"
+    ],
+    "risk_level": "high",
+    "requires_human_approval": true,
+    "required_inputs": [
+      "corpus_source_id",
+      "embedding_provider"
+    ],
+    "steps": [
+      {
+        "id": "acl-check",
+        "agent_id": "ai-security-guardrail-auditor",
+        "description": "Confirm document rights, PII rules, and tenant boundaries"
+      },
+      {
+        "id": "parse-and-chunk",
+        "agent_id": "rag-knowledge-architect",
+        "description": "Extract structured markdown/tables and generate chunks"
+      },
+      {
+        "id": "eval-and-approve",
+        "agent_id": "human-review",
+        "description": "Review citation accuracy and approve index promotion"
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "async_worker",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "Workflow template only. Requires configured workers, credentials, and explicit human approval for consequential steps."
+  },
+  {
     "id": "authorized-app-reverse-engineering",
     "name": "Authorized application reverse-engineering",
     "category": "developer",

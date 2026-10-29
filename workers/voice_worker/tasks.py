@@ -21,8 +21,6 @@ def synthesize(self, payload: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("Text must contain 1-12000 characters")
 
     if engine == "f5-tts":
-        if not (payload.get("reference_audio_asset_id") or payload.get("voice_profile_id")):
-            raise ValueError("F5-TTS requires a consented reference audio asset or saved voice profile; select melo-tts for preset-speaker synthesis")
         return _run_f5(task_id, payload)
     if engine == "melo-tts":
         return _run_melo(task_id, payload)
@@ -132,6 +130,7 @@ def _run_f5(task_id: str, payload: dict[str, Any]) -> dict[str, Any]:
         "--gen_text", str(payload["text"]),
         "--output_dir", output_dir,
         "--output_file", output_path.name,
+        "--device", os.getenv("F5_TTS_DEVICE", "cuda"),
     ]
     ref_audio, ref_text = _resolve_reference(payload)
     if ref_audio:

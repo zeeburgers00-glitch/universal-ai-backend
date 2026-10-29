@@ -1,91 +1,53 @@
+# Integration guide
 
-# Integration and deployment guide
+## Catalog versus integration
 
-## One repository, multiple runtimes
+- `catalog_only`: metadata and links only.
+- `external-service`: expects a separately deployed service and credentials.
+- `python-library`: requires a reviewed package, pinned dependency, adapter, and tests.
+- `provider-adapter`: callable from the backend only after server-side credentials and routing are configured.
 
-This project uses a single Git repository for the control plane and service code. Vercel serves `app.main:app`, while persistent queues, GPU models, large media files and Windows desktop actions run in worker services from `workers/`. Vercel Functions should not be used as long-running GPU model hosts; see https://vercel.com/docs/functions/limitations.
+A repository appearing in the catalog or GitHub discovery output does not mean it is installed or safe.
 
-The API returns worker readiness at `GET /v1/runtime/capabilities`. A worker is ready only when its URL and shared worker secret are configured in Vercel. Even that check is configuration-only: check each worker's own `/health` and test a small job before production.
+## Add a repository to the catalog
 
-## Service map
+Add a JSON object to `catalog/tools.json` with a unique `id`, human-readable `name`, `category`, `description`, upstream `repository_url`, `license` review note, `integration_type`, `status`, and `capabilities`.
 
-| Runtime | Source directory | Purpose | State |
-|---|---|---|---|
-| Vercel control plane | `app/` | Catalog, provider routing, approval gates and worker gateway | Deploy this on Vercel |
-| GPU voice | `workers/voice_worker/` | F5-TTS CLI, MeloTTS, reference assets and async TTS | Concrete adapter scaffold; needs GPU/model/rights verification |
-| Media | `workers/media_worker/` | Asset upload, FFmpeg presets, ComfyUI workflow dispatch, ASR hook | FFmpeg path is implemented; ComfyUI and ASR need config |
-| YouTube | `workers/youtube_worker/` | OAuth-backed official video upload | Needs owner's OAuth credentials, quota and authorized channel |
-| Messaging channels | `workers/channel_worker/` | Telegram, Discord, Slack and WhatsApp templates | These four adapters are present; other catalog items remain manifests |
-| Agent planner | `workers/agent_worker/` | Generate validated JSON action plans from an LLM | Planner only; it never executes arbitrary model-produced code |
-| Workflow dispatcher | `workers/automation_worker/` | Plan workflows or dispatch explicitly declared allowlisted actions | Requires typed `inputs.actions` and approval for dispatch |
-| Windows desktop | `workers/windows_agent/` | Run a restricted set of actions on a paired local PC | Must run on the user's Windows PC, not Vercel |
+You can also call `POST /v1/tools` with `X-API-Key`. This starter's in-memory write does not persist across Vercel cold starts. For production writes, back this route with PostgreSQL/Supabase.
 
-## Deploy workers on a Linux host
+## Add executable behavior
 
-1. Create a private environment file from `workers/.env.workers.example`.
-2. Set unique `REDIS_PASSWORD`, per-service worker API keys, and only the provider/OAuth secrets required by your intended features.
-3. On a host with Docker Compose, install NVIDIA drivers and the NVIDIA Container Toolkit if you need the F5-TTS GPU runner.
-4. Run:
+1. Review the upstream source, its license, dependency provenance, maintainer history, permissions, and threat model.
+2. Define an adapter with typed input/output schemas, timeouts, rate limits, and clear error handling.
+3. Store provider credentials in server environment variables or a secret manager.
+4. Do not execute user-supplied shell commands or install arbitrary repositories inside the API process.
+5. Place untrusted/side-effectful tools in isolated workers with scoped credentials and audit logs.
+6. Require user approval for actions that publish content, alter files or accounts, spend money, or control a desktop.
+7. Add tests and only then mark the integration as tested.
 
-```bash
-docker compose --env-file workers/.env.workers -f workers/docker-compose.yml up --build -d
-docker compose --env-file workers/.env.workers -f workers/docker-compose.yml ps
-```
+## Live GitHub discovery
 
-5. Expose selected loopback-only worker ports through private networking or an HTTPS reverse proxy/tunnel. Do not expose raw ports 8100, 8200, 8300, 8400, 8500 or 8600 to the public internet.
-6. Set Vercel variables `VOICE_WORKER_URL`, `MEDIA_WORKER_URL`, `YOUTUBE_WORKER_URL`, `CHANNEL_WORKER_URL`, `AGENT_WORKER_URL`, `AUTOMATION_WORKER_URL` and the matching `*_WORKER_API_KEY` secrets. The external URL must be HTTPS.
-7. Set the Vercel `BACKEND_API_KEY`, model provider credentials and exact `CORS_ORIGINS`. Never put these secrets in frontend code or Git.
-8. Check `/v1/runtime/capabilities`, `/v1/workers/status` and the worker health endpoint for every configured service. Then make one small test job.
+`GET /v1/discover/github?q=browser+automation&per_page=20` queries GitHub Search API at request time. GitHub may rate-limit requests. Configure `GITHUB_TOKEN` server-side for higher limits. Results should be reviewed before registration.
 
-The Compose file uses internal DNS for worker-to-worker calls. The Vercel control plane needs a secure HTTPS address for every worker it directly contacts. The local Windows agent is separate and needs its own secure connection.
 
-## Voice and consent
+## Expanded catalog sources and license filters
 
-- Upload a reference sample with `POST /v1/voice/assets`, using a Base64-encoded small audio file and a consent-record ID.
-- Create a reference voice profile with `POST /v1/voice/clone`.
-- Request audio with `POST /v1/voice/tts`, then poll `GET /v1/tasks/voice/{task_id}` and fetch `GET /v1/voice/results/{task_id}`.
-- The GPU worker currently implements F5-TTS and MeloTTS. The other listed voice engines are catalog candidates until their specific adapter/runtime has been installed and tested.
-- F5-TTS code and model weights have separate license terms. Upstream describes its standard pretrained weights as CC-BY-NC. For commercial publishing, supply a compatible model/checkpoint with independently verified commercial rights; do not set the commercial-approved flag merely to bypass the gate.
-- The code records a consent ID and checks that ID matches the uploaded asset/profile. A production service must additionally keep reliable consent evidence, authenticate the account/speaker and support revocation/deletion.
+The API loads seven catalogs in this order: `catalog/tools.json`, `catalog/extended.json`, `catalog/commercial.json`, `catalog/llmops.json`, `catalog/voice_media.json`, `catalog/mcp_ecosystem.json`, and `catalog/global_ai_directory.json`. Duplicate repository URLs are merged and the original seed IDs are preserved.
 
-## Media and YouTube
+In addition, `catalog/rea_mcp_tools.json` captures the `229` MCP tools, `6` guided prompts, and `180` CLI commands exposed by [REA (`morluto/rea`)](https://github.com/morluto/rea), along with cryptographic Evidence IDs from static JavaScript application-graph verification of official MCP packages. Query REA metadata via `GET /v1/rea/status` and `GET /v1/rea/tools`. Always follow upstream `DISCLAIMER.md` responsible-use boundaries: only inspect software, bundles, websites, or model files you own or are authorized to analyze.
 
-- Upload larger media directly to the secured media worker at `POST /v1/assets/upload`; don't push large videos through Vercel Functions.
-- Media worker's built-in FFmpeg presets are standard render, short-vertical crop, compression, audio extraction/normalization, thumbnail capture and SRT subtitle burn-in.
-- Generative image/video/audio requires a configured ComfyUI endpoint and reviewed API-format workflow JSON in the worker's persistent `/data/workflows` folder.
-- Transcription is delegated to an explicitly configured `ASR_WORKER_URL`.
-- YouTube publishing expects a media-worker asset ID, a configured OAuth refresh token and a matching channel connection ID. Only publish after a human approves the exact upload request. The implementation checks the channel ID returned by the OAuth token before upload.
-- Verify YouTube quota and API terms on the official docs: https://developers.google.com/youtube/v3/docs/videos/insert.
 
-## Agent planner and workflow dispatcher
+- `GET /v1/catalog/stats` shows current entry totals, categories, and license review statuses.
+- `GET /v1/catalog/sources` lists the curated directories used for discovery and explains the classification policy.
+- `GET /v1/tools?license_status=review_required` returns entries whose licenses still need verification.
+- `GET /v1/tools?source_classification=source_available` can narrow candidate classifications by substring.
+- `GET /v1/discover/github?q=agent+framework&license_filter=apache-2.0&min_stars=100&sort=stars` queries current public GitHub metadata.
 
-- `POST /v1/agents/{agent_id}/run` creates a task that returns a validated JSON plan. Planning is not execution.
-- `POST /v1/workflows/{workflow_id}/run` returns the registered workflow as a plan. To dispatch tasks, send an explicit `inputs.actions` array using one of the fixed action types: `voice_tts`, `voice_clone`, `media_job`, `youtube_publish`, `channel_action` or `desktop_action`.
-- The dispatcher accepts no caller-supplied URLs or shell/code tool. YouTube posts, external messages, voice cloning and desktop actions require approval/consent again at their destination worker.
-- Dispatch responses may contain downstream task IDs. A response saying `dispatched` means an action has been queued/sent, not that a GPU render or public upload has completed.
-- Multi-account deployments should implement per-tenant authentication, encrypted OAuth stores and durable approval/audit records before external use. The starter uses server-side worker secrets and a single configured YouTube channel connection.
+This catalog includes three distinct concepts: a project's source license, the license of model weights/data, and the terms for a hosted API or enterprise edition. An open-source SDK for a paid hosted API does not make that hosted API or its models open-source. "Source available" and fair-code projects may have restrictions that differ from OSI-approved licenses.
 
-## REA reverse-engineering bridge
+The catalog is not a universal inventory. A project being indexed does not mean its code is installed, safe, compatible, or tested. Review the exact upstream commit, license, dependencies, commercial terms, and required permissions before implementing an adapter.
 
-REA is integrated as an optional local MCP server for the paired Windows agent. It is appropriate for authorized app/binary inspection and evidence-backed feature reconstruction, not for voice synthesis. REA's authored code is MIT, but proprietary analyzers such as IDA/Hopper/JEB and other third-party components keep their own terms.
 
-1. Install a supported Node.js release on the Windows PC (REA upstream package metadata currently requires Node `^22.23.4 || ^24.22.1 || >=26.12.1`).
-2. Install `rea-agents@6.8.0` and configure `REA_ENTRY_SCRIPT` to the installed `scripts/rea.mjs`.
-3. Set `REA_MCP_ENABLED=true`, `REA_ALLOWED_TARGET_ROOTS` and `REA_ALLOWED_URL_HOSTS`, leave `REA_ALLOWED_TOOL_NAMES` empty initially, and restart the local Windows agent.
-4. Query `GET /v1/rea/tools` from the backend and inspect exact tool names, descriptions, input schemas and risk annotations.
-5. Manually allowlist only reviewed tool names. Every request requires explicit approval and an authorization-scope note. Use `POST /v1/rea/jobs`, then poll `GET /v1/tasks/rea/{task_id}`.
-6. Never expose REA's plain-HTTP MCP listener to the public internet. This bridge invokes the local stdio MCP process and restricts file/URL arguments to configured local roots/hosts.
+## LLMOps tool candidates
 
-The bridge cannot guarantee that target analysis is sandboxed. Runtime execution, instrumentation, network capture and device operations need stricter review/approval than static file inspection. Analyze only targets you own or are authorized to examine. See https://github.com/morluto/rea/blob/main/SECURITY.md and https://github.com/morluto/rea/blob/main/docs/mcp-contracts.md.
-
-## Registering another tool
-
-1. Search live GitHub metadata via `GET /v1/discover/github?q=...`.
-2. Review the upstream code license, model/checkpoint license, dependencies, maintenance/security posture, required hardware and hosted-service terms.
-3. Add a metadata entry to `catalog/tools.json` or a new documented manifest.
-4. Implement a typed adapter or worker route, pinned dependencies, tests, permissions and timeouts.
-5. Mark the entry executable only after testing its exact installation and runtime on a supported host. Do not auto-install or execute arbitrary GitHub repositories from the API process.
-
-## Licensing distinctions
-
-A project source license, model weights, training data, bundled voice/checkpoint assets and the vendor's hosted API are different rights. Source-available/fair-code and open-core terms are not necessarily OSI-approved open source. The catalog marks candidates `license_status=review_required` until an upstream legal review is recorded.
+The `catalog/llmops.json` file adds candidate references covering LLM gateway/router layers, tracing and observability, evaluation and safety testing, and prompt management. It includes source-reported license hints, inactive/archived markers when provided by the source list, and upstream links. Treat all candidates as review-required and validate current license and project status before integration.
