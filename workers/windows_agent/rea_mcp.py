@@ -123,7 +123,7 @@ def _validate_argument_scope(value: Any, key: str = "") -> None:
     if not isinstance(value, str):
         return
 
-    field = key.casefold()
+    field = re.sub(r"([a-z0-9])([A-Z])", r"\\1_\\2", key).casefold()
     is_url_field = "url" in field or field in {"uri", "website", "webpage"}
     if is_url_field:
         if not value.strip():
@@ -135,9 +135,9 @@ def _validate_argument_scope(value: Any, key: str = "") -> None:
             raise ReaBridgeError(f"URL host {parsed.hostname!r} is not in local REA_ALLOWED_URL_HOSTS.")
         return
 
-    path_field = any(token in field for token in (
-        "path", "file", "directory", "dir", "artifact", "bundle", "apk",
-        "firmware", "binary", "source", "destination", "project", "asset", "root",
+    explicit_path_field = bool(re.search(
+        r"(?:^|_)(?:path|file_path|filepath|directory|dir_path|root_path|target_path|source_path|destination_path|project_path|artifact_path)(?:_|$)",
+        field,
     ))
     looks_like_path = (
         value.startswith(("./", ".\\", "../", "..\\", "/", "\\\\"))
@@ -145,7 +145,7 @@ def _validate_argument_scope(value: Any, key: str = "") -> None:
         or "\\\\" in value
         or value.endswith((".exe", ".dll", ".apk", ".ipa", ".asar", ".bin", ".elf", ".pck", ".wasm", ".gguf", ".safetensors"))
     )
-    if not path_field and not looks_like_path:
+    if not explicit_path_field and not looks_like_path:
         return
     if not value.strip():
         return
