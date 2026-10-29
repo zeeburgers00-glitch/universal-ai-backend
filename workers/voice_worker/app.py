@@ -57,6 +57,7 @@ class VoiceAssetUpload(BaseModel):
 
 
 class VoiceJob(BaseModel):
+    task_id: str | None = Field(default=None, min_length=8, max_length=120, pattern=r"^[A-Za-z0-9_-]+$")
     engine: str = Field(min_length=2, max_length=60, pattern=r"^[a-zA-Z0-9._-]+$")
     text: str = Field(min_length=1, max_length=12000)
     language: str | None = Field(default=None, max_length=40)
@@ -210,9 +211,22 @@ def submit_tts_job(request: VoiceJob):
         if not (request.speaker_consent_confirmed and request.speaker_consent_record_id):
             raise HTTPException(status_code=400, detail="Using a reference voice requires a consent record")
         _check_consent(request.reference_audio_asset_id, request.speaker_consent_record_id)
+    if request.voice_profile_id:
+        if not (request.speaker_consent_confirmed and request.speaker_consent_record_id):
+            raise HTTPException(status_code=400, detail="Using a saved voice profile requires an explicit consent record")
+        if not re.fullmatch(r"voice-profile-[a-f0-9]{32}", request.voice_profile_id):
+            raise HTTPException(status_code=400, detail="Invalid voice profile ID")
+        profile_path = PROFILE_ROOT / f"{request.voice_profile_id}.json"
+        if not profile_path.is_file():
+            raise HTTPException(status_code=404, detail="Voice profile was not found")
+        profile = json.loads(profile_path.read_text(encoding="utf-8"))
+        if not profile.get("speaker_consent_confirmed") or not hmac.compare_digest(
+            str(profile.get("speaker_consent_record_id", "")), request.speaker_consent_record_id
+        ):
+            raise HTTPException(status_code=403, detail="Voice profile consent record does not match")
     if engine == "f5-tts" and request.commercial_use and os.getenv("F5_TTS_MODEL_LICENSE_CLASS", "").lower() != "commercial_approved":
         raise HTTPException(status_code=403, detail="F5-TTS pretrained weights may be non-commercial; configure a compatible commercial checkpoint first")
-    task_id = secrets.token_hex(16)
+    task_id = request.task_id or secrets.token_hex(16)
     async_result = celery_app.send_task("voice_worker.synthesize", kwargs={"payload": request.model_dump()}, task_id=task_id)
     return {"task_id": async_result.id, "status": "queued", "engine": engine, "poll_url": f"/v1/tasks/{async_result.id}"}
 
@@ -252,4 +266,4 @@ def get_voice_result(task_id: str):
     path = (OUTPUT_ROOT / str(meta.get("stored_filename", ""))).resolve()
     if OUTPUT_ROOT.resolve() not in path.parents or not path.is_file():
         raise HTTPException(status_code=404, detail="Audio file is unavailable")
-    return FileResponse(path, media_type=str(meta.get("mime_type", "audio/wav")), filename=f"{asset_id}.wav")
+    return FileResponse(path, media_type=str(meta.get("mime_type", "audio/wav")), filename=path.name)
