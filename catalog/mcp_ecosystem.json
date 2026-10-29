@@ -1,36 +1,28 @@
 [
   {
     "id": "mcp-morluto-rea",
-    "name": "REA: Reverse Engineer Anything (rea-agents)",
+    "name": "REA MCP Server (io.github.morluto/rea)",
     "category": "mcp-servers",
     "kind": "mcp-server",
-    "description": "Local reverse-engineering CLI and MCP server (229 MCP tools, 180 CLI commands) for inspecting JavaScript/Electron bundles, WebMCP browser declarations, GGUF/safetensors AI model artifacts, CUDA/HIP/PTX GPU code objects, native binaries (Ghidra/Hopper/IDA), .NET, Android APKs, and building AgentEnv RL training environments from recorded web traffic.",
-    "repository_url": "https://github.com/morluto/rea",
-    "docs_url": "https://rea.tools/",
-    "install_command": "npx rea-agents setup",
-    "license": "MIT (REA core; external engines such as Hopper/IDA/JEB/Ghidra keep their own licenses)",
-    "license_status": "verified_mit_core_external_engines_separate",
-    "source_classification": "reported_open_source_candidate",
-    "commercial_model": "Free open-source MIT CLI/MCP; optional commercial decompilers licensed separately by their vendors.",
-    "integration_type": "mcp-stdio-or-http",
-    "status": "catalog_only",
+    "description": "229-tool Model Context Protocol (MCP) server for static and runtime reverse-engineering, WebMCP discovery, GGUF/safetensors model inspection, GPU kernel analysis, and AgentEnv RL environment synthesis.",
+    "repository_url": "https://rea.tools",
+    "docs_url": "https://github.com/morluto/rea/tree/main/docs",
+    "license": "MIT (REA core; optional third-party providers keep separate licenses)",
+    "license_status": "osi_permissive",
+    "source_classification": "open_source",
+    "integration_type": "mcp-stdio-server",
+    "status": "verified_mcp_manifest",
+    "mcp_server": true,
+    "language": "JavaScript",
     "capabilities": [
-      "mcp",
+      "mcp-server",
       "reverse-engineering",
       "webmcp-discovery",
-      "gguf-safetensors-inspection",
+      "model-artifact-inspection",
       "gpu-kernel-inspection",
-      "javascript-bundle-analysis",
-      "rl-environment-builder",
-      "binary-analysis"
+      "agentenv-rl-export"
     ],
-    "permissions": [
-      "Local filesystem read/analysis; optional browser CDP, ADB, or process observation requires explicit operator authorization"
-    ],
-    "risk_level": "high",
-    "source_name": "REA Direct MCP Inspection (rea-agents@6.8.0)",
-    "curation_source": "https://github.com/morluto/rea",
-    "warning": "Use strictly on software, bundles, models, and websites you own or are authorized to analyze. See upstream DISCLAIMER.md."
+    "source_name": "MCP Registry & morluto/rea"
   },
   {
     "id": "mcp-official-everything",

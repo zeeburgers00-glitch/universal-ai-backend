@@ -117,3 +117,85 @@ def test_channel_manifest_does_not_claim_every_connector_is_live():
     channels = _read_json(CATALOG / "channels.json")
     assert len(channels) >= 25
     assert all(item.get("integration_status") == "manifest_only" for item in channels)
+
+
+def test_control_plane_imports_and_exposes_worker_and_base44_routes():
+    from app.main import app
+
+    paths = {route.path for route in app.routes}
+    required = {
+        "/health",
+        "/explorer",
+        "/v1/runtime/capabilities",
+        "/v1/models/providers",
+        "/v1/voice/providers",
+        "/v1/voice/tts",
+        "/v1/voice/clone",
+        "/v1/media/jobs",
+        "/v1/workflows/{workflow_id}/run",
+        "/v1/agents/{agent_id}/run",
+        "/v1/channels/{channel_id}/actions",
+        "/v1/youtube/publish",
+        "/v1/desktop/actions",
+        "/v1/rea/status",
+        "/v1/rea/tools",
+        "/v1/rea/inspect",
+        "/v1/rea/jobs",
+        "/v1/integrations/base44/status",
+        "/v1/integrations/base44/sdk",
+        "/v1/integrations/base44/apps",
+        "/v1/integrations/base44/connect",
+        "/v1/discover/github",
+    }
+    assert required.issubset(paths)
+
+
+def test_worker_compose_is_valid_yaml():
+    import yaml
+
+    with (ROOT / "workers" / "docker-compose.yml").open("r", encoding="utf-8") as handle:
+        compose = yaml.safe_load(handle)
+    assert {
+        "redis", "voice-api", "voice-runner", "media-api", "media-runner",
+        "youtube-api", "youtube-runner", "channel-api", "agent-api", "agent-runner",
+        "automation-api", "automation-runner", "rea-api", "rea-runner",
+    }.issubset(set(compose["services"]))
+    assert compose["services"]["redis"]["environment"]["REDIS_PASSWORD"].startswith("${REDIS_PASSWORD:")
+
+
+def test_rea_tool_agent_and_workflow_are_cataloged():
+    registry = Registry.from_file()
+    rea = registry.get("github-morluto-rea")
+    assert rea is not None
+    assert rea["repository_url"] == "https://github.com/morluto/rea"
+    assert rea["integration_type"] == "optional-local-mcp-stdio"
+    assert "reverse-engineering" in rea["capabilities"]
+
+    agents = _read_json(CATALOG / "agents.json")
+    rea_agent = next(item for item in agents if item["id"] == "reverse-engineering-agent")
+    assert rea_agent["worker_service"] == "DESKTOP_AGENT_URL"
+    assert rea_agent["risk_level"] == "high"
+
+    workflows = _read_json(CATALOG / "workflows.json")
+    rea_workflow = next(item for item in workflows if item["id"] == "authorized-app-reverse-engineering")
+    assert rea_workflow["requires_human_approval"] is True
+    assert "rea-mcp" in rea_workflow["required_services"]
+
+
+def test_rea_path_scope_blocks_targets_outside_configured_root(monkeypatch, tmp_path):
+    import pytest
+    from workers.windows_agent.rea_mcp import ReaBridgeError, _validate_argument_scope
+
+    allowed = tmp_path / "authorized"
+    outside = tmp_path / "private"
+    allowed.mkdir()
+    outside.mkdir()
+    approved_target = allowed / "owned-app.exe"
+    approved_target.write_bytes(b"test")
+    denied_target = outside / "other-app.exe"
+    denied_target.write_bytes(b"test")
+    monkeypatch.setenv("REA_ALLOWED_TARGET_ROOTS", str(allowed))
+    _validate_argument_scope({"file_path": str(approved_target)})
+    with pytest.raises(ReaBridgeError, match="outside"):
+        _validate_argument_scope({"file_path": str(denied_target)})
+

@@ -1299,5 +1299,60 @@
     "execution_mode": "async_worker",
     "worker_service": "AUTOMATION_WORKER_URL",
     "warning": "Workflow template only. Requires configured workers, credentials, and explicit human approval for consequential steps."
+  },
+  {
+    "id": "authorized-app-reverse-engineering",
+    "name": "Authorized application reverse-engineering",
+    "category": "developer",
+    "description": "Inspect a user-owned or authorized app/artifact with a local REA MCP process, collect evidence and limitations, then prepare a feature reconstruction brief for the coding agent. Runtime inspection is opt-in and approval-gated.",
+    "required_services": [
+      "rea-mcp",
+      "desktop",
+      "agents"
+    ],
+    "risk_level": "high",
+    "requires_human_approval": true,
+    "required_inputs": [
+      "paired_device_id",
+      "target_path_or_asset_id",
+      "authorization_scope",
+      "analysis_goal"
+    ],
+    "steps": [
+      {
+        "id": "scope",
+        "agent_id": "reverse-engineering-agent",
+        "description": "Confirm target ownership/authorization, local path scope, allowed analysis mode and desired outcome."
+      },
+      {
+        "id": "inventory",
+        "agent_id": "reverse-engineering-agent",
+        "description": "Collect file/package metadata and determine suitable REA analysis families."
+      },
+      {
+        "id": "static-analysis",
+        "agent_id": "reverse-engineering-agent",
+        "description": "Call an allowlisted REA static-analysis tool and retain source evidence, tool name and analysis limits."
+      },
+      {
+        "id": "runtime-analysis",
+        "agent_id": "reverse-engineering-agent",
+        "description": "Optionally perform runtime observation only after separate approval and in a suitable isolated environment."
+      },
+      {
+        "id": "evidence-review",
+        "agent_id": "fact-checker",
+        "description": "Separate direct evidence from inference, record unknowns and verify target-specific restrictions."
+      },
+      {
+        "id": "implementation-brief",
+        "agent_id": "coding-agent",
+        "description": "Create a behavioral specification and test plan without copying protected source code/assets."
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "async_worker",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "Template only. REA must be installed on the paired device, its tool-name allowlist must be configured locally, and the target must be authorized. This workflow does not bypass DRM, license checks, access controls or proprietary-tool licenses."
   }
 ]

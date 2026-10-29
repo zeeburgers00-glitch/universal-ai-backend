@@ -11,6 +11,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from pydantic import BaseModel, Field
 
+from .base44_integration import (
+    Base44Client,
+    base44_status,
+    bootstrap_all_base44_apps,
+    build_base44_backend_function_code,
+    build_base44_frontend_sdk_code,
+    build_base44_hub_page_code,
+    connect_base44_app,
+)
 from .explorer_ui import EXPLORER_HTML
 from .github_discovery import list_discovery_presets, search_github_repositories
 from .providers import chat_with_provider, provider_status
@@ -40,12 +49,14 @@ app = FastAPI(
 )
 
 origins = [x.strip() for x in os.getenv("CORS_ORIGINS", "").split(",") if x.strip()]
-# Production must specify exact web origins; localhost defaults are for development only.
-if not origins and os.getenv("VERCEL") != "1":
+origin_regex = (os.getenv("CORS_ORIGIN_REGEX") or "").strip() or None
+# Production must specify exact web origins or a scoped origin regex; localhost defaults are for development only.
+if not origins and not origin_regex and os.getenv("VERCEL") != "1":
     origins = ["http://localhost:3000", "http://localhost:5173"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=origin_regex,
     allow_credentials=False,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "X-API-Key"],
@@ -159,6 +170,21 @@ class YouTubePublishRequest(BaseModel):
     idempotency_key: str | None = Field(default=None, min_length=8, max_length=120, pattern=r"^[A-Za-z0-9_-]+$")
 
 
+class ReaToolCallRequest(BaseModel):
+    paired_device_id: str = Field(min_length=3, max_length=300)
+    tool_name: str = Field(min_length=1, max_length=200, pattern=r"^[A-Za-z0-9._:/-]+$")
+    arguments: dict[str, Any] = Field(default_factory=dict)
+    user_approved: bool = False
+    authorization_scope_confirmed: bool = False
+    authorization_scope_note: str = Field(min_length=15, max_length=2000)
+
+
+class Base44ConnectRequest(BaseModel):
+    app_id: str = Field(min_length=6, max_length=80, pattern=r"^[A-Za-z0-9_-]+$")
+    backend_url: str | None = Field(default=None, max_length=300)
+    install_frontend_files: bool = True
+
+
 class DesktopActionRequest(BaseModel):
     paired_device_id: str = Field(min_length=3, max_length=300)
     action: Literal[
@@ -237,6 +263,8 @@ def root():
         "rea_status": "/v1/rea/status",
         "rea_tools": "/v1/rea/tools",
         "rea_inspect": "/v1/rea/inspect",
+        "rea_jobs": "/v1/rea/jobs",
+        "base44_integration": "/v1/integrations/base44/status",
         "providers": "/v1/models/providers",
         "workflows": "/v1/workflows",
         "agents": "/v1/agents",
@@ -592,18 +620,83 @@ async def desktop_action(request: DesktopActionRequest):
     return _worker_response(status_code, content_type, body)
 
 
+@app.post("/v1/rea/jobs", status_code=202, dependencies=[Depends(require_api_key)])
+async def create_rea_job(request: ReaToolCallRequest):
+    if not request.user_approved:
+        raise HTTPException(status_code=409, detail="Each REA MCP tool call requires explicit user_approved=true.")
+    if not request.authorization_scope_confirmed or not request.authorization_scope_note.strip():
+        raise HTTPException(status_code=400, detail="Confirm authorization for the target and describe the scope before running REA.")
+    payload = request.model_dump()
+    status_code, content_type, body = await post_worker("desktop", "/v1/rea/jobs", payload, timeout_seconds=25)
+    if "application/json" not in content_type:
+        raise HTTPException(status_code=502, detail="REA worker returned a non-JSON job response")
+    try:
+        result = json.loads(body.decode("utf-8"))
+    except (ValueError, UnicodeDecodeError):
+        raise HTTPException(status_code=502, detail="REA worker returned invalid JSON")
+    if isinstance(result, dict) and result.get("task_id"):
+        result["poll_url"] = f"/v1/tasks/desktop-rea/{result['task_id']}"
+    return JSONResponse(status_code=status_code, content=result)
+
+
+@app.get("/v1/integrations/base44/status")
+def get_base44_integration_status():
+    return base44_status()
+
+
+@app.get("/v1/integrations/base44/sdk")
+def get_base44_integration_sdk():
+    return {
+        "backend_function_name": "universalAiBackend",
+        "backend_function_entry": build_base44_backend_function_code(),
+        "frontend_sdk_path": "src/lib/universalAiBackend.js",
+        "frontend_sdk_code": build_base44_frontend_sdk_code(),
+        "hub_page_path": "src/pages/UniversalAiHub.jsx",
+        "hub_page_code": build_base44_hub_page_code(),
+    }
+
+
+@app.get("/v1/integrations/base44/apps", dependencies=[Depends(require_api_key)])
+async def list_base44_apps():
+    client = Base44Client()
+    apps = await client.list_apps(limit=50)
+    return {"total": len(apps), "items": apps}
+
+
+@app.post("/v1/integrations/base44/connect", dependencies=[Depends(require_api_key)])
+async def connect_base44_endpoint(request: Base44ConnectRequest):
+    return await connect_base44_app(
+        request.app_id,
+        backend_url=request.backend_url,
+        install_frontend_files=request.install_frontend_files,
+    )
+
+
+@app.get("/v1/integrations/base44/bootstrap")
+async def bootstrap_base44_endpoint(nonce: str = Query(min_length=24, max_length=128), app_id: str | None = None):
+    import secrets as _secrets
+
+    expected_nonce = (os.getenv("BASE44_BOOTSTRAP_NONCE") or "").strip()
+    if not expected_nonce:
+        raise HTTPException(status_code=503, detail="One-time Base44 bootstrap is disabled; use POST /v1/integrations/base44/connect with X-API-Key.")
+    if not _secrets.compare_digest(nonce, expected_nonce):
+        raise HTTPException(status_code=401, detail="Invalid bootstrap nonce")
+    return await bootstrap_all_base44_apps(target_app_id=app_id)
+
+
 @app.get("/v1/tasks/{service}/{task_id}", dependencies=[Depends(require_api_key)])
 async def task_status(service: str, task_id: str):
     service_alias = {
         "voice": "voice", "media": "media", "automation": "automation",
-        "agents": "agents", "desktop": "desktop", "youtube": "youtube",
-        "channels": "channels", "rea": "rea",
+        "agents": "agents", "desktop": "desktop", "desktop-rea": "desktop",
+        "youtube": "youtube", "channels": "channels", "rea": "rea",
     }
     if service not in service_alias:
         raise HTTPException(status_code=404, detail="Unknown task service")
     if not re.fullmatch(r"[A-Za-z0-9._:-]{1,180}", task_id):
         raise HTTPException(status_code=400, detail="Invalid task identifier")
-    status_code, content_type, body = await get_worker(service_alias[service], f"/v1/tasks/{task_id}", timeout_seconds=15)
+    worker_path = f"/v1/rea/tasks/{task_id}" if service == "desktop-rea" else f"/v1/tasks/{task_id}"
+    status_code, content_type, body = await get_worker(service_alias[service], worker_path, timeout_seconds=15)
     return _worker_response(status_code, content_type, body)
 
 

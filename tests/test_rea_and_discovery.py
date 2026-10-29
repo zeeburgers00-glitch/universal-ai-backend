@@ -163,3 +163,26 @@ def test_discover_categories_endpoint():
     assert "reverse-engineering-ai" in preset_ids
     assert "local-edge-ai" in preset_ids
     assert "education-learning-ai" in preset_ids
+
+
+def test_base44_integration_routes_and_generated_sdk(monkeypatch):
+    status = client.get("/v1/integrations/base44/status")
+    assert status.status_code == 200
+    assert status.json()["integration"] == "base44"
+    assert "tools" in status.json()["supported_actions"]
+    assert "rea_tools" in status.json()["supported_actions"]
+
+    sdk = client.get("/v1/integrations/base44/sdk")
+    assert sdk.status_code == 200
+    sdk_json = sdk.json()
+    assert sdk_json["backend_function_name"] == "universalAiBackend"
+    assert "createClientFromRequest" in sdk_json["backend_function_entry"]
+    assert "UNIVERSAL_AI_BACKEND_URL" in sdk_json["backend_function_entry"]
+    assert "universalAiBackend" in sdk_json["frontend_sdk_code"]
+    assert "UniversalAiHub" in sdk_json["hub_page_code"]
+
+    # Auth required for listing/connecting Base44 apps
+    monkeypatch.setenv("BACKEND_API_KEY", "test-secret-key-for-base44-routes")
+    unauth = client.get("/v1/integrations/base44/apps")
+    assert unauth.status_code == 401
+

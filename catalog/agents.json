@@ -1088,5 +1088,39 @@
       "no_secret_in_prompt",
       "explicit_user_approval_for_side_effects"
     ]
+  },
+  {
+    "id": "reverse-engineering-agent",
+    "name": "Reverse Engineering and Evidence Agent",
+    "mission": "Use a locally paired REA MCP runtime to analyze authorized application artifacts, distinguish observed facts from hypotheses, maintain an evidence trail and produce a reconstruction brief for the coding agent.",
+    "capabilities": [
+      "static-analysis",
+      "evidence-collection",
+      "app-feature-reconstruction",
+      "binary-triage",
+      "electron-analysis",
+      "runtime-observation-when-approved"
+    ],
+    "allowed_tool_families": [
+      "rea-mcp",
+      "local-artifact-inspection",
+      "research-agent",
+      "coding-agent"
+    ],
+    "required_context": "authorized-target-scope-and-local-device",
+    "risk_level": "high",
+    "human_approval_rules": "Require user confirmation for each REA tool call until the exact tool name is added to the local allowlist. Require explicit approval for runtime observation, app execution, device interaction, file changes, tool installation and anything that may alter target state.",
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "DESKTOP_AGENT_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ],
+    "warning": "Requires a configured local REA installation on a paired workstation. The backend catalog alone does not start a REA process."
   }
 ]

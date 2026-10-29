@@ -12,6 +12,14 @@ from urllib.parse import urlparse
 from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 
+try:
+    from .rea_jobs import initialize_rea_jobs, read_rea_job, shutdown_rea_jobs, submit_rea_job
+    from .rea_mcp import ReaBridgeError, list_rea_tools
+except ImportError:
+    # Also supports the documented `uvicorn app:app` invocation from this directory.
+    from rea_jobs import initialize_rea_jobs, read_rea_job, shutdown_rea_jobs, submit_rea_job
+    from rea_mcp import ReaBridgeError, list_rea_tools
+
 app = FastAPI(title="Universal AI Windows Agent", version="0.1.0")
 WORKSPACE = Path(os.getenv("WINDOWS_AGENT_WORKSPACE", str(Path.home() / "UniversalAIAgentWorkspace"))).resolve()
 WORKSPACE.mkdir(parents=True, exist_ok=True)
@@ -33,6 +41,15 @@ class DesktopAction(BaseModel):
     action: str = Field(min_length=3, max_length=80, pattern=r"^[a-zA-Z0-9_-]+$")
     parameters: dict[str, Any] = Field(default_factory=dict)
     user_approved: bool = False
+
+
+class ReaToolCallRequest(BaseModel):
+    paired_device_id: str = Field(min_length=3, max_length=300)
+    tool_name: str = Field(min_length=1, max_length=200, pattern=r"^[A-Za-z0-9._:/-]+$")
+    arguments: dict[str, Any] = Field(default_factory=dict)
+    user_approved: bool = False
+    authorization_scope_confirmed: bool = False
+    authorization_scope_note: str = Field(min_length=15, max_length=2000)
 
 
 def _require_windows() -> None:
@@ -73,6 +90,16 @@ def _require_approval(req: DesktopAction, message: str = "This desktop action re
         raise HTTPException(status_code=409, detail=message)
 
 
+@app.on_event("startup")
+def _startup_initialize_rea_jobs():
+    initialize_rea_jobs()
+
+
+@app.on_event("shutdown")
+async def _shutdown_rea_jobs():
+    await shutdown_rea_jobs()
+
+
 @app.get("/health")
 def health():
     return {
@@ -83,6 +110,48 @@ def health():
         "workspace_only_file_access": True,
         "arbitrary_shell_enabled": False,
     }
+
+
+@app.get("/v1/rea/tools", dependencies=[Depends(require_agent_key)])
+async def rea_tool_catalog():
+    _require_windows()
+    if not os.getenv("WINDOWS_AGENT_DEVICE_ID", "").strip():
+        raise HTTPException(status_code=503, detail="WINDOWS_AGENT_DEVICE_ID is not configured")
+    try:
+        return await list_rea_tools()
+    except ReaBridgeError as exc:
+        detail = str(exc)
+        status = 503 if any(word in detail.lower() for word in ("disabled", "not configured", "not found", "not in rea_entry_script", "node.js was not found")) else 502
+        raise HTTPException(status_code=status, detail=detail) from exc
+
+
+@app.post("/v1/rea/jobs", status_code=202, dependencies=[Depends(require_agent_key)])
+async def create_rea_job(req: ReaToolCallRequest):
+    _require_windows()
+    configured_device = os.getenv("WINDOWS_AGENT_DEVICE_ID", "").strip()
+    if not configured_device or req.paired_device_id != configured_device:
+        raise HTTPException(status_code=403, detail="Paired device ID does not match this Windows agent")
+    if not req.user_approved:
+        raise HTTPException(status_code=409, detail="Each REA MCP tool call requires explicit user approval")
+    if not req.authorization_scope_confirmed or not req.authorization_scope_note.strip():
+        raise HTTPException(status_code=400, detail="Confirm authorization for the target and describe the scope before running REA")
+    try:
+        return submit_rea_job(req.tool_name, req.arguments, req.authorization_scope_note)
+    except ReaBridgeError as exc:
+        detail = str(exc)
+        status = 429 if "queue has reached" in detail.lower() else 403 if any(word in detail.lower() for word in ("allowlist", "outside", "allowed_target_roots", "allowed_url_hosts", "disabled")) else 503 if any(word in detail.lower() for word in ("not configured", "not found", "node.js")) else 400
+        raise HTTPException(status_code=status, detail=detail) from exc
+
+
+@app.get("/v1/rea/tasks/{task_id}", dependencies=[Depends(require_agent_key)])
+def get_rea_task(task_id: str):
+    _require_windows()
+    if not task_id.startswith("rea-") or not task_id[4:].isalnum() or len(task_id) > 64:
+        raise HTTPException(status_code=400, detail="Invalid REA task identifier")
+    result = read_rea_job(task_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="REA task not found")
+    return result
 
 
 @app.post("/v1/desktop/actions", dependencies=[Depends(require_agent_key)])
