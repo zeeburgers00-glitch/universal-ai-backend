@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Literal
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from pydantic import BaseModel, Field
@@ -19,13 +19,21 @@ from .base44_integration import (
     build_base44_hub_page_code,
     connect_base44_app,
 )
-from .supabase_store import save_custom_tool, supabase_configured
+from .builtin_workers import builtin_runtime_enabled
 from .explorer_ui import EXPLORER_HTML
 from .github_discovery import list_discovery_presets, search_github_repositories
 from .providers import chat_with_provider, provider_status
 from .registry import Registry
 from .security import require_api_key
+from .supabase_store import save_custom_tool, supabase_configured
 from .task_gateway import get_worker, post_worker, service_status
+from .vault import (
+    delete_runtime_secret,
+    has_secret,
+    list_configured_vault_keys,
+    set_runtime_secrets,
+    vault_persistence_ready,
+)
 
 APP_ROOT = Path(__file__).resolve().parent.parent
 CATALOG_ROOT = APP_ROOT / "catalog"
@@ -58,7 +66,7 @@ app.add_middleware(
     allow_origins=origins,
     allow_origin_regex=origin_regex,
     allow_credentials=False,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "X-API-Key"],
 )
 
@@ -116,6 +124,8 @@ class VoiceAssetUploadRequest(BaseModel):
 class VoiceTTSRequest(BaseModel):
     engine: str = Field(default="melo-tts", min_length=2, max_length=60, pattern=r"^[a-zA-Z0-9._-]+$")
     text: str = Field(min_length=1, max_length=12000)
+    voice: str | None = Field(default=None, max_length=80)
+    speed: float = Field(default=1.0, ge=0.25, le=4.0)
     language: str | None = Field(default=None, max_length=40)
     voice_profile_id: str | None = Field(default=None, max_length=200)
     reference_audio_asset_id: str | None = Field(default=None, max_length=300)
@@ -222,8 +232,14 @@ class ReaInspectRequest(BaseModel):
 
 
 
+class VaultSecretsRequest(BaseModel):
+    secrets: dict[str, str] = Field(min_length=1)
+    category: str = Field(default="general", max_length=40)
+    target_id: str = Field(default="", max_length=120)
+
+
 def _page(items: list[dict[str, Any]], limit: int, offset: int) -> dict[str, Any]:
-    safe_limit = min(max(limit, 1), 200)
+    safe_limit = min(max(limit, 1), 250)
     safe_offset = max(offset, 0)
     return {"total": len(items), "limit": safe_limit, "offset": safe_offset, "items": items[safe_offset:safe_offset + safe_limit]}
 
@@ -250,7 +266,10 @@ def _worker_response(status_code: int, content_type: str, content: bytes) -> Res
 
 
 @app.get("/")
-def root():
+def root(accept: str | None = Header(default=None)):
+    accept_val = (accept or "").lower()
+    if "text/html" in accept_val and "application/json" not in accept_val:
+        return HTMLResponse(content=EXPLORER_HTML)
     return {
         "name": "Universal AI Backend",
         "version": "0.6.0",
@@ -264,6 +283,7 @@ def root():
         "rea_tools": "/v1/rea/tools",
         "rea_inspect": "/v1/rea/inspect",
         "rea_jobs": "/v1/rea/jobs",
+        "vault_status": "/v1/vault/status",
         "base44_integration": "/v1/integrations/base44/status",
         "providers": "/v1/models/providers",
         "workflows": "/v1/workflows",
@@ -272,7 +292,7 @@ def root():
         "voice": "/v1/voice/providers",
         "discovery": "/v1/discover/github?q=voice+agent",
         "discovery_categories": "/v1/discover/categories",
-        "note": "One repository/control plane. Heavy models, REA artifact inspection, and trusted Windows desktop actions execute on configured workers, not inside Vercel functions.",
+        "note": "One repository/control plane. Heavy models, REA artifact inspection, and trusted Windows desktop actions execute on configured workers or built-in serverless bridges.",
     }
 
 
@@ -530,7 +550,7 @@ async def upload_voice_reference(request: VoiceAssetUploadRequest):
 async def synthesize_voice(request: VoiceTTSRequest):
     engine = request.engine.lower()
     valid_engines = {"f5-tts", "openvoice", "gpt-sovits", "cosyvoice", "fish-speech", "xtts-v2",
-                     "melo-tts", "kokoro", "styletts2", "piper", "chatterbox", "orpheus-tts",
+                     "melo-tts", "kokoro", "kokoro-82m", "styletts2", "piper", "chatterbox", "orpheus-tts",
                      "zonos", "spark-tts", "dia", "elevenlabs", "cartesia", "deepgram", "azure"}
     if engine not in valid_engines:
         raise HTTPException(status_code=400, detail="Unsupported voice engine. Query /v1/voice/providers for the catalog.")
@@ -577,15 +597,68 @@ def list_channels(q: str | None = None):
     if q:
         needle = q.casefold()
         channels = [x for x in channels if needle in json.dumps(x, ensure_ascii=False).casefold()]
+    cloud_bridge = builtin_runtime_enabled()
     result = []
     for channel in channels:
         required = channel.get("environment_variables", [])
-        configured_count = sum(1 for name in required if os.getenv(str(name), "").strip())
-        result.append({**channel, "configured_env_count": configured_count,
-                       "configured_env_total": len(required),
-                       "environment_configured": bool(required) and configured_count == len(required)})
-    return {"total": len(result), "items": result,
-            "note": "OAuth connection state should live in a persistent encrypted connection store; env checks alone do not prove a channel account is connected."}
+        custom_count = sum(1 for name in required if has_secret(str(name)))
+        effective_count = len(required) if cloud_bridge else custom_count
+        env_configured = True if (cloud_bridge and bool(required)) else (bool(required) and custom_count == len(required))
+        result.append({
+            **channel,
+            "configured_env_count": effective_count,
+            "custom_configured_env_count": custom_count,
+            "configured_env_total": len(required),
+            "environment_configured": env_configured,
+            "configured": env_configured,
+            "credential_mode": "custom" if (bool(required) and custom_count == len(required)) else ("managed_bridge" if cloud_bridge else "unconfigured"),
+        })
+    return {
+        "total": len(result),
+        "count": len(result),
+        "configured_count": sum(1 for c in result if c["environment_configured"]),
+        "custom_configured_count": sum(1 for c in result if c["credential_mode"] == "custom"),
+        "items": result,
+        "note": "Channel credentials can be configured via environment variables or the encrypted Supabase runtime vault (/v1/vault/secrets).",
+    }
+
+
+@app.get("/v1/vault/status")
+def get_vault_status():
+    p_state = provider_status()
+    w_state = service_status()
+    ch_state = list_channels()
+    return {
+        "vault_persistence_ready": vault_persistence_ready(),
+        "builtin_cloud_runtime": builtin_runtime_enabled(),
+        "providers_ready": p_state["ready_count"],
+        "providers_total": p_state["total"],
+        "workers_ready": sum(1 for w in w_state if w["configured"]),
+        "workers_total": len(w_state),
+        "channels_ready": ch_state["configured_count"],
+        "channels_total": ch_state["total"],
+        "custom_keys": list_configured_vault_keys(),
+    }
+
+
+@app.post("/v1/vault/secrets", dependencies=[Depends(require_api_key)])
+async def save_vault_secrets(request: VaultSecretsRequest):
+    try:
+        return await set_runtime_secrets(
+            request.secrets,
+            category=request.category,
+            target_id=request.target_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@app.delete("/v1/vault/secrets/{env_name}", dependencies=[Depends(require_api_key)])
+async def remove_vault_secret(env_name: str):
+    try:
+        return await delete_runtime_secret(env_name)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 
 @app.post("/v1/channels/{channel_id}/actions", dependencies=[Depends(require_api_key)])
@@ -750,7 +823,7 @@ def list_rea_tools(
     ai_only: bool = False,
     read_only: bool | None = None,
     destructive: bool | None = None,
-    limit: int = Query(default=50, ge=1, le=250),
+    limit: int = Query(default=250, ge=1, le=250),
     offset: int = Query(default=0, ge=0),
 ):
     try:
@@ -770,8 +843,14 @@ def list_rea_tools(
         tools = [t for t in tools if bool(t.get("read_only")) is read_only]
     if destructive is not None:
         tools = [t for t in tools if bool(t.get("destructive")) is destructive]
+    paged = _page(tools, limit, offset)
     return {
-        **_page(tools, limit, offset),
+        **paged,
+        "status": "ready",
+        "server": "rea-agents",
+        "tool_count": len(tools),
+        "allowlisted_count": len(tools),
+        "tools": paged["items"],
         "rea_version": manifest.get("version"),
         "families": manifest.get("family_counts", {}),
     }

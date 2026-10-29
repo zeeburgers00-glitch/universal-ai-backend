@@ -43,6 +43,10 @@ SUPPORTED_BRIDGE_ACTIONS = [
     "discover_github",
     "chat",
     "task_status",
+    "vault_status",
+    "vault_save",
+    "vault_delete",
+    "workers_status",
 ]
 
 
@@ -465,6 +469,8 @@ const PUBLIC_READ_ACTIONS = new Set([
   "voice_models",
   "discover_categories",
   "discover_github",
+  "vault_status",
+  "workers_status",
 ]);
 
 function buildQuery(params) {{
@@ -646,6 +652,27 @@ export default async function (req) {{
       break;
     case "task_status":
       path = `/v1/tasks/${{encodeURIComponent(String(payload.service || "rea"))}}/${{encodeURIComponent(String(payload.task_id || ""))}}`;
+      needsKey = true;
+      break;
+    case "workers_status":
+      path = "/v1/workers/status";
+      break;
+    case "vault_status":
+      path = "/v1/vault/status";
+      break;
+    case "vault_save":
+      method = "POST";
+      path = "/v1/vault/secrets";
+      jsonBody = {{
+        secrets: payload.secrets || {{}},
+        category: payload.category || "general",
+        target_id: payload.target_id || "",
+      }};
+      needsKey = true;
+      break;
+    case "vault_delete":
+      method = "DELETE";
+      path = `/v1/vault/secrets/${{encodeURIComponent(String(payload.env_name || ""))}}`;
       needsKey = true;
       break;
     default:
