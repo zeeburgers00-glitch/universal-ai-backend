@@ -35,13 +35,14 @@ Do not use a `VITE_` prefix for either secret. Vite variables are public browser
 
 ## Metricool and YouTube
 
-Metricool is the connected-channel scheduling and analytics layer, not a YouTube channel creator. The channel owner connects the existing YouTube channel inside Metricool. The backend adapter can then list Metricool brands, scheduled posts and YouTube categories using `METRICOOL_API_TOKEN`, `METRICOOL_USER_ID` and `METRICOOL_BLOG_ID`. Metricool API access requires its Advanced or Custom plan. YouTube channel connection requires the channel Owner role.
+Metricool is the connected-channel scheduling and analytics layer, not a YouTube channel creator. The channel owner connects the existing YouTube channel inside Metricool. The backend adapter can then list Metricool brands, scheduled posts and YouTube categories using `METRICOOL_API_TOKEN`, `METRICOOL_USER_ID` and `METRICOOL_BLOG_ID`. Metricool API access requires its Advanced or Custom plan. YouTube channel connection requires the channel Owner role. The scheduling endpoint expects a Metricool media ID, so the video must first be uploaded to Metricool's media service; the backend does not pretend a local Pexels URL is already a Metricool media asset.
 
 The current API adapter provides:
 - `GET /v1/integrations/metricool/status`
 - `GET /v1/integrations/metricool/brands`
 - `GET /v1/integrations/metricool/youtube/categories`
 - `GET /v1/integrations/metricool/scheduled-posts?start=...&end=...`
+- `POST /v1/integrations/metricool/schedule-youtube` — schedule a YouTube video/Short using previously uploaded Metricool media IDs; requires explicit `user_approved=true`.
 
 Use the official YouTube Data API worker for channel metadata/branding and video upload where Metricool's documented API does not expose a needed channel-management action. Do not claim a channel was created: YouTube does not provide a general API method for creating new channels.
 
