@@ -149,24 +149,53 @@ export default function YouTubePublisher() {
         },
         status,
       };
-      const boundary = "youtubeStudio" + crypto.randomUUID().replace(/-/g, "");
-      const body = new Blob([
-        "--" + boundary + "\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n",
-        JSON.stringify(metadata),
-        "\r\n--" + boundary + "\r\nContent-Type: " + (file.type || "video/mp4") + "\r\n\r\n",
-        file,
-        "\r\n--" + boundary + "--",
-      ]);
-      const response = await fetch("https://www.googleapis.com/upload/youtube/v3/videos?uploadType=multipart&part=snippet,status", {
+      const mimeType = file.type || "video/webm";
+      const sessionResponse = await fetch("https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status", {
         method: "POST",
         headers: {
           Authorization: "Bearer " + token,
-          "Content-Type": "multipart/related; boundary=" + boundary,
+          "Content-Type": "application/json; charset=UTF-8",
+          "X-Upload-Content-Type": mimeType,
+          "X-Upload-Content-Length": String(file.size),
         },
-        body,
+        body: JSON.stringify(metadata),
       });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data.id) throw new Error(data.error?.message || "YouTube upload failed (HTTP " + response.status + "). Check API quota and OAuth permissions.");
+      if (!sessionResponse.ok) {
+        const details = await sessionResponse.json().catch(() => ({}));
+        throw new Error(details.error?.message || "YouTube could not start the resumable upload session (HTTP " + sessionResponse.status + ").");
+      }
+      const uploadUrl = sessionResponse.headers.get("Location");
+      if (!uploadUrl || !uploadUrl.startsWith("https://")) throw new Error("YouTube did not return a valid resumable upload URL.");
+
+      const chunkSize = 8 * 1024 * 1024;
+      let uploadResult: Record<string, unknown> | null = null;
+      for (let offset = 0; offset < file.size; ) {
+        const end = Math.min(file.size, offset + chunkSize);
+        const chunkResponse = await fetch(uploadUrl, {
+          method: "PUT",
+          headers: {
+            Authorization: "Bearer " + token,
+            "Content-Type": mimeType,
+            "Content-Range": "bytes " + offset + "-" + (end - 1) + "/" + file.size,
+          },
+          body: file.slice(offset, end),
+        });
+        if (chunkResponse.status === 308) {
+          offset = end;
+          setProgress(Math.round((offset / file.size) * 100));
+          continue;
+        }
+        const data = await chunkResponse.json().catch(() => ({}));
+        if (!chunkResponse.ok || !data.id) {
+          throw new Error(data.error?.message || "YouTube video upload failed (HTTP " + chunkResponse.status + ").");
+        }
+        uploadResult = data as Record<string, unknown>;
+        offset = end;
+        setProgress(100);
+        break;
+      }
+      if (!uploadResult || typeof uploadResult.id !== "string") throw new Error("YouTube upload ended without returning a video ID.");
+      const data = uploadResult;
       const url = "https://www.youtube.com/watch?v=" + data.id;
       setPublishedUrl(url);
       setProgress(100);
