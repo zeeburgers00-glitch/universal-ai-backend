@@ -5,6 +5,8 @@ import { AudioLines, CheckCircle2, Copy, Download, Image as ImageIcon, LoaderCir
 
 type Model = { id: string; name?: string; description?: string; video_capabilities?: string[]; input_modalities?: string[]; min_duration?: number; max_duration?: number; paid_only?: boolean; pricing?: Record<string, string> };
 type Models = { text: Model[]; image: Model[]; video: Model[]; audio: Model[] };
+type GeneratedClip = { id: string; url: string; blob: Blob; seconds: number; format: "longform" | "shorts"; prompt: string };
+type CaptionCue = { start: number; end: number; text: string };
 
 const API = "https://gen.pollinations.ai";
 const AUTH = "https://enter.pollinations.ai";
@@ -68,7 +70,7 @@ export default function AIStudio() {
   const [expiresAt, setExpiresAt] = useState(0);
   const [models, setModels] = useState<Models>(DEFAULT_MODELS);
   const [catalogLoading, setCatalogLoading] = useState(true);
-  const [tab, setTab] = useState<"script" | "seo" | "thumbnail" | "avatar" | "voice">("avatar");
+  const [tab, setTab] = useState<"script" | "seo" | "thumbnail" | "avatar" | "voice" | "editor">("avatar");
   const [textModel, setTextModel] = useState(DEFAULT_MODELS.text[0].id);
   const [imageModel, setImageModel] = useState(DEFAULT_MODELS.image[0].id);
   const [videoModel, setVideoModel] = useState("");
@@ -83,6 +85,10 @@ export default function AIStudio() {
   const [referenceImageUrl, setReferenceImageUrl] = useState("");
   const [referenceImageFile, setReferenceImageFile] = useState<File | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [generatedClips, setGeneratedClips] = useState<GeneratedClip[]>([]);
+  const [captionCues, setCaptionCues] = useState<CaptionCue[]>([]);
+  const [finalVideoUrl, setFinalVideoUrl] = useState("");
+  const [renderProgress, setRenderProgress] = useState(0);
   const [shareReferenceMedia, setShareReferenceMedia] = useState(false);
   const [referenceAudioUrl, setReferenceAudioUrl] = useState("");
   const [videoDuration, setVideoDuration] = useState("5");
