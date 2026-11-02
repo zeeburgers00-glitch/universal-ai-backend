@@ -43,6 +43,29 @@ const jobSchema=z.object({topic:z.string().min(8).max(300)}).strict();
 function cronFor(time:string):string{const [hour,minute]=time.split(":");return minute+" "+hour+" * * *";}
 function webUrl(path:string):string{return (process.env.WEB_APP_URL||"https://localhost:3000").replace(/\/$/,"")+path;}
 
+async function getProviderStatus(userId:string){
+  const clientDb=requireDb();
+  const {data:connection}=await clientDb.from("youtube_connections").select("channel_id").eq("user_id",userId).maybeSingle();
+  let redisReady=false,workerOnline=false,storageReady=false;
+  if(redis){
+    try{redisReady=(await redis.ping())==="PONG";workerOnline=Boolean(await redis.get("youtube-worker:heartbeat"))}catch{}
+  }
+  if(db){try{const {data,error}=await db.storage.getBucket("youtube-media");storageReady=!error&&Boolean(data)}catch{}}
+  const configured=(...names:string[])=>names.every(name=>Boolean(process.env[name]));
+  return {
+    model:{configured:configured("MODEL_API_KEY","MODEL_NAME"),detail:"Configurable OpenAI-compatible model endpoint"},
+    research:{configured:configured("TAVILY_API_KEY"),detail:"Tavily research provider"},
+    stock_video:{configured:configured("PEXELS_API_KEY"),detail:"Pexels licensed video footage"},
+    voice:{configured:configured("ELEVENLABS_API_KEY","ELEVENLABS_VOICE_ID"),detail:"ElevenLabs voice generation"},
+    captions:{configured:configured("OPENAI_API_KEY"),detail:"Whisper speech transcription"},
+    youtube:{configured:Boolean(connection?.channel_id)&&configured("GOOGLE_CLIENT_ID","GOOGLE_CLIENT_SECRET","GOOGLE_REDIRECT_URI"),detail:connection?.channel_id?"Channel connected":"Channel OAuth required"},
+    redis:{configured:redisReady,detail:redisReady?"Queue connection healthy":"Redis unavailable"},
+    worker:{configured:workerOnline,detail:workerOnline?"Worker heartbeat active":"Worker offline or heartbeat expired"},
+    storage:{configured:storageReady,detail:storageReady?"Private media bucket ready":"Private media bucket unavailable"},
+    runpod:{configured:configured("RUNPOD_ENDPOINT_URL","RUNPOD_API_KEY"),detail:"Optional GPU endpoint"}
+  };
+}
+
 await app.register(helmet,{contentSecurityPolicy:false});
 await app.register(cors,{origin:(process.env.CORS_ORIGINS||"").split(",").map(x=>x.trim()).filter(Boolean),credentials:false});
 await app.register(rateLimit,{max:120,timeWindow:"1 minute"});
@@ -122,7 +145,7 @@ app.get("/v1/dashboard",{preHandler:requireUser},async(req)=>{
   ]);
   if(conn.error||settings.error||jobs.error||usage.error)throw new Error("Could not load dashboard data");
   const spent=(usage.data||[]).reduce((sum,row)=>sum+Number(row.cost_usd||0),0);
-  return {channel:conn.data?{id:conn.data.channel_id,title:conn.data.channel_title,thumbnail:conn.data.channel_thumbnail}:null,settings:settings.data||{},jobs:jobs.data||[],usage:{today_usd:Number(spent.toFixed(4))}};
+  return {channel:conn.data?{id:conn.data.channel_id,title:conn.data.channel_title,thumbnail:conn.data.channel_thumbnail}:null,settings:settings.data||{},jobs:jobs.data||[],usage:{today_usd:Number(spent.toFixed(4))},providers:await getProviderStatus(userId)};
 });
 app.post("/v1/jobs",{preHandler:requireUser},async(req,reply)=>{
   const parsed=jobSchema.safeParse(req.body);
@@ -138,6 +161,30 @@ app.post("/v1/jobs",{preHandler:requireUser},async(req,reply)=>{
     await jobsQueue.add("produce-video",{jobId:data.id,userId,topic:parsed.data.topic},{jobId:data.id,attempts:3,backoff:{type:"exponential",delay:30000},removeOnComplete:100,removeOnFail:200});
     return reply.code(202).send({job_id:data.id,status:"queued"});
   }catch(e){req.log.error({err:e},"Could not queue production job");return reply.code(503).send({message:e instanceof Error?e.message:"Production queue unavailable"})}
+});
+app.get("/v1/providers/status",{preHandler:requireUser},async(req)=>({providers:await getProviderStatus(uid(req))}));
+app.get("/v1/jobs/:jobId/events",{preHandler:requireUser},async(req,reply)=>{
+  const {jobId}=req.params as {jobId:string};
+  const clientDb=requireDb(),userId=uid(req);
+  const {data:job,error:jobError}=await clientDb.from("production_jobs").select("id").eq("id",jobId).eq("user_id",userId).maybeSingle();
+  if(jobError||!job)return reply.code(404).send({message:"Production job not found"});
+  const {data,error}=await clientDb.from("audit_events").select("id,event_type,stage,status,message,metadata,created_at").eq("job_id",jobId).eq("user_id",userId).order("created_at",{ascending:true}).limit(200);
+  if(error)throw new Error("Could not load production audit events");
+  return {events:data||[]};
+});
+app.post("/v1/jobs/:jobId/retry",{preHandler:requireUser},async(req,reply)=>{
+  const {jobId}=req.params as {jobId:string};
+  const clientDb=requireDb(),jobsQueue=requireQueue(),userId=uid(req);
+  const {data:job,error}=await clientDb.from("production_jobs").select("id,topic,status,upload_started_at,youtube_video_id").eq("id",jobId).eq("user_id",userId).maybeSingle();
+  if(error||!job)return reply.code(404).send({message:"Production job not found"});
+  if(!["failed","blocked"].includes(job.status))return reply.code(409).send({message:"Only failed or blocked jobs can be retried"});
+  if(job.upload_started_at||job.youtube_video_id)return reply.code(409).send({message:"Upload may already have reached YouTube. Automatic retry is blocked to prevent duplicate uploads."});
+  const {error:updateError}=await clientDb.from("production_jobs").update({status:"queued",stage:"retry_queued",progress:0,error:null,updated_at:new Date().toISOString(),completed_at:null}).eq("id",jobId).eq("user_id",userId);
+  if(updateError)throw new Error("Could not reset failed job for retry");
+  const queueId="retry-"+jobId+"-"+Date.now();
+  await jobsQueue.add("produce-video",{jobId,userId,topic:job.topic},{jobId:queueId,attempts:2,backoff:{type:"exponential",delay:30000},removeOnComplete:100,removeOnFail:200});
+  await clientDb.from("audit_events").insert({user_id:userId,job_id:jobId,event_type:"job_retry",stage:"retry_queued",status:"queued",message:"User requested a retry. Duplicate-upload guard remains enabled."});
+  return reply.code(202).send({job_id:jobId,status:"queued",retry_queued:true});
 });
 app.post("/v1/automation/enable",{preHandler:requireUser},async(req,reply)=>{
   const clientDb=requireDb(),jobsQueue=requireQueue(),userId=uid(req);

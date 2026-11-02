@@ -30,5 +30,7 @@ const worker=new Worker("youtube-production",processJob,{connection,concurrency:
 worker.on("completed",job=>console.info("youtube production job completed",job.id,job.name));
 worker.on("failed",(job,error)=>console.error("youtube production job failed",job?.id,job?.name,error.message.slice(0,300)));
 console.info("YouTube production worker started");
-async function shutdown(){await worker.close();await queue.close();await connection.quit();process.exit(0);}
+const heartbeat=setInterval(()=>{void connection.set("youtube-worker:heartbeat",new Date().toISOString(),"EX",60).catch(()=>undefined)},20000);
+void connection.set("youtube-worker:heartbeat",new Date().toISOString(),"EX",60).catch(()=>undefined);
+async function shutdown(){clearInterval(heartbeat);await worker.close();await queue.close();await connection.quit();process.exit(0);}
 process.on("SIGTERM",shutdown);process.on("SIGINT",shutdown);

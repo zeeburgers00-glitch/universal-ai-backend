@@ -5,7 +5,7 @@
 - studio/: Next.js App Router frontend intended for Vercel.
 - services/youtube-api/: Fastify API intended for Railway. It verifies Supabase access tokens, owns Google OAuth, encrypts refresh tokens, writes user-scoped rows and enqueues work.
 - services/youtube-worker/: isolated BullMQ worker intended for Railway. Media generation and publishing do not run inside Vercel request handlers.
-- supabase/migrations/: Supabase schema, RLS and private media bucket.
+- database/migrations/: Supabase schema, RLS and private media bucket.
 
 The existing Universal AI Backend (FastAPI and Celery modules) remains in the repository. This product-specific Node service is a separate deployable surface so the previous agent platform is not removed.
 
@@ -66,3 +66,23 @@ NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, NEXT_PUBLIC_API_BASE_UR
 ## Initial status
 
 Source code and migrations are not equivalent to a running deployment. The API and worker require host-side credentials and a live Redis/Supabase project. Google OAuth requires the exact callback URL to be registered in Google Cloud. Vercel must use studio/ as its root directory and the frontend environment variables must be set. The Railway workspace in this account currently has offline services and a plan limitation, so code changes alone do not activate a worker or start paid jobs.
+
+
+## Operational API endpoints
+
+Authenticated routes use a Supabase Auth access token in the Authorization bearer header:
+- GET /v1/dashboard — channel, settings, recent jobs, rolling-24-hour reserved cost and provider readiness.
+- GET /v1/providers/status — configured/not-configured state for model, research, Pexels, voice, captions, YouTube OAuth, Redis, worker heartbeat, storage and optional RunPod. Secret values are never returned.
+- POST /v1/jobs with an Idempotency-Key — queue a production job.
+- GET /v1/jobs/:jobId/events — user-scoped durable audit events for that job.
+- POST /v1/jobs/:jobId/retry — retries only failed/blocked jobs that have no YouTube upload-start marker or video ID; duplicate-upload risk is blocked.
+- POST /v1/automation/enable — explicit user opt-in after configured prerequisites are checked.
+- POST /v1/automation/disable and /v1/automation/stop-all — cancel future automation; stop-all also cancels queued/running DB jobs.
+
+## Budget enforcement
+
+Every production job calls reserve_creator_video_budget in Postgres. The function serializes reservations per user with an advisory transaction lock, checks the rolling 24-hour budget and writes one idempotent estimated reservation per job. The worker does not launch media generation if the reservation is rejected. This is an estimate, not an exact provider invoice; vendor billing dashboards remain authoritative. The reservation is intentionally conservative and may count failed attempts until the job is reconciled.
+
+## Storage and progress
+
+youtube-media is a private Supabase Storage bucket. Worker files are not made public; the API returns only signed preview URLs. The worker publishes a 60-second Redis heartbeat which the provider-status endpoint uses to distinguish a configured queue from a live worker. Audit events are keyed by user and job and are queried only after verifying ownership of the job.

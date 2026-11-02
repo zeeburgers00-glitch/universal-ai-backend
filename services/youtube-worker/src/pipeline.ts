@@ -23,14 +23,6 @@ async function setStage(db:SupabaseClient,userId:string,jobId:string,stage:strin
  await db.from("production_jobs").update({status:"running",stage,progress,updated_at:new Date().toISOString(),error:null}).eq("id",jobId).eq("user_id",userId);
  await record(db,userId,jobId,stage,"running",message);
 }
-async function checkBudget(db:SupabaseClient,userId:string,jobId:string,settings:Record<string,unknown>,estimate:number){
- const cap=Number(settings.daily_budget_usd||0);
- if(cap<=0)throw new Error("Set a positive daily budget before production is allowed");
- const {data,error}=await db.from("provider_usage").select("cost_usd").eq("user_id",userId).neq("job_id",jobId).gte("created_at",new Date(Date.now()-24*60*60*1000).toISOString());
- if(error)throw new Error("Could not verify daily budget usage");
- const spent=(data||[]).reduce((sum:number,row:{cost_usd:number})=>sum+Number(row.cost_usd||0),0);
- if(spent+estimate>cap)throw new Error("Daily budget cap would be exceeded; production was paused");
-}
 export async function runProduction(args:{db:SupabaseClient;jobId:string;userId:string;topic:string}):Promise<void>{
  const {db,jobId,userId,topic}=args,dir=path.join(os.tmpdir(),"ytstudio-"+randomUUID());
  await fs.mkdir(dir,{recursive:true});
@@ -43,9 +35,9 @@ export async function runProduction(args:{db:SupabaseClient;jobId:string;userId:
   const {data:settings,error:settingsError}=await db.from("creator_settings").select("*").eq("user_id",userId).maybeSingle();
   if(settingsError||!settings)throw new Error("Creator settings are missing");
   const estimated=estimateCost();
-  await checkBudget(db,userId,jobId,settings,estimated);
-  const {error:reservationError}=await db.from("provider_usage").upsert({user_id:userId,job_id:jobId,provider:"estimated-video-pipeline",usage_kind:"estimated_reservation",cost_usd:estimated,usage:{reservation:true}},{onConflict:"job_id,usage_kind"});
-  if(reservationError)throw new Error("Could not reserve estimated budget for this production job");
+  const {data:reserved,error:reservationError}=await db.rpc("reserve_creator_video_budget",{p_user_id:userId,p_job_id:jobId,p_estimated_cost:estimated});
+  if(reservationError)throw new Error("Could not reserve estimated budget safely: "+reservationError.message.slice(0,180));
+  if(reserved!==true)throw new Error("Daily budget cap would be exceeded; production was paused");
   let selectedTopic=topic;
   if(topic.startsWith("Daily original video opportunity for niche:")){
     await setStage(db,userId,jobId,"topic_discovery",5,"Selecting a fresh niche-specific topic using recent research evidence.");
