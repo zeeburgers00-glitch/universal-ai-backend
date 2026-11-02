@@ -51,7 +51,7 @@ export default function HomePage(){
  useEffect(()=>{if(!sb)return;sb.auth.getSession().then(({data})=>setSession(data.session));const {data}=sb.auth.onAuthStateChange((_event,s)=>setSession(s));return()=>data.subscription.unsubscribe()},[]);
  useEffect(()=>{if(typeof window==="undefined")return;const params=new URLSearchParams(window.location.search);if(params.get("ai")==="connected"){setPage("AI Studio");window.history.replaceState({}, "", window.location.pathname)}},[]);
  useEffect(()=>{refresh();const timer=setInterval(refresh,15000);return()=>clearInterval(timer)},[refresh]);
- const signIn=async()=>{if(!sb)return say("Supabase Auth is not configured.",true);if(!email.includes("@"))return say("Enter a valid email address.",true);setBusy("signin");const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:window.location.origin}});setBusy("");if(error)say(error.message,true);else{setSent(true);say("Check your email for the secure sign-in link.")}};
+ const signIn=async()=>{if(!sb)return say("Supabase Auth is not configured.",true);if(!email.includes("@"))return say("Enter a valid email address.",true);setBusy("signin");const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:window.location.origin+(process.env.NEXT_PUBLIC_BASE_PATH||"")+"/"}});setBusy("");if(error)say(error.message,true);else{setSent(true);say("Check your email for the secure sign-in link.")}};
  const signOut=async()=>{await sb?.auth.signOut();setSession(null);setState({})};
  const run=async(key:string,fn:()=>Promise<void>)=>{setBusy(key);try{await fn()}catch(e){say(e instanceof Error?e.message:"Request failed.",true)}finally{setBusy("")}};
  const connect=()=>run("oauth",async()=>{const result=await api("/v1/youtube/oauth/start",{method:"POST",body:"{}"});window.location.assign(result.authorization_url)});
@@ -65,7 +65,7 @@ export default function HomePage(){
   if(!session?.access_token)return;
   setTeamLoading(true);
   try{
-   const response=await fetch("/api/youtube/team",{cache:"no-store"});
+   const response=await fetch((process.env.NEXT_PUBLIC_BASE_PATH || "") + "/api/youtube/team",{cache:"no-store"});
    if(!response.ok)throw new Error("Could not load the bundled YouTube team manifest.");
    const data=await response.json();setYoutubeTeam(data as CreatorTeam);
   }catch(e){say(e instanceof Error?e.message:"Could not load YouTube team.",true)}
