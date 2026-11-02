@@ -266,6 +266,35 @@ export default function AIStudio() {
     }
   };
 
+  const uploadReferenceMedia = async (blob: Blob, filename: string): Promise<string> => {
+    if (!connected) throw new Error("Connect your AI credits first.");
+    if (!shareReferenceMedia) throw new Error("Confirm the public-media notice before uploading a reference file.");
+    const form = new FormData();
+    form.append("file", blob, filename);
+    const response = await fetch("https://media.pollinations.ai/upload", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + token },
+      body: form,
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.url) throw new Error(data.error?.message || data.message || "Media upload failed.");
+    return safeHttpsUrl(String(data.url));
+  };
+
+  const publishVoiceReference = () => run("upload-audio", async () => {
+    if (!audioBlob) throw new Error("Generate a voice-over first.");
+    const url = await uploadReferenceMedia(audioBlob, "voice-reference.mp3");
+    setReferenceAudioUrl(url);
+    say("Voice reference uploaded. The video tab can now use this public audio URL for models that support audio-driven video.");
+  });
+
+  const publishAvatarReference = () => run("upload-image", async () => {
+    if (!referenceImageFile) throw new Error("Choose an avatar image file first.");
+    const url = await uploadReferenceMedia(referenceImageFile, referenceImageFile.name || "avatar-reference.png");
+    setReferenceImageUrl(url);
+    say("Avatar image uploaded. Choose a video model that supports image-reference input.");
+  });
+
   const generateScript = () => run("script", async () => {
     if (topic.trim().length < 6) throw new Error("Enter a video topic first.");
     const data = await aiRequest("/v1/chat/completions", {
@@ -449,11 +478,12 @@ export default function AIStudio() {
           {tab === "avatar" && <>
             <h2>AI Video / Avatar Studio</h2><p className="muted mt-2">Generate a short AI video clip. Supply a public HTTPS image or audio reference for models that support those inputs.</p>
             <div className="field mt-4"><label>Video prompt</label><textarea value={videoPrompt} onChange={(e) => setVideoPrompt(e.target.value)} placeholder="A friendly presenter speaking directly to camera in a modern studio, natural facial motion, expressive gestures, cinematic lighting..." /></div>
+            <div className="callout mt-3"><label className="flex items-center gap-2"><input type="checkbox" checked={shareReferenceMedia} onChange={(e) => setShareReferenceMedia(e.target.checked)} /> I authorize uploading my selected avatar/voice reference to a public media URL</label><p className="mt-2">Anyone who has the resulting URL may be able to access the file. Use only your own media or material you have permission to share. Leave unchecked to use an already-public HTTPS URL instead.</p></div>
             <div className="grid gap-3 md:grid-cols-2">
               <div className="field"><label>Video model</label>{modelSelect(videoModel, setVideoModel, models.video, "No video models listed in the live catalogue")}</div>
               <div className="field"><label>Video format</label><select value={videoFormat} onChange={(e) => setVideoFormat(e.target.value as "longform" | "shorts")} className="w-full rounded-lg border border-line bg-panel p-3 text-sm"><option value="longform">Long-form scene · 16:9</option><option value="shorts">Shorts scene · 9:16</option></select></div>
               <div className="field"><label>Clip duration (seconds)</label><select value={videoDuration} onChange={(e) => setVideoDuration(e.target.value)} className="w-full rounded-lg border border-line bg-panel p-3 text-sm"><option value="3">3 seconds</option><option value="5">5 seconds</option><option value="8">8 seconds</option><option value="10">10 seconds</option></select></div>
-              <div className="field"><label>Reference image URL (optional)</label><input value={referenceImageUrl} onChange={(e) => setReferenceImageUrl(e.target.value)} placeholder="https://.../avatar.png" /></div>
+              <div className="field"><label>Reference image URL (optional)</label><input value={referenceImageUrl} onChange={(e) => setReferenceImageUrl(e.target.value)} placeholder="https://.../avatar.png" /><label className="mt-2">Or choose an avatar photo</label><input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => setReferenceImageFile(e.target.files?.[0] || null)} /><button className="btn secondary mt-2" onClick={publishAvatarReference} disabled={!connected || !referenceImageFile || busy === "upload-image"}>{busy === "upload-image" ? <LoaderCircle size={14} className="animate-spin" /> : <UploadCloud size={14} />} Upload avatar photo for video</button></div>
               <div className="field"><label>Reference audio URL (optional)</label><input value={referenceAudioUrl} onChange={(e) => setReferenceAudioUrl(e.target.value)} placeholder="https://.../voice.mp3" /></div>
             </div>
             <button className="btn mt-3" onClick={generateVideo} disabled={!connected || busy === "video" || !videoModel}>{busy === "video" ? <LoaderCircle size={14} className="animate-spin" /> : <Play size={14} />} Generate video clip</button>
@@ -469,7 +499,7 @@ export default function AIStudio() {
               <div className="field"><label>Voice</label><input value={speechVoice} onChange={(e) => setSpeechVoice(e.target.value)} placeholder="nova" /></div>
               <div className="flex items-end"><button className="btn" onClick={generateSpeech} disabled={!connected || busy === "audio" || !audioModel}>{busy === "audio" ? <LoaderCircle size={14} className="animate-spin" /> : <AudioLines size={14} />} Generate voice</button></div>
             </div>
-            {audioUrl && <div className="mt-4"><audio src={audioUrl} controls className="w-full" /><a className="btn secondary mt-3 inline-flex" href={audioUrl} download="voiceover.mp3"><Download size={14} /> Save voice-over</a></div>}
+            {audioUrl && <div className="mt-4"><audio src={audioUrl} controls className="w-full" /><div className="mt-3 flex flex-wrap gap-2"><a className="btn secondary inline-flex" href={audioUrl} download="voiceover.mp3"><Download size={14} /> Save voice-over</a><button className="btn secondary" onClick={publishVoiceReference} disabled={!shareReferenceMedia || busy === "upload-audio"}>{busy === "upload-audio" ? <LoaderCircle size={14} className="animate-spin" /> : <UploadCloud size={14} />} Upload as avatar audio reference</button></div></div>}
           </>}
         </section>
       </div>
