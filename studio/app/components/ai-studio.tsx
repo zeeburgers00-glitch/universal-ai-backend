@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { AudioLines, CheckCircle2, Copy, Download, Image as ImageIcon, LoaderCircle, LogOut, Play, RefreshCw, Sparkles, Video, WandSparkles } from "lucide-react";
 
 type Model = { id: string; name?: string; description?: string };
@@ -53,6 +53,7 @@ function safeHttpsUrl(value: string): string {
 
 export default function AIStudio() {
   const [appKey, setAppKey] = useState("");
+  const [redirectUri, setRedirectUri] = useState("");
   const [token, setToken] = useState("");
   const [expiresAt, setExpiresAt] = useState(0);
   const [models, setModels] = useState<Models>(DEFAULT_MODELS);
@@ -80,7 +81,6 @@ export default function AIStudio() {
   const [isError, setIsError] = useState(false);
 
   const connected = Boolean(token) && expiresAt > Date.now();
-  const redirectUri = useMemo(() => typeof window === "undefined" ? "" : window.location.origin + "/ai/connect", []);
 
   const say = useCallback((message: string, error = false) => {
     setNotice(message);
@@ -110,6 +110,7 @@ export default function AIStudio() {
   }, [say]);
 
   useEffect(() => {
+    setRedirectUri(window.location.origin + "/ai/connect");
     const storedKey = sessionStorage.getItem("pollinations_app_key") || "";
     const storedToken = sessionStorage.getItem("pollinations_access_token") || "";
     const storedExpiry = Number(sessionStorage.getItem("pollinations_expires_at") || 0);
@@ -319,7 +320,7 @@ export default function AIStudio() {
     say("Voice-over generated.");
   });
 
-  const tabButton = (value: typeof tab, label: string, icon: React.ReactNode) => (
+  const tabButton = (value: typeof tab, label: string, icon: ReactNode) => (
     <button key={value} onClick={() => setTab(value)} className={"nav " + (tab === value ? "active" : "")}>{icon}{label}</button>
   );
 
