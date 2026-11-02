@@ -68,6 +68,28 @@ NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, NEXT_PUBLIC_API_BASE_UR
 Source code and migrations are not equivalent to a running deployment. The API and worker require host-side credentials and a live Redis/Supabase project. Google OAuth requires the exact callback URL to be registered in Google Cloud. Vercel must use studio/ as its root directory and the frontend environment variables must be set. The Railway workspace in this account currently has offline services and a plan limitation, so code changes alone do not activate a worker or start paid jobs.
 
 
+
+## Four-agent YouTube creator team
+
+The repository now includes a dedicated four-seat team manifest at `catalog/youtube_creator_team.json` and the `youtube-four-agent-team` workflow:
+
+1. **Thumbnail Designer** — creates a truthful thumbnail concept, 16:9 layout, overlay options and image-generation prompt. A rendered image is only confirmed when the media worker returns an actual asset.
+2. **YouTube SEO Specialist** — creates title options, keyword clusters, source-aware description, tags, hashtags, chapters when timeline evidence exists and a pinned-comment draft.
+3. **Long-form Video Production Agent** — plans a 16:9 long-form production using licensed stock-video footage, narration, synchronized captions and FFmpeg.
+4. **Shorts Video Production Agent** — plans standalone 9:16 Shorts with opening hooks, highlight/timecode selection, reframing and readable captions.
+
+The long-form and Shorts production steps share a `video-production` parallel group. Both depend on the approved script; thumbnail design depends on the SEO package and long-form video plan. Review is required before the publisher step.
+
+### Team API and execution status
+
+- `GET /v1/youtube/team` returns the four-seat team manifest.
+- `GET /v1/agents` lists the four individual agent blueprints.
+- `POST /v1/agents/{agent_id}/run` sends an agent task to the agent worker when deployed.
+- `POST /v1/workflows/youtube-four-agent-team/run` requests a workflow plan. Workflow step dependencies, parallel group labels and expected outputs are included in the returned plan.
+
+**Important:** The agent worker is currently a plan-only worker. These are registered specialist blueprints, not four continuously running processes. Its response describes actions and expected outputs; it does not itself render the thumbnail, encode the video or publish to YouTube. Actual asset creation needs the media/voice/caption services, and upload/scheduling remains behind the connected channel owner's explicit approval. A workflow plan or queued task is not proof of a completed media asset or YouTube upload.
+
+
 ## Operational API endpoints
 
 Authenticated routes use a Supabase Auth access token in the Authorization bearer header:
