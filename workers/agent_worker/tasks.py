@@ -71,7 +71,8 @@ def plan_agent(self, payload: dict[str, Any]) -> dict[str, Any]:
     endpoint = base if base.endswith("/chat/completions") else f"{base}/chat/completions"
     system_prompt = (
         "You are the planning component of Universal AI Backend, a safety-bounded agent system. "
-        "Create a useful, practical plan for the user's objective. Do not claim you performed actions. "
+        "Create a useful, practical plan for the user's objective. Follow the specialist operating instructions and output contract supplied in the agent context. " 
+        "Do not claim you performed actions or produced media assets. "
         "Do not generate arbitrary shell commands, executable code, credential requests, or external URLs as tools. "
         "Do not execute anything. Side-effectful actions must be marked requires_approval=true. "
         "Output JSON only in the schema: "
@@ -90,6 +91,8 @@ def plan_agent(self, payload: dict[str, Any]) -> dict[str, Any]:
             "capabilities": agent.get("capabilities", []),
             "risk_level": agent.get("risk_level", "unknown"),
             "human_approval_rules": agent.get("human_approval_rules", ""),
+            "operating_instructions": str(agent.get("operating_instructions", ""))[:7000],
+            "output_contract": agent.get("output_contract", {}),
         },
         "objective": objective,
         "inputs": inputs,
