@@ -44,12 +44,17 @@
       },
       {
         "id": "render",
-        "agent_id": "video-editor",
+        "agent_id": "youtube-shorts-video-producer",
         "description": "Render vertical video with audio, captions, and safe margins"
       },
       {
+        "id": "seo",
+        "agent_id": "youtube-seo-specialist",
+        "description": "Create accurate Shorts title, description, hashtags and tags based on the final cut and audience search intent."
+      },
+      {
         "id": "thumbnail",
-        "agent_id": "thumbnail-designer",
+        "agent_id": "youtube-thumbnail-designer",
         "description": "Generate an accurate thumbnail and metadata suggestions"
       },
       {
@@ -113,13 +118,23 @@
       },
       {
         "id": "edit",
-        "agent_id": "video-editor",
+        "agent_id": "youtube-longform-video-producer",
         "description": "Assemble timeline, music, b-roll and lower thirds"
       },
       {
         "id": "captions",
         "agent_id": "caption-editor",
         "description": "Generate SRT/VTT and align timestamps"
+      },
+      {
+        "id": "seo",
+        "agent_id": "youtube-seo-specialist",
+        "description": "Prepare searchable title options, a source-aware description, tags, chapters and keywords from the finished script."
+      },
+      {
+        "id": "thumbnail",
+        "agent_id": "youtube-thumbnail-designer",
+        "description": "Prepare a truthful 16:9 thumbnail concept and image-generation prompt matching the finished video and channel brand."
       },
       {
         "id": "review",
@@ -1354,5 +1369,118 @@
     "execution_mode": "async_worker",
     "worker_service": "AUTOMATION_WORKER_URL",
     "warning": "Template only. REA must be installed on the paired device, its tool-name allowlist must be configured locally, and the target must be authorized. This workflow does not bypass DRM, license checks, access controls or proprietary-tool licenses."
+  },
+  {
+    "id": "youtube-four-agent-team",
+    "name": "YouTube four-agent creator team",
+    "category": "youtube",
+    "description": "Coordinate four specialist agents: one thumbnail designer, one YouTube SEO specialist, one long-form video producer and one Shorts video producer. Research/script support and approval/publishing gates remain separate shared services.",
+    "team_id": "youtube-creator-team",
+    "team_agent_ids": [
+      "youtube-thumbnail-designer",
+      "youtube-seo-specialist",
+      "youtube-longform-video-producer",
+      "youtube-shorts-video-producer"
+    ],
+    "required_services": [
+      "agents",
+      "youtube",
+      "voice",
+      "media",
+      "captions",
+      "automation"
+    ],
+    "risk_level": "high",
+    "requires_human_approval": true,
+    "required_inputs": [
+      "channel_connection_id",
+      "topic",
+      "channel_niche",
+      "language",
+      "target_audience",
+      "channel_brand_kit"
+    ],
+    "steps": [
+      {
+        "id": "research",
+        "agent_id": "research-agent",
+        "description": "Collect reliable source URLs, relevant topic context and rights notes.",
+        "expected_output": "research_pack"
+      },
+      {
+        "id": "script",
+        "agent_id": "youtube-producer",
+        "description": "Create an original, sourced script and scene outline for long-form and Shorts use.",
+        "depends_on": [
+          "research"
+        ],
+        "expected_output": "approved_script_and_storyboard"
+      },
+      {
+        "id": "seo-package",
+        "agent_id": "youtube-seo-specialist",
+        "description": "Produce title options, primary/supporting keywords, description, tags, hashtags and chapters from the research and final script.",
+        "depends_on": [
+          "script"
+        ],
+        "expected_output": "youtube_metadata_package"
+      },
+      {
+        "id": "longform-video",
+        "agent_id": "youtube-longform-video-producer",
+        "description": "Plan and produce the 16:9 long-form video from the approved script using licensed stock video, narration, synchronized captions and FFmpeg.",
+        "depends_on": [
+          "script"
+        ],
+        "parallel_group": "video-production",
+        "expected_output": "longform_video_asset_and_quality_report"
+      },
+      {
+        "id": "shorts-video",
+        "agent_id": "youtube-shorts-video-producer",
+        "description": "Create standalone vertical Shorts from the approved script or authorized source footage, with hooks, reframing and readable captions.",
+        "depends_on": [
+          "script"
+        ],
+        "parallel_group": "video-production",
+        "expected_output": "shorts_assets_and_quality_report"
+      },
+      {
+        "id": "thumbnail",
+        "agent_id": "youtube-thumbnail-designer",
+        "description": "Create one primary thumbnail design and two alternatives, matching the actual video and channel branding.",
+        "depends_on": [
+          "seo-package",
+          "longform-video"
+        ],
+        "expected_output": "thumbnail_design_package_and_rendered_asset_when_available"
+      },
+      {
+        "id": "review",
+        "agent_id": "approval-gate",
+        "description": "Check factual accuracy, asset rights, thumbnail truthfulness, metadata, captions, audience declarations and video quality before any public action.",
+        "depends_on": [
+          "seo-package",
+          "longform-video",
+          "shorts-video",
+          "thumbnail"
+        ],
+        "expected_output": "review_decision_and_blockers"
+      },
+      {
+        "id": "publish",
+        "agent_id": "youtube-publisher",
+        "description": "Upload or schedule only the explicitly approved assets through the connected channel owner's authorized YouTube account.",
+        "depends_on": [
+          "review"
+        ],
+        "requires_user_approval": true,
+        "expected_output": "youtube_video_ids_and_schedule"
+      }
+    ],
+    "status": "template_only",
+    "execution_mode": "plan_only_agent_blueprints",
+    "worker_service": "AUTOMATION_WORKER_URL",
+    "warning": "The four specialist agents are registered blueprints and are available to the plan-only agent worker when deployed. This workflow does not itself render assets or execute chained agents. The current automation worker returns a plan unless explicit downstream actions are provided. Media generation requires live media/voice/caption workers; YouTube upload always requires channel OAuth and explicit owner approval."
   }
 ]
