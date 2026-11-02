@@ -4,7 +4,7 @@ import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import {createClient} from "@supabase/supabase-js";
-import Redis from "ioredis";
+import { Redis } from "ioredis";
 import {Queue} from "bullmq";
 import {google} from "googleapis";
 import {z} from "zod";
@@ -173,9 +173,10 @@ app.post("/v1/automation/stop-all",{preHandler:requireUser},async(req)=>{
 });
 
 app.setErrorHandler((error,req,reply)=>{
-  req.log.error({err:error},"Request failed");
-  const status=error.statusCode&&error.statusCode>=400?error.statusCode:500;
-  reply.code(status).send({message:status>=500?"The request could not be completed. Check service logs for the redacted error.":error.message});
+  const err=error as Error & {statusCode?:number};
+  req.log.error({err},"Request failed");
+  const status=err.statusCode&&err.statusCode>=400?err.statusCode:500;
+  reply.code(status).send({message:status>=500?"The request could not be completed. Check service logs for the redacted error.":err.message});
 });
 const port=Number(process.env.PORT||8080);
 try{await app.listen({host:"0.0.0.0",port})}catch(error){app.log.error(error);process.exit(1)}
