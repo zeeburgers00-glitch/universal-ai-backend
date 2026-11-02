@@ -38,6 +38,10 @@ def add_event(run_id: str, stage: str, message: str, status: str = "queued") -> 
         "stage": stage, "status": status, "message": message, "payload": {}})
 
 
+def update_run(run_id: str, values: dict[str, Any]) -> None:
+    _request("PATCH", "autopilot_runs", params={"id": f"eq.{run_id}"}, body=values)
+
+
 def get_run(run_id: str) -> dict[str, Any] | None:
     rows = _request("GET", "autopilot_runs", params={"id": f"eq.{run_id}", "select": "*", "limit": "1"})
     return rows[0] if rows else None
