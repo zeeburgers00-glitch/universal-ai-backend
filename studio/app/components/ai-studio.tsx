@@ -784,6 +784,7 @@ export default function AIStudio() {
               <div className="flex items-end"><button className="btn" onClick={generateSpeech} disabled={!connected || busy === "audio" || !audioModel}>{busy === "audio" ? <LoaderCircle size={14} className="animate-spin" /> : <AudioLines size={14} />} Generate voice</button></div>
             </div>
             {audioUrl && <div className="mt-4"><audio src={audioUrl} controls className="w-full" /><div className="mt-3 flex flex-wrap gap-2"><a className="btn secondary inline-flex" href={audioUrl} download="voiceover.mp3"><Download size={14} /> Save voice-over</a><button className="btn secondary" onClick={publishVoiceReference} disabled={!shareReferenceMedia || busy === "upload-audio"}>{busy === "upload-audio" ? <LoaderCircle size={14} className="animate-spin" /> : <UploadCloud size={14} />} Upload as avatar audio reference</button><button className="btn secondary" onClick={transcribeAudio} disabled={!connected || busy === "captions"}>{busy === "captions" ? <LoaderCircle size={14} className="animate-spin" /> : <Film size={14} />} Generate Whisper captions</button></div><p className="muted mt-2">{captionCues.length ? captionCues.length + " timestamped caption cues ready." : "Captions have not been transcribed yet."}</p></div>}
+          </>}
           {tab === "editor" && <>
             <h2>Final Video Editor</h2>
             <p className="muted mt-2">Combine your generated scenes into one video. Add a narration track and generate Whisper timestamps before rendering to burn captions into the picture.</p>
