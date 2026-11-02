@@ -96,7 +96,12 @@ def dispatch_workflow(self, payload: dict[str, Any]) -> dict[str, Any]:
             "workflow_name": workflow.get("name"),
             "steps": [
                 {"index": i, "step": step.get("id"), "agent_id": step.get("agent_id"),
-                 "description": step.get("description"), "execution_status": "not_dispatched"}
+                 "description": step.get("description"),
+                 "depends_on": step.get("depends_on", []),
+                 "parallel_group": step.get("parallel_group"),
+                 "expected_output": step.get("expected_output"),
+                 "requires_user_approval": bool(step.get("requires_user_approval")),
+                 "execution_status": "not_dispatched"}
                 for i, step in enumerate(workflow.get("steps", []), start=1)
             ],
             "required_inputs": workflow.get("required_inputs", []),
