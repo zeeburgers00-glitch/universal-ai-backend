@@ -1,18 +1,25 @@
-# AutoTube AI Studio
+# AutoTube AI Studio — Chat frontend
 
-Frontend for the Universal AI Backend YouTube automation workspace.
+The only user-facing interface is a ChatGPT-style chat. Agent catalogues, production orchestration, provider adapters, tool discovery, Metricool integration and worker controls stay in the backend. The chat shows durable task activity events and final outputs.
 
 ## Vercel
-Create a separate Vercel project linked to this repository and set Root Directory to `autotube`. The frontend is a static HTML app. Set `VITE_API_BASE_URL` to the public HTTPS origin of the Railway/Render FastAPI service when backend routes are ready.
 
-## Services
-- Frontend: Vercel (this directory)
-- Backend: Railway or Render using the existing FastAPI app at repository root
-- GPU: RunPod worker endpoints for FFmpeg, Whisper/faster-whisper, TTS and optional generative video
-- Data: Supabase Postgres and private Storage buckets
+- Project root directory: `autotube`
+- Framework: Vite
+- Static page: `index.html`
+- Server-side API proxy: `api/chat.js`
 
-## Secrets
-Set credentials only on trusted backend/worker hosts: BACKEND_API_KEY, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI, TOKEN_ENCRYPTION_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, RUNPOD_API_KEY, RUNPOD_ENDPOINT_ID, AI_API_KEY, PEXELS_API_KEY, CORS_ORIGINS. Never put private secrets in frontend environment variables.
+Set these Vercel environment variables (server-side only; do not prefix them with `VITE_`):
 
-## Honest integration state
-This is the initial frontend shell. UI setup states do not mean integrations are live. OAuth routes, Supabase project credentials, RunPod worker and API deployment must be configured and tested separately. YouTube Data API has no general channel-creation endpoint; first-time channel creation needs the official YouTube UI. Some branding changes may also require YouTube Studio. Autopublish must remain disabled until the channel owner explicitly enables it.
+- `BACKEND_API_URL`: public HTTPS URL of the FastAPI backend
+- `BACKEND_API_KEY`: the same secret configured as `BACKEND_API_KEY` on FastAPI
+
+The browser calls `/api/chat`; the proxy attaches the backend key server-side. The key must never be placed in HTML, localStorage, JavaScript bundles, or any `VITE_*` variable.
+
+## Backend and worker
+
+See [chat-first architecture](../docs/CHAT_FIRST_ARCHITECTURE.md). The backend needs Supabase, Redis/Celery, an AI provider key and the dedicated autopilot worker. The Vercel page can render before the backend is deployed, but it will report that the backend is not connected until `BACKEND_API_URL` and `BACKEND_API_KEY` are configured.
+
+## Metricool / YouTube
+
+Connect the existing YouTube channel inside Metricool using the channel Owner account. Configure Metricool API credentials only on backend hosts. Metricool's API requires an Advanced or Custom plan. Channel creation itself still requires the official YouTube user interface.
