@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { AudioLines, CheckCircle2, Copy, Download, Image as ImageIcon, LoaderCircle, LogOut, Play, RefreshCw, Search, Sparkles, UploadCloud, Video, WandSparkles } from "lucide-react";
+import { AudioLines, CheckCircle2, Copy, Download, Film, Image as ImageIcon, LoaderCircle, LogOut, Play, RefreshCw, Search, Sparkles, Trash2, UploadCloud, Video, WandSparkles } from "lucide-react";
 
 type Model = { id: string; name?: string; description?: string; video_capabilities?: string[]; input_modalities?: string[]; min_duration?: number; max_duration?: number; paid_only?: boolean; pricing?: Record<string, string> };
 type Models = { text: Model[]; image: Model[]; video: Model[]; audio: Model[] };
@@ -462,6 +462,178 @@ export default function AIStudio() {
     setAudioBlob(blob);
     setAudioUrl(URL.createObjectURL(blob));
     say("Voice-over generated.");
+  });
+
+  const transcribeAudio = () => run("captions", async () => {
+    if (!audioBlob) throw new Error("Generate a voice-over before creating captions.");
+    const form = new FormData();
+    form.append("file", audioBlob, "narration.mp3");
+    form.append("model", "openai/whisper-large-v3");
+    form.append("response_format", "verbose_json");
+    form.append("timestamp_granularities[]", "word");
+    const response = await fetch(API + "/v1/audio/transcriptions", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + token },
+      body: form,
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error?.message || data.message || "Whisper transcription failed.");
+    const words = Array.isArray(data.words) ? data.words : [];
+    const segments = Array.isArray(data.segments) ? data.segments : [];
+    const cues: CaptionCue[] = words.length
+      ? words.flatMap((item: Record<string, unknown>) => {
+          const start = Number(item.start);
+          const end = Number(item.end);
+          const text = String(item.word || item.text || "").trim();
+          return text && Number.isFinite(start) && Number.isFinite(end) && end > start ? [{ start, end, text }] : [];
+        })
+      : segments.flatMap((item: Record<string, unknown>) => {
+          const start = Number(item.start);
+          const end = Number(item.end);
+          const text = String(item.text || "").trim();
+          return text && Number.isFinite(start) && Number.isFinite(end) && end > start ? [{ start, end, text }] : [];
+        });
+    if (!cues.length) throw new Error("Whisper returned no timestamped captions for this audio.");
+    setCaptionCues(cues);
+    say("Whisper created " + cues.length + " timestamped caption cues.");
+  });
+
+  const removeClip = (id: string) => {
+    setGeneratedClips((previous) => {
+      const removed = previous.find((clip) => clip.id === id);
+      if (removed) URL.revokeObjectURL(removed.url);
+      return previous.filter((clip) => clip.id !== id);
+    });
+  };
+
+  const renderTimeline = () => run("render", async () => {
+    if (!generatedClips.length) throw new Error("Generate at least one video scene before rendering.");
+    if (typeof MediaRecorder === "undefined" || !HTMLCanvasElement.prototype.captureStream) {
+      throw new Error("This browser does not support canvas video recording. Use a recent Chrome or Edge browser.");
+    }
+    if (!audioBlob) throw new Error("Generate a narration voice-over before rendering the final video.");
+    if (!captionCues.length) throw new Error("Generate timestamped Whisper captions before rendering the final video.");
+    const audioContext = new AudioContext();
+    let recorder: MediaRecorder | null = null;
+    let stream: MediaStream | null = null;
+    const canvas = document.createElement("canvas");
+    const isShort = videoFormat === "shorts";
+    canvas.width = isShort ? 1080 : 1920;
+    canvas.height = isShort ? 1920 : 1080;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Could not create the video rendering canvas.");
+
+    try {
+      const audioBuffer = await audioContext.decodeAudioData(await audioBlob.arrayBuffer());
+      const sceneSeconds = generatedClips.reduce((sum, clip) => sum + Math.max(1, clip.seconds), 0);
+      const totalSeconds = Math.max(sceneSeconds, audioBuffer.duration);
+      if (totalSeconds > 300) throw new Error("The browser editor currently caps a render at five minutes. Split longer videos into separate parts.");
+      const videoStream = canvas.captureStream(30);
+      const audioDestination = audioContext.createMediaStreamDestination();
+      stream = new MediaStream([...videoStream.getVideoTracks(), ...audioDestination.stream.getAudioTracks()]);
+      const mimeTypes = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"];
+      const mimeType = mimeTypes.find((type) => MediaRecorder.isTypeSupported(type));
+      if (!mimeType) throw new Error("This browser does not provide a supported WebM recording format.");
+      recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8_000_000, audioBitsPerSecond: 192_000 });
+      const chunks: BlobPart[] = [];
+      const stopped = new Promise<void>((resolve, reject) => {
+        if (!recorder) return reject(new Error("Recorder was not initialized."));
+        recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data); };
+        recorder.onerror = () => reject(new Error("Browser video recorder failed."));
+        recorder.onstop = () => resolve();
+      });
+      await audioContext.resume();
+      const narration = audioContext.createBufferSource();
+      narration.buffer = audioBuffer;
+      narration.connect(audioDestination);
+      recorder.start(1000);
+      narration.start();
+
+      let elapsed = 0;
+      while (elapsed < totalSeconds) {
+        for (const clip of generatedClips) {
+          if (elapsed >= totalSeconds) break;
+          const video = document.createElement("video");
+          video.src = clip.url;
+          video.muted = true;
+          video.playsInline = true;
+          video.preload = "auto";
+          await new Promise<void>((resolve, reject) => {
+            video.onloadeddata = () => resolve();
+            video.onerror = () => reject(new Error("A scene video could not be decoded by this browser."));
+            video.load();
+          });
+          const clipLength = Math.max(1, Math.min(clip.seconds, Number.isFinite(video.duration) ? video.duration : clip.seconds));
+          await video.play();
+          const clipStart = elapsed;
+          const clipEnd = Math.min(totalSeconds, clipStart + clipLength);
+
+          while (elapsed < clipEnd) {
+            ctx.fillStyle = "#090d18";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            const sourceWidth = video.videoWidth || canvas.width;
+            const sourceHeight = video.videoHeight || canvas.height;
+            const scale = Math.max(canvas.width / sourceWidth, canvas.height / sourceHeight);
+            const drawWidth = sourceWidth * scale;
+            const drawHeight = sourceHeight * scale;
+            ctx.drawImage(video, (canvas.width - drawWidth) / 2, (canvas.height - drawHeight) / 2, drawWidth, drawHeight);
+
+            const localSeconds = Math.max(0, video.currentTime);
+            const cue = captionCues.find((item) => elapsed >= item.start && elapsed <= item.end);
+            if (cue) {
+              const fontSize = Math.round(canvas.width * 0.034);
+              ctx.font = "700 " + fontSize + "px Arial, sans-serif";
+              ctx.textAlign = "center";
+              ctx.textBaseline = "middle";
+              const maxWidth = canvas.width * 0.84;
+              const wordsInCue = cue.text.split(/\s+/);
+              const lines: string[] = [];
+              let line = "";
+              for (const word of wordsInCue) {
+                const next = line ? line + " " + word : word;
+                if (ctx.measureText(next).width > maxWidth && line) {
+                  lines.push(line);
+                  line = word;
+                } else line = next;
+              }
+              if (line) lines.push(line);
+              const lineHeight = fontSize * 1.25;
+              const boxHeight = lines.length * lineHeight + fontSize;
+              const boxY = canvas.height - boxHeight - canvas.height * 0.07;
+              ctx.fillStyle = "rgba(0,0,0,0.68)";
+              ctx.fillRect(canvas.width * 0.07, boxY, canvas.width * 0.86, boxHeight);
+              ctx.fillStyle = "#ffffff";
+              lines.forEach((text, index) => ctx.fillText(text, canvas.width / 2, boxY + fontSize * 0.7 + index * lineHeight, maxWidth));
+            }
+
+            elapsed = clipStart + localSeconds;
+            setRenderProgress(Math.min(99, Math.round((elapsed / totalSeconds) * 100)));
+            await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+          }
+          video.pause();
+          video.removeAttribute("src");
+          video.load();
+          elapsed = clipEnd;
+        }
+      }
+
+      await new Promise((resolve) => window.setTimeout(resolve, 250));
+      const stopPromise = stopped;
+      recorder.stop();
+      await stopPromise;
+      const finalBlob = new Blob(chunks, { type: mimeType });
+      if (!finalBlob.size) throw new Error("Browser rendering finished without creating a video file.");
+      const outputUrl = URL.createObjectURL(finalBlob);
+      setFinalVideoUrl(outputUrl);
+      setRenderProgress(100);
+      say("Final video rendered with narration and timestamped captions. Download the WebM file below.");
+    } finally {
+      if (recorder && recorder.state !== "inactive") {
+        try { recorder.stop(); } catch {}
+      }
+      stream?.getTracks().forEach((track) => track.stop());
+      await audioContext.close().catch(() => undefined);
+    }
   });
 
   const tabButton = (value: typeof tab, label: string, icon: ReactNode) => (
