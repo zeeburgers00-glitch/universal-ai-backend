@@ -1,0 +1,214 @@
+{
+  "name": "YouTube Creator Team",
+  "version": "1.0.0",
+  "team_id": "youtube-creator-team",
+  "workflow_id": "youtube-four-agent-team",
+  "team_size": 4,
+  "status": "blueprint_available",
+  "execution_policy": "Four task-scoped agent blueprints. Agents are planned on demand by the agent worker; they are not persistent processes and are not claimed as running until the worker is deployed and health-checked.",
+  "worker_service": "AGENT_WORKER_URL",
+  "members": [
+    {
+      "agent_id": "youtube-thumbnail-designer",
+      "seat": 1,
+      "name": "Thumbnail Designer",
+      "responsibility": "Design a high-CTR, truthful thumbnail concept that matches the actual video, channel brand kit and target audience.",
+      "inputs": [
+        "video_topic",
+        "final_title_candidates",
+        "script_or_video_summary",
+        "channel_brand_kit",
+        "target_audience"
+      ],
+      "outputs": [
+        "thumbnail_concept",
+        "image_generation_prompt",
+        "composition_notes",
+        "text_overlay_options",
+        "accessibility_notes"
+      ],
+      "quality_gates": [
+        "1280x720_16_9_canvas",
+        "readable_at_mobile_size",
+        "no_misleading_claims",
+        "no_unlicensed_logos_or_faces",
+        "match_video_content"
+      ],
+      "tool_families": [
+        "media-worker",
+        "asset-store"
+      ],
+      "status": "blueprint_available",
+      "execution_mode": "plan_only"
+    },
+    {
+      "agent_id": "youtube-seo-specialist",
+      "seat": 2,
+      "name": "YouTube SEO Specialist",
+      "responsibility": "Build evidence-led YouTube packaging and metadata for search intent, suggested discovery and audience fit.",
+      "inputs": [
+        "topic",
+        "script",
+        "research_sources",
+        "channel_niche",
+        "language",
+        "target_audience",
+        "past_performance_when_available"
+      ],
+      "outputs": [
+        "primary_keyword",
+        "secondary_keywords",
+        "three_title_options",
+        "description",
+        "tags",
+        "hashtags",
+        "chapters",
+        "pinned_comment_draft"
+      ],
+      "quality_gates": [
+        "title_within_100_characters",
+        "accurate_description",
+        "source_links_preserved",
+        "no_keyword_stuffing",
+        "no_false_trend_or_performance_claims"
+      ],
+      "tool_families": [
+        "research-agent",
+        "youtube-api",
+        "analytics-read"
+      ],
+      "status": "blueprint_available",
+      "execution_mode": "plan_only"
+    },
+    {
+      "agent_id": "youtube-longform-video-producer",
+      "seat": 3,
+      "name": "Long-form Video Production Agent",
+      "responsibility": "Turn the approved research and script into a complete long-form 16:9 YouTube video production plan using licensed stock video, narration, captions, sound mix and FFmpeg rendering.",
+      "inputs": [
+        "approved_script",
+        "research_sources",
+        "scene_storyboard",
+        "voice_profile",
+        "licensed_footage_results",
+        "brand_kit"
+      ],
+      "outputs": [
+        "shot_list",
+        "stock_footage_manifest",
+        "narration_plan",
+        "caption_plan",
+        "ffmpeg_render_spec",
+        "quality_report",
+        "video_asset_id_when_rendered"
+      ],
+      "quality_gates": [
+        "licensed_video_footage_only",
+        "no_still_image_slideshows",
+        "source_attribution_retained",
+        "1920x1080_16_9",
+        "caption_sync",
+        "audio_video_quality_check"
+      ],
+      "tool_families": [
+        "media-worker",
+        "voice-worker",
+        "caption-worker",
+        "asset-store"
+      ],
+      "status": "blueprint_available",
+      "execution_mode": "plan_only"
+    },
+    {
+      "agent_id": "youtube-shorts-video-producer",
+      "seat": 4,
+      "name": "Shorts Video Production Agent",
+      "responsibility": "Create standalone vertical Shorts from approved scripts or user-owned/licensed long-form footage, emphasizing the opening hook, pacing, reframing and readable captions.",
+      "inputs": [
+        "approved_script_or_source_asset_id",
+        "source_video_transcript",
+        "highlight_candidates",
+        "channel_brand_kit",
+        "target_audience"
+      ],
+      "outputs": [
+        "shorts_hooks",
+        "clip_timecodes",
+        "vertical_edit_plan",
+        "caption_plan",
+        "ffmpeg_render_spec",
+        "quality_report",
+        "shorts_asset_ids_when_rendered"
+      ],
+      "quality_gates": [
+        "vertical_9_16",
+        "standalone_context",
+        "strong_opening_hook",
+        "caption_safe_margins",
+        "authorized_source_media_only",
+        "no_context_stripping"
+      ],
+      "tool_families": [
+        "media-worker",
+        "caption-worker",
+        "asset-store"
+      ],
+      "status": "blueprint_available",
+      "execution_mode": "plan_only"
+    }
+  ],
+  "workflow": {
+    "id": "youtube-four-agent-team",
+    "summary": "Coordinate the SEO, long-form video, Shorts video and thumbnail specialists around one approved channel brief.",
+    "sequence": [
+      {
+        "step": "seo-package",
+        "agent_id": "youtube-seo-specialist",
+        "output": "youtube_metadata_package"
+      },
+      {
+        "step": "longform-video",
+        "agent_id": "youtube-longform-video-producer",
+        "output": "longform_video_plan",
+        "parallel_group": "video-production"
+      },
+      {
+        "step": "shorts-video",
+        "agent_id": "youtube-shorts-video-producer",
+        "output": "shorts_video_plan",
+        "parallel_group": "video-production"
+      },
+      {
+        "step": "thumbnail",
+        "agent_id": "youtube-thumbnail-designer",
+        "output": "thumbnail_design_package"
+      },
+      {
+        "step": "human-review",
+        "agent_id": "approval-gate",
+        "output": "approved_content_package"
+      },
+      {
+        "step": "publish",
+        "agent_id": "youtube-publisher",
+        "output": "youtube_video_ids_and_schedule",
+        "requires_user_approval": true
+      }
+    ],
+    "required_inputs": [
+      "channel_connection_id",
+      "topic",
+      "channel_niche",
+      "language",
+      "target_audience",
+      "brand_kit"
+    ],
+    "requires_human_approval": true
+  },
+  "limitations": [
+    "Blueprints do not mean that four agents are running as background processes.",
+    "The current agent worker produces plans only; a plan does not itself render a video or create an image.",
+    "The long-form and Shorts video agents are separate production roles; actual rendering depends on configured media, voice, caption and storage workers.",
+    "YouTube publishing remains approval-gated and requires the connected channel owner's Google OAuth consent."
+  ]
+}
