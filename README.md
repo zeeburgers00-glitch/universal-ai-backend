@@ -121,3 +121,12 @@ GET /v1/tools?q=license&license_status=review_required
 GET /v1/catalog/stats
 ```
 
+
+
+## Continuous AI tool discovery
+
+A scheduled GitHub Actions workflow runs every six hours and opens/updates a pull request containing fresh AI repository candidates in `catalog/discovery_candidates.json`. It records metadata and licence identifiers only: it does not clone, install, import or execute third-party code. Candidates must pass a separate security/licence/dependency/test review before becoming executable integrations. This keeps discovery continuous without allowing arbitrary repositories to compromise the production backend.
+
+## Provider and stock footage additions
+
+See [provider and stock footage integration guide](docs/AUTOPILOT_PROVIDERS_AND_DISCOVERY.md). Added OpenAI-compatible adapters for Z.ai, HackerAI and OpenCode Zen, plus authenticated Pexels video search at `POST /v1/media/stock/pexels/search`. Pexels assets are returned with creator/source attribution metadata; actual rendering and publishing still require configured media and YouTube workers.
