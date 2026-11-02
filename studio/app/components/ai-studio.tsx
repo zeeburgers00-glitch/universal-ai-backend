@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { AudioLines, CheckCircle2, Copy, Download, Image as ImageIcon, LoaderCircle, LogOut, Play, RefreshCw, Sparkles, Video, WandSparkles } from "lucide-react";
+import { AudioLines, CheckCircle2, Copy, Download, Image as ImageIcon, LoaderCircle, LogOut, Play, RefreshCw, Search, Sparkles, Video, WandSparkles } from "lucide-react";
 
 type Model = { id: string; name?: string; description?: string };
 type Models = { text: Model[]; image: Model[]; video: Model[]; audio: Model[] };
@@ -58,7 +58,7 @@ export default function AIStudio() {
   const [expiresAt, setExpiresAt] = useState(0);
   const [models, setModels] = useState<Models>(DEFAULT_MODELS);
   const [catalogLoading, setCatalogLoading] = useState(true);
-  const [tab, setTab] = useState<"script" | "thumbnail" | "avatar" | "voice">("avatar");
+  const [tab, setTab] = useState<"script" | "seo" | "thumbnail" | "avatar" | "voice">("avatar");
   const [textModel, setTextModel] = useState(DEFAULT_MODELS.text[0].id);
   const [imageModel, setImageModel] = useState(DEFAULT_MODELS.image[0].id);
   const [videoModel, setVideoModel] = useState("");
@@ -66,6 +66,7 @@ export default function AIStudio() {
   const [budget, setBudget] = useState("5");
   const [topic, setTopic] = useState("");
   const [script, setScript] = useState("");
+  const [seoPack, setSeoPack] = useState("");
   const [imagePrompt, setImagePrompt] = useState("");
   const [thumbnailUrl, setThumbnailUrl] = useState("");
   const [videoPrompt, setVideoPrompt] = useState("");
@@ -264,6 +265,21 @@ export default function AIStudio() {
     say("Script generated.");
   });
 
+  const generateSeo = () => run("seo", async () => {
+    if (topic.trim().length < 6) throw new Error("Enter a video topic first.");
+    const data = await aiRequest("/v1/chat/completions", {
+      model: textModel,
+      temperature: 0.35,
+      max_tokens: 1200,
+      messages: [
+        { role: "system", content: "You are a careful YouTube SEO specialist. Create an evidence-aware metadata package for the exact video described. Return: one recommended title plus two alternatives (all <=100 characters), primary keyword, supporting keyword cluster, search intent, natural description, concise tags, relevant hashtags, chapters only if timestamps exist in supplied material, and pinned comment. Never invent search volume, trend growth, channel analytics, statistics or sources. Avoid keyword stuffing and clickbait unrelated to the content." },
+        { role: "user", content: "Topic: " + topic + "\nScript / video context:\n" + script.slice(0, 12000) },
+      ],
+    });
+    setSeoPack(String(data.choices?.[0]?.message?.content || ""));
+    say("SEO metadata package generated.");
+  });
+
   const generateThumbnail = () => run("image", async () => {
     if (imagePrompt.trim().length < 8) throw new Error("Describe the thumbnail you want.");
     const data = await aiRequest("/v1/images/generations", {
@@ -375,6 +391,7 @@ export default function AIStudio() {
         <nav className="panel flex gap-1 overflow-x-auto lg:flex-col">
           {tabButton("avatar", "AI Video / Avatar", <Video size={16} />)}
           {tabButton("script", "Script Writer", <WandSparkles size={16} />)}
+          {tabButton("seo", "YouTube SEO", <Search size={16} />)}
           {tabButton("thumbnail", "Thumbnail Studio", <ImageIcon size={16} />)}
           {tabButton("voice", "AI Voice", <AudioLines size={16} />)}
         </nav>
@@ -387,6 +404,14 @@ export default function AIStudio() {
             <button className="btn secondary mt-2" onClick={() => navigator.clipboard.writeText(script)} disabled={!script}><Copy size={14} /> Copy script</button>
           </>}
 
+          {tab === "seo" && <>
+            <h2>YouTube SEO Specialist</h2><p className="muted mt-2">Create search-aware metadata from the topic and actual script, without invented ranking claims.</p>
+            <div className="field mt-4"><label>Video topic</label><input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="What is this video about?" /></div>
+            <div className="field"><label>Script or final video summary (optional)</label><textarea value={script} onChange={(e) => setScript(e.target.value)} placeholder="Paste the script so titles and keywords accurately match the video..." /></div>
+            <div className="flex flex-wrap items-end gap-3"><div className="field min-w-[240px] flex-1"><label>Text model</label>{modelSelect(textModel, setTextModel, models.text, "No text models listed")}</div><button className="btn" onClick={generateSeo} disabled={!connected || busy === "seo"}>{busy === "seo" ? <LoaderCircle size={14} className="animate-spin" /> : <Search size={14} />} Generate SEO package</button></div>
+            <textarea className="mt-4 min-h-72 w-full rounded-lg border border-line bg-panel p-3 text-sm" value={seoPack} onChange={(e) => setSeoPack(e.target.value)} placeholder="Title options, description, keywords, tags and hashtags will appear here..." />
+            <button className="btn secondary mt-2" onClick={() => navigator.clipboard.writeText(seoPack)} disabled={!seoPack}><Copy size={14} /> Copy SEO package</button>
+          </>}
           {tab === "thumbnail" && <>
             <h2>AI Thumbnail Studio</h2><p className="muted mt-2">Generate a 16:9 thumbnail image from a prompt. Review claims and rights before use.</p>
             <div className="field mt-4"><label>Thumbnail concept</label><textarea value={imagePrompt} onChange={(e) => setImagePrompt(e.target.value)} placeholder="A dramatic underwater explorer facing a huge mysterious creature..." /></div>
