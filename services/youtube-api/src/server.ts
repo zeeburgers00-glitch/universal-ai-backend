@@ -1,4 +1,6 @@
 import "dotenv/config";
+import {readFile} from "node:fs/promises";
+import {resolve} from "node:path";
 import Fastify,{FastifyRequest,FastifyReply} from "fastify";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
@@ -42,6 +44,17 @@ const settingsSchema=z.object({
 const jobSchema=z.object({topic:z.string().min(8).max(300)}).strict();
 function cronFor(time:string):string{const [hour,minute]=time.split(":");return minute+" "+hour+" * * *";}
 function webUrl(path:string):string{return (process.env.WEB_APP_URL||"https://localhost:3000").replace(/\/$/,"")+path;}
+
+async function loadYouTubeCreatorTeam():Promise<Record<string,unknown>>{
+  const candidates=[
+    resolve(process.cwd(),"catalog/youtube_creator_team.json"),
+    resolve(process.cwd(),"../../catalog/youtube_creator_team.json")
+  ];
+  for(const candidate of candidates){
+    try{return JSON.parse(await readFile(candidate,"utf8")) as Record<string,unknown>}catch{}
+  }
+  throw new Error("YouTube creator team manifest is not available in this deployment");
+}
 
 async function getProviderStatus(userId:string){
   const clientDb=requireDb();
@@ -135,6 +148,7 @@ app.put("/v1/settings",{preHandler:requireUser},async(req,reply)=>{
   if(error)throw error;
   return {settings:data};
 });
+app.get("/v1/youtube/team",{preHandler:requireUser},async()=>loadYouTubeCreatorTeam());
 app.get("/v1/dashboard",{preHandler:requireUser},async(req)=>{
   const clientDb=requireDb(),userId=uid(req);
   const [conn,settings,jobs,usage]=await Promise.all([
