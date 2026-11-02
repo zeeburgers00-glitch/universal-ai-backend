@@ -1,5 +1,5 @@
 import { createCipheriv,createDecipheriv,createHmac,randomBytes,timingSafeEqual } from "node:crypto";
-import type Redis from "ioredis";
+type RedisStateStore = { set(key:string,value:string,...args:(string|number)[]):Promise<unknown>; eval(script:string,numKeys:number,...args:(string|number)[]):Promise<unknown>; };
 
 function encryptionKey():Buffer {
   const raw=process.env.TOKEN_ENCRYPTION_KEY||"";
@@ -25,7 +25,7 @@ export function decryptSecret(value:string):string {
   return Buffer.concat([decipher.update(Buffer.from(parts[2],"base64url")),decipher.final()]).toString("utf8");
 }
 type StatePayload={userId:string;nonce:string;expiresAt:number};
-export async function createOAuthState(userId:string,redis:Redis):Promise<string>{
+export async function createOAuthState(userId:string,redis:RedisStateStore):Promise<string>{
   const nonce=randomBytes(24).toString("base64url");
   const payload:StatePayload={userId,nonce,expiresAt:Date.now()+10*60*1000};
   await redis.set("yt-oauth-state:"+nonce,userId,"EX",600,"NX");

@@ -1,5 +1,5 @@
 import "dotenv/config";
-import Redis from "ioredis";
+import { Redis } from "ioredis";
 import {Queue,Worker,Job} from "bullmq";
 import {createClient} from "@supabase/supabase-js";
 import {runProduction} from "./pipeline.js";
