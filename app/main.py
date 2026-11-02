@@ -25,7 +25,7 @@ from .explorer_ui import EXPLORER_HTML
 from .github_discovery import list_discovery_presets, search_github_repositories
 from .providers import chat_with_provider, provider_status
 from .pexels import search_pexels_videos
-from .metricool import metricool_request, metricool_status
+from .metricool import metricool_request, metricool_status, schedule_youtube_video
 from .autopilot_store import configured as autopilot_store_configured, create_run, add_event, get_run as get_autopilot_run, get_events as get_autopilot_events, update_run
 from .registry import Registry
 from .security import require_api_key
@@ -81,6 +81,21 @@ class ChatRequest(BaseModel):
     messages: list[dict[str, Any]] = Field(min_length=1, max_length=200)
     temperature: float = Field(default=0.7, ge=0, le=2)
     max_tokens: int | None = Field(default=1024, ge=1, le=32768)
+
+
+class MetricoolYouTubeScheduleRequest(BaseModel):
+    title: str = Field(min_length=1, max_length=100)
+    description: str = Field(min_length=1, max_length=5000)
+    publication_datetime: str = Field(min_length=10, max_length=80)
+    timezone: str = Field(min_length=3, max_length=80)
+    media_ids: list[str] = Field(min_length=1, max_length=5)
+    tags: list[str] = Field(default_factory=list, max_length=500)
+    category: str = Field(default="22", min_length=1, max_length=12)
+    privacy: Literal["public", "unlisted", "private"] = "private"
+    video_type: Literal["video", "short"] = "video"
+    made_for_kids: bool = False
+    ai_generated_content: bool = True
+    user_approved: bool = False
 
 
 class ChatTaskRequest(BaseModel):
@@ -1027,3 +1042,30 @@ async def metricool_scheduled_posts(start: str, end: str, timezone: str = "Asia/
         raise HTTPException(status_code=503, detail=str(exc))
     except httpx.HTTPError as exc:
         raise HTTPException(status_code=502, detail="Metricool scheduled-post lookup failed") from exc
+
+
+@app.post("/v1/integrations/metricool/schedule-youtube", dependencies=[Depends(require_api_key)], status_code=202)
+async def metricool_schedule_youtube(request: MetricoolYouTubeScheduleRequest):
+    if not request.user_approved:
+        raise HTTPException(status_code=409, detail="Scheduling a public YouTube post requires explicit user_approved=true")
+    try:
+        result = await schedule_youtube_video(
+            title=request.title,
+            description=request.description,
+            publication_datetime=request.publication_datetime,
+            timezone=request.timezone,
+            media_ids=request.media_ids,
+            tags=request.tags,
+            category=request.category,
+            privacy=request.privacy,
+            made_for_kids=request.made_for_kids,
+            ai_generated_content=request.ai_generated_content,
+            video_type=request.video_type,
+        )
+        return {"status": "scheduled", "provider": "metricool", "result": result}
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="Metricool scheduling request failed") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
