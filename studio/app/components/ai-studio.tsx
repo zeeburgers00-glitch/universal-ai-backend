@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { AudioLines, CheckCircle2, Copy, Download, Film, Image as ImageIcon, LoaderCircle, LogOut, Play, RefreshCw, Search, Sparkles, Trash2, UploadCloud, Video, WandSparkles } from "lucide-react";
+import { AudioLines, CheckCircle2, Copy, Download, Film, Image as ImageIcon, LoaderCircle, LogOut, Play, Plus, RefreshCw, Search, Sparkles, Trash2, UploadCloud, Video, WandSparkles } from "lucide-react";
 
 type Model = { id: string; name?: string; description?: string; video_capabilities?: string[]; input_modalities?: string[]; min_duration?: number; max_duration?: number; paid_only?: boolean; pricing?: Record<string, string> };
 type Models = { text: Model[]; image: Model[]; video: Model[]; audio: Model[] };
