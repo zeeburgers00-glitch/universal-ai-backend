@@ -10,6 +10,7 @@ type CaptionCue = { start: number; end: number; text: string };
 
 const API = "https://gen.pollinations.ai";
 const AUTH = "https://enter.pollinations.ai";
+const APP_BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "";
 const DEFAULT_MODELS: Models = {
   text: [{ id: "openai/gpt-5.4-nano" }],
   image: [{ id: "black-forest-labs/flux.1-schnell" }],
@@ -135,7 +136,7 @@ export default function AIStudio() {
   }, [say]);
 
   useEffect(() => {
-    setRedirectUri(window.location.origin + "/ai/connect");
+    setRedirectUri(window.location.origin + APP_BASE_PATH + "/ai/connect");
     const storedKey = sessionStorage.getItem("pollinations_app_key") || "";
     const storedToken = sessionStorage.getItem("pollinations_access_token") || "";
     const storedExpiry = Number(sessionStorage.getItem("pollinations_expires_at") || 0);
