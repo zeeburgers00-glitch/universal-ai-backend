@@ -50,14 +50,14 @@ Use private service DNS (for example, `http://ollama:11434/v1`) when the API and
 
 ### Research and topic discovery
 
-SearXNG: https://github.com/searxng/searxng provides a self-hosted metasearch HTTP API. Its JSON interface is `/search?q=...&format=json`; the operator must enable JSON in the instance's `search.formats` setting. It avoids a single paid search-provider API key, but results depend on configured upstream search engines, rate limits, and availability. The current YouTube worker still calls Tavily directly, so SearXNG is an alternative implementation target, not an already-active fallback.
+SearXNG: https://github.com/searxng/searxng provides a self-hosted metasearch HTTP API. Its JSON interface is `/search?q=...&format=json`; the operator must enable JSON in the instance's `search.formats` setting. It avoids a single paid search-provider API key, but results depend on configured upstream search engines, rate limits, and availability. The YouTube worker now uses Tavily when TAVILY_API_KEY is set and falls back to SearXNG when only SEARXNG_BASE_URL is configured. The SearXNG instance must be deployed privately and have JSON output enabled.
 
 ### Speech transcription and captions
 
 - faster-whisper: https://github.com/SYSTRAN/faster-whisper — local Whisper-compatible transcription engine using CTranslate2. It is a library/engine, not a ready public API; run it inside a worker or wrap it with an authenticated HTTP service.
 - LocalAI also provides an OpenAI-style runtime with audio backends.
 
-The current YouTube video renderer still sends captions requests to OpenAI's `/v1/audio/transcriptions`. A self-hosted transcription endpoint must be configured and tested before `OPENAI_API_KEY` can be removed from that path.
+The YouTube video renderer now reads `WHISPER_BASE_URL`, `WHISPER_API_KEY`, and `WHISPER_MODEL` and posts to `/audio/transcriptions`; it falls back to `OPENAI_API_KEY` for backwards compatibility. Point `WHISPER_BASE_URL` at a private OpenAI-compatible ASR endpoint to use a self-hosted transcription model. Test the deployed ASR server's SRT response support before removing the OpenAI fallback.
 
 ### Voice generation
 
