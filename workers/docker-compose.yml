@@ -217,6 +217,27 @@ services:
     restart: unless-stopped
     networks: [workers-private]
 
+  autopilot-runner:
+    build: { context: .., dockerfile: workers/autopilot_worker/Dockerfile }
+    command: ["celery", "-A", "autopilot_worker.app.celery_app", "worker", "--loglevel=INFO", "--concurrency=${AUTOPILOT_MAX_PARALLEL_AGENTS:-5}"]
+    environment:
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/6
+      SUPABASE_URL: ${SUPABASE_URL:?set SUPABASE_URL}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:?set SUPABASE_SERVICE_ROLE_KEY}
+      AUTOPILOT_MODEL_BASE_URL: ${AUTOPILOT_MODEL_BASE_URL:-}
+      AUTOPILOT_MODEL_API_KEY: ${AUTOPILOT_MODEL_API_KEY:-}
+      AUTOPILOT_DEFAULT_MODEL: ${AUTOPILOT_DEFAULT_MODEL:-}
+      AI_BASE_URL: ${AI_BASE_URL:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_DEFAULT_MODEL: ${AI_DEFAULT_MODEL:-}
+      GROQ_BASE_URL: ${GROQ_BASE_URL:-https://api.groq.com/openai/v1}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_DEFAULT_MODEL: ${GROQ_DEFAULT_MODEL:-}
+      AUTOPILOT_MAX_PARALLEL_AGENTS: ${AUTOPILOT_MAX_PARALLEL_AGENTS:-5}
+    depends_on: { redis: { condition: service_healthy } }
+    restart: unless-stopped
+    networks: [workers-private]
+
   rea-api:
     build: { context: ./rea_worker, dockerfile: Dockerfile }
     command: ["uvicorn", "rea_worker.app:app", "--host", "0.0.0.0", "--port", "8700"]
