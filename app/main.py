@@ -23,6 +23,7 @@ from .builtin_workers import builtin_runtime_enabled
 from .explorer_ui import EXPLORER_HTML
 from .github_discovery import list_discovery_presets, search_github_repositories
 from .providers import chat_with_provider, provider_status
+from .pexels import search_pexels_videos
 from .registry import Registry
 from .security import require_api_key
 from .supabase_store import save_custom_tool, supabase_configured
@@ -898,3 +899,30 @@ async def discover_github(
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"GitHub discovery failed: {type(exc).__name__}")
 
+
+
+class PexelsVideoSearchRequest(BaseModel):
+    query: str = Field(min_length=2, max_length=160)
+    orientation: Literal["landscape", "portrait", "square"] = "landscape"
+    size: Literal["large", "medium", "small"] = "medium"
+    per_page: int = Field(default=12, ge=1, le=30)
+    page: int = Field(default=1, ge=1, le=50)
+
+
+@app.post("/v1/media/stock/pexels/search", dependencies=[Depends(require_api_key)])
+async def search_stock_video(request: PexelsVideoSearchRequest):
+    """Search licensed Pexels stock footage; returns source/creator attribution with each result."""
+    try:
+        return await search_pexels_videos(
+            query=request.query,
+            orientation=request.orientation,
+            size=request.size,
+            per_page=request.per_page,
+            page=request.page,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=502, detail="Pexels returned an invalid response") from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Pexels search failed: {type(exc).__name__}") from exc
