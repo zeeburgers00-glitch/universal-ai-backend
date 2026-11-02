@@ -1,0 +1,3200 @@
+{
+  "name": "YouTube Agent Fleet",
+  "version": "1.0.0",
+  "role_count": 17,
+  "agent_slots": 120,
+  "execution_policy": "Slots are role templates. Runtime spawns task-scoped agents only when workers and budget permit; catalogue slots are not claimed as currently running instances.",
+  "max_parallel_default": 5,
+  "max_parallel_env": "AUTOPILOT_MAX_PARALLEL_AGENTS",
+  "roles": [
+    {
+      "id": "content-strategist",
+      "name": "Content Strategist",
+      "capacity": 8,
+      "mission": "Channel strategy, audience definition, niche selection and content pillars",
+      "capabilities": [
+        "strategy",
+        "niche-research",
+        "content-calendar"
+      ]
+    },
+    {
+      "id": "seo-specialist",
+      "name": "YouTube SEO Specialist",
+      "capacity": 6,
+      "mission": "Keyword clusters, metadata, search intent and discoverability",
+      "capabilities": [
+        "keyword-research",
+        "youtube-seo",
+        "metadata"
+      ]
+    },
+    {
+      "id": "publishing-reviewer",
+      "name": "Publishing Reviewer",
+      "capacity": 4,
+      "mission": "Final checks for metadata, policy, rights, audience and scheduling readiness",
+      "capabilities": [
+        "preflight",
+        "policy-review",
+        "publishing"
+      ]
+    },
+    {
+      "id": "shorts-editor",
+      "name": "Shorts Editor",
+      "capacity": 8,
+      "mission": "Short-form hooks, pacing, vertical structure and retention edits",
+      "capabilities": [
+        "shorts",
+        "retention",
+        "editing"
+      ]
+    },
+    {
+      "id": "video-production-specialist",
+      "name": "Video Production Specialist",
+      "capacity": 10,
+      "mission": "Production planning, shot lists, audio/video assembly and output checks",
+      "capabilities": [
+        "production",
+        "rendering",
+        "quality"
+      ]
+    },
+    {
+      "id": "marketing-specialist",
+      "name": "Marketing Specialist",
+      "capacity": 6,
+      "mission": "Positioning, promotion, audience growth and campaign planning",
+      "capabilities": [
+        "marketing",
+        "distribution",
+        "growth"
+      ]
+    },
+    {
+      "id": "research-specialist",
+      "name": "Research Specialist",
+      "capacity": 12,
+      "mission": "Topic research, sources, fact-checking, trend analysis and competitor research",
+      "capabilities": [
+        "research",
+        "fact-check",
+        "trends"
+      ]
+    },
+    {
+      "id": "audience-analytics-specialist",
+      "name": "Audience Analytics Specialist",
+      "capacity": 6,
+      "mission": "Retention, CTR, watch-time and audience cohort analysis",
+      "capabilities": [
+        "analytics",
+        "retention",
+        "experiments"
+      ]
+    },
+    {
+      "id": "channel-specialist",
+      "name": "Channel Specialist",
+      "capacity": 4,
+      "mission": "Channel configuration, playlists, channel branding and operational checks",
+      "capabilities": [
+        "channel-ops",
+        "branding",
+        "playlists"
+      ]
+    },
+    {
+      "id": "production-manager",
+      "name": "Production Manager",
+      "capacity": 4,
+      "mission": "Task routing, deadlines, dependencies, budgets and production coordination",
+      "capabilities": [
+        "orchestration",
+        "scheduling",
+        "budget"
+      ]
+    },
+    {
+      "id": "motion-designer",
+      "name": "Motion Designer",
+      "capacity": 6,
+      "mission": "Motion graphics, transitions, animated titles and visual effects",
+      "capabilities": [
+        "motion-design",
+        "effects",
+        "titles"
+      ]
+    },
+    {
+      "id": "video-editor",
+      "name": "Video Editor",
+      "capacity": 8,
+      "mission": "FFmpeg editing, montage, sound mix, transitions and aspect-ratio delivery",
+      "capabilities": [
+        "ffmpeg",
+        "editing",
+        "render"
+      ]
+    },
+    {
+      "id": "visual-production-specialist",
+      "name": "Visual Production Specialist",
+      "capacity": 8,
+      "mission": "Stock-footage selection, visual continuity and scene coverage",
+      "capabilities": [
+        "stock-footage",
+        "visuals",
+        "storyboard"
+      ]
+    },
+    {
+      "id": "voice-specialist",
+      "name": "Voice Specialist",
+      "capacity": 6,
+      "mission": "TTS, pronunciation, narration direction, dubbing and consent-aware voice workflows",
+      "capabilities": [
+        "tts",
+        "voice",
+        "dubbing"
+      ]
+    },
+    {
+      "id": "caption-specialist",
+      "name": "Caption Specialist",
+      "capacity": 6,
+      "mission": "Whisper transcription, word-level alignment, subtitles and localization",
+      "capabilities": [
+        "captions",
+        "asr",
+        "localization"
+      ]
+    },
+    {
+      "id": "script-specialist",
+      "name": "Script Specialist",
+      "capacity": 10,
+      "mission": "Original scripts, hooks, storytelling, structure and fact checking",
+      "capabilities": [
+        "scriptwriting",
+        "storytelling",
+        "fact-check"
+      ]
+    },
+    {
+      "id": "packaging-specialist",
+      "name": "Packaging Specialist",
+      "capacity": 8,
+      "mission": "Titles, thumbnails, channel positioning and packaging tests",
+      "capabilities": [
+        "titles",
+        "thumbnails",
+        "packaging"
+      ]
+    }
+  ],
+  "agents": [
+    {
+      "id": "yt-content-strategist-01",
+      "role_id": "content-strategist",
+      "name": "Content Strategist 01",
+      "mission": "Channel strategy, audience definition, niche selection and content pillars",
+      "capabilities": [
+        "strategy",
+        "niche-research",
+        "content-calendar"
+      ],
+      "slot": 1,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-content-strategist-02",
+      "role_id": "content-strategist",
+      "name": "Content Strategist 02",
+      "mission": "Channel strategy, audience definition, niche selection and content pillars",
+      "capabilities": [
+        "strategy",
+        "niche-research",
+        "content-calendar"
+      ],
+      "slot": 2,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-content-strategist-03",
+      "role_id": "content-strategist",
+      "name": "Content Strategist 03",
+      "mission": "Channel strategy, audience definition, niche selection and content pillars",
+      "capabilities": [
+        "strategy",
+        "niche-research",
+        "content-calendar"
+      ],
+      "slot": 3,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-content-strategist-04",
+      "role_id": "content-strategist",
+      "name": "Content Strategist 04",
+      "mission": "Channel strategy, audience definition, niche selection and content pillars",
+      "capabilities": [
+        "strategy",
+        "niche-research",
+        "content-calendar"
+      ],
+      "slot": 4,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-content-strategist-05",
+      "role_id": "content-strategist",
+      "name": "Content Strategist 05",
+      "mission": "Channel strategy, audience definition, niche selection and content pillars",
+      "capabilities": [
+        "strategy",
+        "niche-research",
+        "content-calendar"
+      ],
+      "slot": 5,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-content-strategist-06",
+      "role_id": "content-strategist",
+      "name": "Content Strategist 06",
+      "mission": "Channel strategy, audience definition, niche selection and content pillars",
+      "capabilities": [
+        "strategy",
+        "niche-research",
+        "content-calendar"
+      ],
+      "slot": 6,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-content-strategist-07",
+      "role_id": "content-strategist",
+      "name": "Content Strategist 07",
+      "mission": "Channel strategy, audience definition, niche selection and content pillars",
+      "capabilities": [
+        "strategy",
+        "niche-research",
+        "content-calendar"
+      ],
+      "slot": 7,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-content-strategist-08",
+      "role_id": "content-strategist",
+      "name": "Content Strategist 08",
+      "mission": "Channel strategy, audience definition, niche selection and content pillars",
+      "capabilities": [
+        "strategy",
+        "niche-research",
+        "content-calendar"
+      ],
+      "slot": 8,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-seo-specialist-01",
+      "role_id": "seo-specialist",
+      "name": "YouTube SEO Specialist 01",
+      "mission": "Keyword clusters, metadata, search intent and discoverability",
+      "capabilities": [
+        "keyword-research",
+        "youtube-seo",
+        "metadata"
+      ],
+      "slot": 1,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-seo-specialist-02",
+      "role_id": "seo-specialist",
+      "name": "YouTube SEO Specialist 02",
+      "mission": "Keyword clusters, metadata, search intent and discoverability",
+      "capabilities": [
+        "keyword-research",
+        "youtube-seo",
+        "metadata"
+      ],
+      "slot": 2,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-seo-specialist-03",
+      "role_id": "seo-specialist",
+      "name": "YouTube SEO Specialist 03",
+      "mission": "Keyword clusters, metadata, search intent and discoverability",
+      "capabilities": [
+        "keyword-research",
+        "youtube-seo",
+        "metadata"
+      ],
+      "slot": 3,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-seo-specialist-04",
+      "role_id": "seo-specialist",
+      "name": "YouTube SEO Specialist 04",
+      "mission": "Keyword clusters, metadata, search intent and discoverability",
+      "capabilities": [
+        "keyword-research",
+        "youtube-seo",
+        "metadata"
+      ],
+      "slot": 4,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-seo-specialist-05",
+      "role_id": "seo-specialist",
+      "name": "YouTube SEO Specialist 05",
+      "mission": "Keyword clusters, metadata, search intent and discoverability",
+      "capabilities": [
+        "keyword-research",
+        "youtube-seo",
+        "metadata"
+      ],
+      "slot": 5,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-seo-specialist-06",
+      "role_id": "seo-specialist",
+      "name": "YouTube SEO Specialist 06",
+      "mission": "Keyword clusters, metadata, search intent and discoverability",
+      "capabilities": [
+        "keyword-research",
+        "youtube-seo",
+        "metadata"
+      ],
+      "slot": 6,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-publishing-reviewer-01",
+      "role_id": "publishing-reviewer",
+      "name": "Publishing Reviewer 01",
+      "mission": "Final checks for metadata, policy, rights, audience and scheduling readiness",
+      "capabilities": [
+        "preflight",
+        "policy-review",
+        "publishing"
+      ],
+      "slot": 1,
+      "role_capacity": 4,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-publishing-reviewer-02",
+      "role_id": "publishing-reviewer",
+      "name": "Publishing Reviewer 02",
+      "mission": "Final checks for metadata, policy, rights, audience and scheduling readiness",
+      "capabilities": [
+        "preflight",
+        "policy-review",
+        "publishing"
+      ],
+      "slot": 2,
+      "role_capacity": 4,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-publishing-reviewer-03",
+      "role_id": "publishing-reviewer",
+      "name": "Publishing Reviewer 03",
+      "mission": "Final checks for metadata, policy, rights, audience and scheduling readiness",
+      "capabilities": [
+        "preflight",
+        "policy-review",
+        "publishing"
+      ],
+      "slot": 3,
+      "role_capacity": 4,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-publishing-reviewer-04",
+      "role_id": "publishing-reviewer",
+      "name": "Publishing Reviewer 04",
+      "mission": "Final checks for metadata, policy, rights, audience and scheduling readiness",
+      "capabilities": [
+        "preflight",
+        "policy-review",
+        "publishing"
+      ],
+      "slot": 4,
+      "role_capacity": 4,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-shorts-editor-01",
+      "role_id": "shorts-editor",
+      "name": "Shorts Editor 01",
+      "mission": "Short-form hooks, pacing, vertical structure and retention edits",
+      "capabilities": [
+        "shorts",
+        "retention",
+        "editing"
+      ],
+      "slot": 1,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-shorts-editor-02",
+      "role_id": "shorts-editor",
+      "name": "Shorts Editor 02",
+      "mission": "Short-form hooks, pacing, vertical structure and retention edits",
+      "capabilities": [
+        "shorts",
+        "retention",
+        "editing"
+      ],
+      "slot": 2,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-shorts-editor-03",
+      "role_id": "shorts-editor",
+      "name": "Shorts Editor 03",
+      "mission": "Short-form hooks, pacing, vertical structure and retention edits",
+      "capabilities": [
+        "shorts",
+        "retention",
+        "editing"
+      ],
+      "slot": 3,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-shorts-editor-04",
+      "role_id": "shorts-editor",
+      "name": "Shorts Editor 04",
+      "mission": "Short-form hooks, pacing, vertical structure and retention edits",
+      "capabilities": [
+        "shorts",
+        "retention",
+        "editing"
+      ],
+      "slot": 4,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-shorts-editor-05",
+      "role_id": "shorts-editor",
+      "name": "Shorts Editor 05",
+      "mission": "Short-form hooks, pacing, vertical structure and retention edits",
+      "capabilities": [
+        "shorts",
+        "retention",
+        "editing"
+      ],
+      "slot": 5,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-shorts-editor-06",
+      "role_id": "shorts-editor",
+      "name": "Shorts Editor 06",
+      "mission": "Short-form hooks, pacing, vertical structure and retention edits",
+      "capabilities": [
+        "shorts",
+        "retention",
+        "editing"
+      ],
+      "slot": 6,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-shorts-editor-07",
+      "role_id": "shorts-editor",
+      "name": "Shorts Editor 07",
+      "mission": "Short-form hooks, pacing, vertical structure and retention edits",
+      "capabilities": [
+        "shorts",
+        "retention",
+        "editing"
+      ],
+      "slot": 7,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-shorts-editor-08",
+      "role_id": "shorts-editor",
+      "name": "Shorts Editor 08",
+      "mission": "Short-form hooks, pacing, vertical structure and retention edits",
+      "capabilities": [
+        "shorts",
+        "retention",
+        "editing"
+      ],
+      "slot": 8,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-video-production-specialist-01",
+      "role_id": "video-production-specialist",
+      "name": "Video Production Specialist 01",
+      "mission": "Production planning, shot lists, audio/video assembly and output checks",
+      "capabilities": [
+        "production",
+        "rendering",
+        "quality"
+      ],
+      "slot": 1,
+      "role_capacity": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-video-production-specialist-02",
+      "role_id": "video-production-specialist",
+      "name": "Video Production Specialist 02",
+      "mission": "Production planning, shot lists, audio/video assembly and output checks",
+      "capabilities": [
+        "production",
+        "rendering",
+        "quality"
+      ],
+      "slot": 2,
+      "role_capacity": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-video-production-specialist-03",
+      "role_id": "video-production-specialist",
+      "name": "Video Production Specialist 03",
+      "mission": "Production planning, shot lists, audio/video assembly and output checks",
+      "capabilities": [
+        "production",
+        "rendering",
+        "quality"
+      ],
+      "slot": 3,
+      "role_capacity": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-video-production-specialist-04",
+      "role_id": "video-production-specialist",
+      "name": "Video Production Specialist 04",
+      "mission": "Production planning, shot lists, audio/video assembly and output checks",
+      "capabilities": [
+        "production",
+        "rendering",
+        "quality"
+      ],
+      "slot": 4,
+      "role_capacity": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-video-production-specialist-05",
+      "role_id": "video-production-specialist",
+      "name": "Video Production Specialist 05",
+      "mission": "Production planning, shot lists, audio/video assembly and output checks",
+      "capabilities": [
+        "production",
+        "rendering",
+        "quality"
+      ],
+      "slot": 5,
+      "role_capacity": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-video-production-specialist-06",
+      "role_id": "video-production-specialist",
+      "name": "Video Production Specialist 06",
+      "mission": "Production planning, shot lists, audio/video assembly and output checks",
+      "capabilities": [
+        "production",
+        "rendering",
+        "quality"
+      ],
+      "slot": 6,
+      "role_capacity": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-video-production-specialist-07",
+      "role_id": "video-production-specialist",
+      "name": "Video Production Specialist 07",
+      "mission": "Production planning, shot lists, audio/video assembly and output checks",
+      "capabilities": [
+        "production",
+        "rendering",
+        "quality"
+      ],
+      "slot": 7,
+      "role_capacity": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-video-production-specialist-08",
+      "role_id": "video-production-specialist",
+      "name": "Video Production Specialist 08",
+      "mission": "Production planning, shot lists, audio/video assembly and output checks",
+      "capabilities": [
+        "production",
+        "rendering",
+        "quality"
+      ],
+      "slot": 8,
+      "role_capacity": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-video-production-specialist-09",
+      "role_id": "video-production-specialist",
+      "name": "Video Production Specialist 09",
+      "mission": "Production planning, shot lists, audio/video assembly and output checks",
+      "capabilities": [
+        "production",
+        "rendering",
+        "quality"
+      ],
+      "slot": 9,
+      "role_capacity": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-video-production-specialist-10",
+      "role_id": "video-production-specialist",
+      "name": "Video Production Specialist 10",
+      "mission": "Production planning, shot lists, audio/video assembly and output checks",
+      "capabilities": [
+        "production",
+        "rendering",
+        "quality"
+      ],
+      "slot": 10,
+      "role_capacity": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-marketing-specialist-01",
+      "role_id": "marketing-specialist",
+      "name": "Marketing Specialist 01",
+      "mission": "Positioning, promotion, audience growth and campaign planning",
+      "capabilities": [
+        "marketing",
+        "distribution",
+        "growth"
+      ],
+      "slot": 1,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-marketing-specialist-02",
+      "role_id": "marketing-specialist",
+      "name": "Marketing Specialist 02",
+      "mission": "Positioning, promotion, audience growth and campaign planning",
+      "capabilities": [
+        "marketing",
+        "distribution",
+        "growth"
+      ],
+      "slot": 2,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-marketing-specialist-03",
+      "role_id": "marketing-specialist",
+      "name": "Marketing Specialist 03",
+      "mission": "Positioning, promotion, audience growth and campaign planning",
+      "capabilities": [
+        "marketing",
+        "distribution",
+        "growth"
+      ],
+      "slot": 3,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-marketing-specialist-04",
+      "role_id": "marketing-specialist",
+      "name": "Marketing Specialist 04",
+      "mission": "Positioning, promotion, audience growth and campaign planning",
+      "capabilities": [
+        "marketing",
+        "distribution",
+        "growth"
+      ],
+      "slot": 4,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-marketing-specialist-05",
+      "role_id": "marketing-specialist",
+      "name": "Marketing Specialist 05",
+      "mission": "Positioning, promotion, audience growth and campaign planning",
+      "capabilities": [
+        "marketing",
+        "distribution",
+        "growth"
+      ],
+      "slot": 5,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-marketing-specialist-06",
+      "role_id": "marketing-specialist",
+      "name": "Marketing Specialist 06",
+      "mission": "Positioning, promotion, audience growth and campaign planning",
+      "capabilities": [
+        "marketing",
+        "distribution",
+        "growth"
+      ],
+      "slot": 6,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-research-specialist-01",
+      "role_id": "research-specialist",
+      "name": "Research Specialist 01",
+      "mission": "Topic research, sources, fact-checking, trend analysis and competitor research",
+      "capabilities": [
+        "research",
+        "fact-check",
+        "trends"
+      ],
+      "slot": 1,
+      "role_capacity": 12,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-research-specialist-02",
+      "role_id": "research-specialist",
+      "name": "Research Specialist 02",
+      "mission": "Topic research, sources, fact-checking, trend analysis and competitor research",
+      "capabilities": [
+        "research",
+        "fact-check",
+        "trends"
+      ],
+      "slot": 2,
+      "role_capacity": 12,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-research-specialist-03",
+      "role_id": "research-specialist",
+      "name": "Research Specialist 03",
+      "mission": "Topic research, sources, fact-checking, trend analysis and competitor research",
+      "capabilities": [
+        "research",
+        "fact-check",
+        "trends"
+      ],
+      "slot": 3,
+      "role_capacity": 12,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-research-specialist-04",
+      "role_id": "research-specialist",
+      "name": "Research Specialist 04",
+      "mission": "Topic research, sources, fact-checking, trend analysis and competitor research",
+      "capabilities": [
+        "research",
+        "fact-check",
+        "trends"
+      ],
+      "slot": 4,
+      "role_capacity": 12,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-research-specialist-05",
+      "role_id": "research-specialist",
+      "name": "Research Specialist 05",
+      "mission": "Topic research, sources, fact-checking, trend analysis and competitor research",
+      "capabilities": [
+        "research",
+        "fact-check",
+        "trends"
+      ],
+      "slot": 5,
+      "role_capacity": 12,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-research-specialist-06",
+      "role_id": "research-specialist",
+      "name": "Research Specialist 06",
+      "mission": "Topic research, sources, fact-checking, trend analysis and competitor research",
+      "capabilities": [
+        "research",
+        "fact-check",
+        "trends"
+      ],
+      "slot": 6,
+      "role_capacity": 12,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-research-specialist-07",
+      "role_id": "research-specialist",
+      "name": "Research Specialist 07",
+      "mission": "Topic research, sources, fact-checking, trend analysis and competitor research",
+      "capabilities": [
+        "research",
+        "fact-check",
+        "trends"
+      ],
+      "slot": 7,
+      "role_capacity": 12,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-research-specialist-08",
+      "role_id": "research-specialist",
+      "name": "Research Specialist 08",
+      "mission": "Topic research, sources, fact-checking, trend analysis and competitor research",
+      "capabilities": [
+        "research",
+        "fact-check",
+        "trends"
+      ],
+      "slot": 8,
+      "role_capacity": 12,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-research-specialist-09",
+      "role_id": "research-specialist",
+      "name": "Research Specialist 09",
+      "mission": "Topic research, sources, fact-checking, trend analysis and competitor research",
+      "capabilities": [
+        "research",
+        "fact-check",
+        "trends"
+      ],
+      "slot": 9,
+      "role_capacity": 12,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-research-specialist-10",
+      "role_id": "research-specialist",
+      "name": "Research Specialist 10",
+      "mission": "Topic research, sources, fact-checking, trend analysis and competitor research",
+      "capabilities": [
+        "research",
+        "fact-check",
+        "trends"
+      ],
+      "slot": 10,
+      "role_capacity": 12,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-research-specialist-11",
+      "role_id": "research-specialist",
+      "name": "Research Specialist 11",
+      "mission": "Topic research, sources, fact-checking, trend analysis and competitor research",
+      "capabilities": [
+        "research",
+        "fact-check",
+        "trends"
+      ],
+      "slot": 11,
+      "role_capacity": 12,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-research-specialist-12",
+      "role_id": "research-specialist",
+      "name": "Research Specialist 12",
+      "mission": "Topic research, sources, fact-checking, trend analysis and competitor research",
+      "capabilities": [
+        "research",
+        "fact-check",
+        "trends"
+      ],
+      "slot": 12,
+      "role_capacity": 12,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-audience-analytics-specialist-01",
+      "role_id": "audience-analytics-specialist",
+      "name": "Audience Analytics Specialist 01",
+      "mission": "Retention, CTR, watch-time and audience cohort analysis",
+      "capabilities": [
+        "analytics",
+        "retention",
+        "experiments"
+      ],
+      "slot": 1,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-audience-analytics-specialist-02",
+      "role_id": "audience-analytics-specialist",
+      "name": "Audience Analytics Specialist 02",
+      "mission": "Retention, CTR, watch-time and audience cohort analysis",
+      "capabilities": [
+        "analytics",
+        "retention",
+        "experiments"
+      ],
+      "slot": 2,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-audience-analytics-specialist-03",
+      "role_id": "audience-analytics-specialist",
+      "name": "Audience Analytics Specialist 03",
+      "mission": "Retention, CTR, watch-time and audience cohort analysis",
+      "capabilities": [
+        "analytics",
+        "retention",
+        "experiments"
+      ],
+      "slot": 3,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-audience-analytics-specialist-04",
+      "role_id": "audience-analytics-specialist",
+      "name": "Audience Analytics Specialist 04",
+      "mission": "Retention, CTR, watch-time and audience cohort analysis",
+      "capabilities": [
+        "analytics",
+        "retention",
+        "experiments"
+      ],
+      "slot": 4,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-audience-analytics-specialist-05",
+      "role_id": "audience-analytics-specialist",
+      "name": "Audience Analytics Specialist 05",
+      "mission": "Retention, CTR, watch-time and audience cohort analysis",
+      "capabilities": [
+        "analytics",
+        "retention",
+        "experiments"
+      ],
+      "slot": 5,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-audience-analytics-specialist-06",
+      "role_id": "audience-analytics-specialist",
+      "name": "Audience Analytics Specialist 06",
+      "mission": "Retention, CTR, watch-time and audience cohort analysis",
+      "capabilities": [
+        "analytics",
+        "retention",
+        "experiments"
+      ],
+      "slot": 6,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-channel-specialist-01",
+      "role_id": "channel-specialist",
+      "name": "Channel Specialist 01",
+      "mission": "Channel configuration, playlists, channel branding and operational checks",
+      "capabilities": [
+        "channel-ops",
+        "branding",
+        "playlists"
+      ],
+      "slot": 1,
+      "role_capacity": 4,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-channel-specialist-02",
+      "role_id": "channel-specialist",
+      "name": "Channel Specialist 02",
+      "mission": "Channel configuration, playlists, channel branding and operational checks",
+      "capabilities": [
+        "channel-ops",
+        "branding",
+        "playlists"
+      ],
+      "slot": 2,
+      "role_capacity": 4,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-channel-specialist-03",
+      "role_id": "channel-specialist",
+      "name": "Channel Specialist 03",
+      "mission": "Channel configuration, playlists, channel branding and operational checks",
+      "capabilities": [
+        "channel-ops",
+        "branding",
+        "playlists"
+      ],
+      "slot": 3,
+      "role_capacity": 4,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-channel-specialist-04",
+      "role_id": "channel-specialist",
+      "name": "Channel Specialist 04",
+      "mission": "Channel configuration, playlists, channel branding and operational checks",
+      "capabilities": [
+        "channel-ops",
+        "branding",
+        "playlists"
+      ],
+      "slot": 4,
+      "role_capacity": 4,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-production-manager-01",
+      "role_id": "production-manager",
+      "name": "Production Manager 01",
+      "mission": "Task routing, deadlines, dependencies, budgets and production coordination",
+      "capabilities": [
+        "orchestration",
+        "scheduling",
+        "budget"
+      ],
+      "slot": 1,
+      "role_capacity": 4,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-production-manager-02",
+      "role_id": "production-manager",
+      "name": "Production Manager 02",
+      "mission": "Task routing, deadlines, dependencies, budgets and production coordination",
+      "capabilities": [
+        "orchestration",
+        "scheduling",
+        "budget"
+      ],
+      "slot": 2,
+      "role_capacity": 4,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-production-manager-03",
+      "role_id": "production-manager",
+      "name": "Production Manager 03",
+      "mission": "Task routing, deadlines, dependencies, budgets and production coordination",
+      "capabilities": [
+        "orchestration",
+        "scheduling",
+        "budget"
+      ],
+      "slot": 3,
+      "role_capacity": 4,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-production-manager-04",
+      "role_id": "production-manager",
+      "name": "Production Manager 04",
+      "mission": "Task routing, deadlines, dependencies, budgets and production coordination",
+      "capabilities": [
+        "orchestration",
+        "scheduling",
+        "budget"
+      ],
+      "slot": 4,
+      "role_capacity": 4,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-motion-designer-01",
+      "role_id": "motion-designer",
+      "name": "Motion Designer 01",
+      "mission": "Motion graphics, transitions, animated titles and visual effects",
+      "capabilities": [
+        "motion-design",
+        "effects",
+        "titles"
+      ],
+      "slot": 1,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-motion-designer-02",
+      "role_id": "motion-designer",
+      "name": "Motion Designer 02",
+      "mission": "Motion graphics, transitions, animated titles and visual effects",
+      "capabilities": [
+        "motion-design",
+        "effects",
+        "titles"
+      ],
+      "slot": 2,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-motion-designer-03",
+      "role_id": "motion-designer",
+      "name": "Motion Designer 03",
+      "mission": "Motion graphics, transitions, animated titles and visual effects",
+      "capabilities": [
+        "motion-design",
+        "effects",
+        "titles"
+      ],
+      "slot": 3,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-motion-designer-04",
+      "role_id": "motion-designer",
+      "name": "Motion Designer 04",
+      "mission": "Motion graphics, transitions, animated titles and visual effects",
+      "capabilities": [
+        "motion-design",
+        "effects",
+        "titles"
+      ],
+      "slot": 4,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-motion-designer-05",
+      "role_id": "motion-designer",
+      "name": "Motion Designer 05",
+      "mission": "Motion graphics, transitions, animated titles and visual effects",
+      "capabilities": [
+        "motion-design",
+        "effects",
+        "titles"
+      ],
+      "slot": 5,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-motion-designer-06",
+      "role_id": "motion-designer",
+      "name": "Motion Designer 06",
+      "mission": "Motion graphics, transitions, animated titles and visual effects",
+      "capabilities": [
+        "motion-design",
+        "effects",
+        "titles"
+      ],
+      "slot": 6,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-video-editor-01",
+      "role_id": "video-editor",
+      "name": "Video Editor 01",
+      "mission": "FFmpeg editing, montage, sound mix, transitions and aspect-ratio delivery",
+      "capabilities": [
+        "ffmpeg",
+        "editing",
+        "render"
+      ],
+      "slot": 1,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-video-editor-02",
+      "role_id": "video-editor",
+      "name": "Video Editor 02",
+      "mission": "FFmpeg editing, montage, sound mix, transitions and aspect-ratio delivery",
+      "capabilities": [
+        "ffmpeg",
+        "editing",
+        "render"
+      ],
+      "slot": 2,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-video-editor-03",
+      "role_id": "video-editor",
+      "name": "Video Editor 03",
+      "mission": "FFmpeg editing, montage, sound mix, transitions and aspect-ratio delivery",
+      "capabilities": [
+        "ffmpeg",
+        "editing",
+        "render"
+      ],
+      "slot": 3,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-video-editor-04",
+      "role_id": "video-editor",
+      "name": "Video Editor 04",
+      "mission": "FFmpeg editing, montage, sound mix, transitions and aspect-ratio delivery",
+      "capabilities": [
+        "ffmpeg",
+        "editing",
+        "render"
+      ],
+      "slot": 4,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-video-editor-05",
+      "role_id": "video-editor",
+      "name": "Video Editor 05",
+      "mission": "FFmpeg editing, montage, sound mix, transitions and aspect-ratio delivery",
+      "capabilities": [
+        "ffmpeg",
+        "editing",
+        "render"
+      ],
+      "slot": 5,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-video-editor-06",
+      "role_id": "video-editor",
+      "name": "Video Editor 06",
+      "mission": "FFmpeg editing, montage, sound mix, transitions and aspect-ratio delivery",
+      "capabilities": [
+        "ffmpeg",
+        "editing",
+        "render"
+      ],
+      "slot": 6,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-video-editor-07",
+      "role_id": "video-editor",
+      "name": "Video Editor 07",
+      "mission": "FFmpeg editing, montage, sound mix, transitions and aspect-ratio delivery",
+      "capabilities": [
+        "ffmpeg",
+        "editing",
+        "render"
+      ],
+      "slot": 7,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-video-editor-08",
+      "role_id": "video-editor",
+      "name": "Video Editor 08",
+      "mission": "FFmpeg editing, montage, sound mix, transitions and aspect-ratio delivery",
+      "capabilities": [
+        "ffmpeg",
+        "editing",
+        "render"
+      ],
+      "slot": 8,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-visual-production-specialist-01",
+      "role_id": "visual-production-specialist",
+      "name": "Visual Production Specialist 01",
+      "mission": "Stock-footage selection, visual continuity and scene coverage",
+      "capabilities": [
+        "stock-footage",
+        "visuals",
+        "storyboard"
+      ],
+      "slot": 1,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-visual-production-specialist-02",
+      "role_id": "visual-production-specialist",
+      "name": "Visual Production Specialist 02",
+      "mission": "Stock-footage selection, visual continuity and scene coverage",
+      "capabilities": [
+        "stock-footage",
+        "visuals",
+        "storyboard"
+      ],
+      "slot": 2,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-visual-production-specialist-03",
+      "role_id": "visual-production-specialist",
+      "name": "Visual Production Specialist 03",
+      "mission": "Stock-footage selection, visual continuity and scene coverage",
+      "capabilities": [
+        "stock-footage",
+        "visuals",
+        "storyboard"
+      ],
+      "slot": 3,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-visual-production-specialist-04",
+      "role_id": "visual-production-specialist",
+      "name": "Visual Production Specialist 04",
+      "mission": "Stock-footage selection, visual continuity and scene coverage",
+      "capabilities": [
+        "stock-footage",
+        "visuals",
+        "storyboard"
+      ],
+      "slot": 4,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-visual-production-specialist-05",
+      "role_id": "visual-production-specialist",
+      "name": "Visual Production Specialist 05",
+      "mission": "Stock-footage selection, visual continuity and scene coverage",
+      "capabilities": [
+        "stock-footage",
+        "visuals",
+        "storyboard"
+      ],
+      "slot": 5,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-visual-production-specialist-06",
+      "role_id": "visual-production-specialist",
+      "name": "Visual Production Specialist 06",
+      "mission": "Stock-footage selection, visual continuity and scene coverage",
+      "capabilities": [
+        "stock-footage",
+        "visuals",
+        "storyboard"
+      ],
+      "slot": 6,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-visual-production-specialist-07",
+      "role_id": "visual-production-specialist",
+      "name": "Visual Production Specialist 07",
+      "mission": "Stock-footage selection, visual continuity and scene coverage",
+      "capabilities": [
+        "stock-footage",
+        "visuals",
+        "storyboard"
+      ],
+      "slot": 7,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-visual-production-specialist-08",
+      "role_id": "visual-production-specialist",
+      "name": "Visual Production Specialist 08",
+      "mission": "Stock-footage selection, visual continuity and scene coverage",
+      "capabilities": [
+        "stock-footage",
+        "visuals",
+        "storyboard"
+      ],
+      "slot": 8,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-voice-specialist-01",
+      "role_id": "voice-specialist",
+      "name": "Voice Specialist 01",
+      "mission": "TTS, pronunciation, narration direction, dubbing and consent-aware voice workflows",
+      "capabilities": [
+        "tts",
+        "voice",
+        "dubbing"
+      ],
+      "slot": 1,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-voice-specialist-02",
+      "role_id": "voice-specialist",
+      "name": "Voice Specialist 02",
+      "mission": "TTS, pronunciation, narration direction, dubbing and consent-aware voice workflows",
+      "capabilities": [
+        "tts",
+        "voice",
+        "dubbing"
+      ],
+      "slot": 2,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-voice-specialist-03",
+      "role_id": "voice-specialist",
+      "name": "Voice Specialist 03",
+      "mission": "TTS, pronunciation, narration direction, dubbing and consent-aware voice workflows",
+      "capabilities": [
+        "tts",
+        "voice",
+        "dubbing"
+      ],
+      "slot": 3,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-voice-specialist-04",
+      "role_id": "voice-specialist",
+      "name": "Voice Specialist 04",
+      "mission": "TTS, pronunciation, narration direction, dubbing and consent-aware voice workflows",
+      "capabilities": [
+        "tts",
+        "voice",
+        "dubbing"
+      ],
+      "slot": 4,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-voice-specialist-05",
+      "role_id": "voice-specialist",
+      "name": "Voice Specialist 05",
+      "mission": "TTS, pronunciation, narration direction, dubbing and consent-aware voice workflows",
+      "capabilities": [
+        "tts",
+        "voice",
+        "dubbing"
+      ],
+      "slot": 5,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-voice-specialist-06",
+      "role_id": "voice-specialist",
+      "name": "Voice Specialist 06",
+      "mission": "TTS, pronunciation, narration direction, dubbing and consent-aware voice workflows",
+      "capabilities": [
+        "tts",
+        "voice",
+        "dubbing"
+      ],
+      "slot": 6,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-caption-specialist-01",
+      "role_id": "caption-specialist",
+      "name": "Caption Specialist 01",
+      "mission": "Whisper transcription, word-level alignment, subtitles and localization",
+      "capabilities": [
+        "captions",
+        "asr",
+        "localization"
+      ],
+      "slot": 1,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-caption-specialist-02",
+      "role_id": "caption-specialist",
+      "name": "Caption Specialist 02",
+      "mission": "Whisper transcription, word-level alignment, subtitles and localization",
+      "capabilities": [
+        "captions",
+        "asr",
+        "localization"
+      ],
+      "slot": 2,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-caption-specialist-03",
+      "role_id": "caption-specialist",
+      "name": "Caption Specialist 03",
+      "mission": "Whisper transcription, word-level alignment, subtitles and localization",
+      "capabilities": [
+        "captions",
+        "asr",
+        "localization"
+      ],
+      "slot": 3,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-caption-specialist-04",
+      "role_id": "caption-specialist",
+      "name": "Caption Specialist 04",
+      "mission": "Whisper transcription, word-level alignment, subtitles and localization",
+      "capabilities": [
+        "captions",
+        "asr",
+        "localization"
+      ],
+      "slot": 4,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-caption-specialist-05",
+      "role_id": "caption-specialist",
+      "name": "Caption Specialist 05",
+      "mission": "Whisper transcription, word-level alignment, subtitles and localization",
+      "capabilities": [
+        "captions",
+        "asr",
+        "localization"
+      ],
+      "slot": 5,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-caption-specialist-06",
+      "role_id": "caption-specialist",
+      "name": "Caption Specialist 06",
+      "mission": "Whisper transcription, word-level alignment, subtitles and localization",
+      "capabilities": [
+        "captions",
+        "asr",
+        "localization"
+      ],
+      "slot": 6,
+      "role_capacity": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-script-specialist-01",
+      "role_id": "script-specialist",
+      "name": "Script Specialist 01",
+      "mission": "Original scripts, hooks, storytelling, structure and fact checking",
+      "capabilities": [
+        "scriptwriting",
+        "storytelling",
+        "fact-check"
+      ],
+      "slot": 1,
+      "role_capacity": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-script-specialist-02",
+      "role_id": "script-specialist",
+      "name": "Script Specialist 02",
+      "mission": "Original scripts, hooks, storytelling, structure and fact checking",
+      "capabilities": [
+        "scriptwriting",
+        "storytelling",
+        "fact-check"
+      ],
+      "slot": 2,
+      "role_capacity": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-script-specialist-03",
+      "role_id": "script-specialist",
+      "name": "Script Specialist 03",
+      "mission": "Original scripts, hooks, storytelling, structure and fact checking",
+      "capabilities": [
+        "scriptwriting",
+        "storytelling",
+        "fact-check"
+      ],
+      "slot": 3,
+      "role_capacity": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-script-specialist-04",
+      "role_id": "script-specialist",
+      "name": "Script Specialist 04",
+      "mission": "Original scripts, hooks, storytelling, structure and fact checking",
+      "capabilities": [
+        "scriptwriting",
+        "storytelling",
+        "fact-check"
+      ],
+      "slot": 4,
+      "role_capacity": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-script-specialist-05",
+      "role_id": "script-specialist",
+      "name": "Script Specialist 05",
+      "mission": "Original scripts, hooks, storytelling, structure and fact checking",
+      "capabilities": [
+        "scriptwriting",
+        "storytelling",
+        "fact-check"
+      ],
+      "slot": 5,
+      "role_capacity": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-script-specialist-06",
+      "role_id": "script-specialist",
+      "name": "Script Specialist 06",
+      "mission": "Original scripts, hooks, storytelling, structure and fact checking",
+      "capabilities": [
+        "scriptwriting",
+        "storytelling",
+        "fact-check"
+      ],
+      "slot": 6,
+      "role_capacity": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-script-specialist-07",
+      "role_id": "script-specialist",
+      "name": "Script Specialist 07",
+      "mission": "Original scripts, hooks, storytelling, structure and fact checking",
+      "capabilities": [
+        "scriptwriting",
+        "storytelling",
+        "fact-check"
+      ],
+      "slot": 7,
+      "role_capacity": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-script-specialist-08",
+      "role_id": "script-specialist",
+      "name": "Script Specialist 08",
+      "mission": "Original scripts, hooks, storytelling, structure and fact checking",
+      "capabilities": [
+        "scriptwriting",
+        "storytelling",
+        "fact-check"
+      ],
+      "slot": 8,
+      "role_capacity": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-script-specialist-09",
+      "role_id": "script-specialist",
+      "name": "Script Specialist 09",
+      "mission": "Original scripts, hooks, storytelling, structure and fact checking",
+      "capabilities": [
+        "scriptwriting",
+        "storytelling",
+        "fact-check"
+      ],
+      "slot": 9,
+      "role_capacity": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-script-specialist-10",
+      "role_id": "script-specialist",
+      "name": "Script Specialist 10",
+      "mission": "Original scripts, hooks, storytelling, structure and fact checking",
+      "capabilities": [
+        "scriptwriting",
+        "storytelling",
+        "fact-check"
+      ],
+      "slot": 10,
+      "role_capacity": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-packaging-specialist-01",
+      "role_id": "packaging-specialist",
+      "name": "Packaging Specialist 01",
+      "mission": "Titles, thumbnails, channel positioning and packaging tests",
+      "capabilities": [
+        "titles",
+        "thumbnails",
+        "packaging"
+      ],
+      "slot": 1,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-packaging-specialist-02",
+      "role_id": "packaging-specialist",
+      "name": "Packaging Specialist 02",
+      "mission": "Titles, thumbnails, channel positioning and packaging tests",
+      "capabilities": [
+        "titles",
+        "thumbnails",
+        "packaging"
+      ],
+      "slot": 2,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-packaging-specialist-03",
+      "role_id": "packaging-specialist",
+      "name": "Packaging Specialist 03",
+      "mission": "Titles, thumbnails, channel positioning and packaging tests",
+      "capabilities": [
+        "titles",
+        "thumbnails",
+        "packaging"
+      ],
+      "slot": 3,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-packaging-specialist-04",
+      "role_id": "packaging-specialist",
+      "name": "Packaging Specialist 04",
+      "mission": "Titles, thumbnails, channel positioning and packaging tests",
+      "capabilities": [
+        "titles",
+        "thumbnails",
+        "packaging"
+      ],
+      "slot": 4,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-packaging-specialist-05",
+      "role_id": "packaging-specialist",
+      "name": "Packaging Specialist 05",
+      "mission": "Titles, thumbnails, channel positioning and packaging tests",
+      "capabilities": [
+        "titles",
+        "thumbnails",
+        "packaging"
+      ],
+      "slot": 5,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-packaging-specialist-06",
+      "role_id": "packaging-specialist",
+      "name": "Packaging Specialist 06",
+      "mission": "Titles, thumbnails, channel positioning and packaging tests",
+      "capabilities": [
+        "titles",
+        "thumbnails",
+        "packaging"
+      ],
+      "slot": 6,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-packaging-specialist-07",
+      "role_id": "packaging-specialist",
+      "name": "Packaging Specialist 07",
+      "mission": "Titles, thumbnails, channel positioning and packaging tests",
+      "capabilities": [
+        "titles",
+        "thumbnails",
+        "packaging"
+      ],
+      "slot": 7,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    },
+    {
+      "id": "yt-packaging-specialist-08",
+      "role_id": "packaging-specialist",
+      "name": "Packaging Specialist 08",
+      "mission": "Titles, thumbnails, channel positioning and packaging tests",
+      "capabilities": [
+        "titles",
+        "thumbnails",
+        "packaging"
+      ],
+      "slot": 8,
+      "role_capacity": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "model_selection": "provider_router",
+      "worker_pool": "autopilot",
+      "max_parallel_per_task": 1,
+      "security": [
+        "no_secrets_in_prompt",
+        "least_privilege",
+        "cost_limit",
+        "audit_log",
+        "human_approval_for_external_side_effects"
+      ]
+    }
+  ]
+}
