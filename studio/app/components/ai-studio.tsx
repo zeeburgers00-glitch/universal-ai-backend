@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { AudioLines, CheckCircle2, Copy, Download, Image as ImageIcon, LoaderCircle, LogOut, Play, RefreshCw, Search, Sparkles, Video, WandSparkles } from "lucide-react";
 
-type Model = { id: string; name?: string; description?: string };
+type Model = { id: string; name?: string; description?: string; video_capabilities?: string[]; input_modalities?: string[]; min_duration?: number; max_duration?: number; paid_only?: boolean; pricing?: Record<string, string> };
 type Models = { text: Model[]; image: Model[]; video: Model[]; audio: Model[] };
 
 const API = "https://gen.pollinations.ai";
@@ -41,7 +41,17 @@ function getList(data: unknown): Model[] {
     if (!item || typeof item !== "object") return [];
     const model = item as Record<string, unknown>;
     const id = String(model.id ?? model.name ?? "").trim();
-    return id ? [{ id, name: String(model.name ?? ""), description: String(model.description ?? "") }] : [];
+    return id ? [{
+      id,
+      name: String(model.name ?? model.title ?? ""),
+      description: String(model.description ?? ""),
+      video_capabilities: Array.isArray(model.video_capabilities) ? model.video_capabilities.map(String) : [],
+      input_modalities: Array.isArray(model.input_modalities) ? model.input_modalities.map(String) : [],
+      min_duration: Number(model.min_duration ?? 0) || undefined,
+      max_duration: Number(model.max_duration ?? 0) || undefined,
+      paid_only: Boolean(model.paid_only),
+      pricing: model.pricing && typeof model.pricing === "object" ? model.pricing as Record<string, string> : undefined,
+    }] : [];
   });
 }
 
@@ -71,6 +81,9 @@ export default function AIStudio() {
   const [thumbnailUrl, setThumbnailUrl] = useState("");
   const [videoPrompt, setVideoPrompt] = useState("");
   const [referenceImageUrl, setReferenceImageUrl] = useState("");
+  const [referenceImageFile, setReferenceImageFile] = useState<File | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [shareReferenceMedia, setShareReferenceMedia] = useState(false);
   const [referenceAudioUrl, setReferenceAudioUrl] = useState("");
   const [videoDuration, setVideoDuration] = useState("5");
   const [videoFormat, setVideoFormat] = useState<"longform" | "shorts">("longform");
@@ -102,7 +115,9 @@ export default function AIStudio() {
       setModels(next);
       if (next.text[0]) setTextModel(next.text[0].id);
       if (next.image[0]) setImageModel(next.image[0].id);
-      if (next.video[0]) setVideoModel(next.video[0].id);
+      const audioDrivenVideo = next.video.find((model) => model.video_capabilities?.includes("reference_audios"));
+      if (audioDrivenVideo) setVideoModel(audioDrivenVideo.id);
+      else if (next.video[0]) setVideoModel(next.video[0].id);
       if (next.audio[0]) setAudioModel(next.audio[0].id);
     } catch {
       say("Could not refresh the live model catalogue. You can still use the documented default text and image models.", true);
@@ -304,8 +319,16 @@ export default function AIStudio() {
     const url = new URL(API + "/video/" + encodeURIComponent(formatPrompt + videoPrompt + avatarPrompt));
     url.searchParams.set("model", videoModel);
     url.searchParams.set("duration", String(Math.min(10, Math.max(3, Number(videoDuration) || 5))));
-    if (referenceImageUrl.trim()) url.searchParams.set("image", safeHttpsUrl(referenceImageUrl.trim()));
-    if (referenceAudioUrl.trim()) url.searchParams.set("reference_audios", safeHttpsUrl(referenceAudioUrl.trim()));
+    const selectedModel = models.video.find((model) => model.id === videoModel);
+    if (referenceImageUrl.trim()) {
+      const canAcceptImage = selectedModel?.video_capabilities?.some((cap) => ["start_frame", "reference_images"].includes(cap)) || selectedModel?.input_modalities?.includes("image");
+      if (!canAcceptImage) throw new Error("The selected video model does not advertise image-reference support. Choose a compatible model or remove the reference image.");
+      url.searchParams.set("image", safeHttpsUrl(referenceImageUrl.trim()));
+    }
+    if (referenceAudioUrl.trim()) {
+      if (!selectedModel?.video_capabilities?.includes("reference_audios")) throw new Error("The selected video model does not advertise audio-reference support. Choose a model marked as audio-driven in the catalogue.");
+      url.searchParams.set("reference_audios", safeHttpsUrl(referenceAudioUrl.trim()));
+    }
     const response = await fetch(url.toString(), { headers: { Authorization: "Bearer " + token } });
     if (!response.ok) {
       const body = await response.text();
@@ -335,6 +358,7 @@ export default function AIStudio() {
       response_format: "mp3",
     }, "blob") as Blob;
     if (!blob.size) throw new Error("The speech model returned an empty audio file.");
+    setAudioBlob(blob);
     setAudioUrl(URL.createObjectURL(blob));
     say("Voice-over generated.");
   });
