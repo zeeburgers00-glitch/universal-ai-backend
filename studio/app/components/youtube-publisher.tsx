@@ -29,8 +29,8 @@ export default function YouTubePublisher() {
   const [tags, setTags] = useState("");
   const [scheduleAt, setScheduleAt] = useState("");
   const [privacy, setPrivacy] = useState<"private" | "unlisted" | "public">("private");
-  const [madeForKids, setMadeForKids] = useState("no");
-  const [syntheticMedia, setSyntheticMedia] = useState("yes");
+  const [madeForKids, setMadeForKids] = useState("unset");
+  const [syntheticMedia, setSyntheticMedia] = useState("unset");
   const [busy, setBusy] = useState("");
   const [progress, setProgress] = useState(0);
   const [notice, setNotice] = useState("");
@@ -127,6 +127,7 @@ export default function YouTubePublisher() {
       if (!title.trim() || title.trim().length > 100) throw new Error("Video title must contain 1–100 characters.");
       if (description.length > 5000) throw new Error("Description must be 5,000 characters or less.");
       if (scheduleAt && privacy !== "private") throw new Error("Scheduled YouTube videos must be uploaded with Private privacy.");
+      if (madeForKids === "unset" || syntheticMedia === "unset") throw new Error("Choose the audience and realistic synthetic-media declarations before uploading.");
       const status: Record<string, unknown> = {
         privacyStatus: scheduleAt ? "private" : privacy,
         selfDeclaredMadeForKids: madeForKids === "yes",
@@ -215,8 +216,8 @@ export default function YouTubePublisher() {
           <div className="field"><label>Tags (comma separated)</label><input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="education, science, explainer" /></div>
           <div className="field"><label>Privacy</label><select value={privacy} onChange={(e) => setPrivacy(e.target.value as typeof privacy)}><option value="private">Private</option><option value="unlisted">Unlisted</option><option value="public">Public</option></select></div>
           <div className="field"><label>Schedule time (optional)</label><input type="datetime-local" value={scheduleAt} onChange={(e) => setScheduleAt(e.target.value)} /><small className="muted">Scheduling uploads as Private with a future publish time.</small></div>
-          <div className="field"><label>Made for kids?</label><select value={madeForKids} onChange={(e) => setMadeForKids(e.target.value)}><option value="no">No</option><option value="yes">Yes</option></select></div>
-          <div className="field"><label>Contains realistic altered / synthetic media?</label><select value={syntheticMedia} onChange={(e) => setSyntheticMedia(e.target.value)}><option value="yes">Yes</option><option value="no">No</option></select></div>
+          <div className="field"><label>Made for kids?</label><select value={madeForKids} onChange={(e) => setMadeForKids(e.target.value)}><option value="unset">Choose…</option><option value="no">No</option><option value="yes">Yes</option></select></div>
+          <div className="field"><label>Contains realistic altered / synthetic media?</label><select value={syntheticMedia} onChange={(e) => setSyntheticMedia(e.target.value)}><option value="unset">Choose…</option><option value="yes">Yes</option><option value="no">No</option></select></div>
         </div>
         {busy === "upload" && <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-700"><div className="h-full bg-violet-400" style={{ width: progress + "%" }}/></div>}
         <button className="btn mt-4" onClick={upload} disabled={!channel || !file || busy === "upload"}>{busy === "upload" ? <LoaderCircle size={15} className="animate-spin" /> : <UploadCloud size={15}/>} Upload to YouTube</button>
