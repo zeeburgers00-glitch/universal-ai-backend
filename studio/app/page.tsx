@@ -48,6 +48,7 @@ export default function HomePage(){
   }catch{setBackend("offline")}
  },[api,session]);
  useEffect(()=>{if(!sb)return;sb.auth.getSession().then(({data})=>setSession(data.session));const {data}=sb.auth.onAuthStateChange((_event,s)=>setSession(s));return()=>data.subscription.unsubscribe()},[]);
+ useEffect(()=>{if(typeof window==="undefined")return;const params=new URLSearchParams(window.location.search);if(params.get("ai")==="connected"){setPage("AI Studio");window.history.replaceState({}, "", window.location.pathname)}},[]);
  useEffect(()=>{refresh();const timer=setInterval(refresh,15000);return()=>clearInterval(timer)},[refresh]);
  const signIn=async()=>{if(!sb)return say("Supabase Auth is not configured.",true);if(!email.includes("@"))return say("Enter a valid email address.",true);setBusy("signin");const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:window.location.origin}});setBusy("");if(error)say(error.message,true);else{setSent(true);say("Check your email for the secure sign-in link.")}};
  const signOut=async()=>{await sb?.auth.signOut();setSession(null);setState({})};
