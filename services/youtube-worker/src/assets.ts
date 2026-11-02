@@ -53,11 +53,17 @@ async function makeVoice(script:string,dir:string):Promise<string>{
  return output;
 }
 async function makeCaptions(audio:string,dir:string):Promise<string>{
+ const base=(process.env.WHISPER_BASE_URL||"https://api.openai.com/v1").replace(/\/+$/,"");
+ const apiKey=(process.env.WHISPER_API_KEY||process.env.OPENAI_API_KEY||"").trim();
+ const model=process.env.WHISPER_MODEL||"whisper-1";
+ if(!apiKey&&base.includes("api.openai.com"))throw new Error("Missing transcription credential: set WHISPER_API_KEY or OPENAI_API_KEY");
  const form=new FormData(),buffer=await fs.readFile(audio);
- form.append("model","whisper-1");form.append("response_format","srt");
+ form.append("model",model);form.append("response_format","srt");
  form.append("file",new Blob([buffer],{type:"audio/mpeg"}),"narration.mp3");
- const response=await fetch("https://api.openai.com/v1/audio/transcriptions",{method:"POST",headers:{Authorization:"Bearer "+setting("OPENAI_API_KEY")},body:form});
- if(!response.ok)throw new Error("Whisper transcription returned HTTP "+response.status);
+ const headers:Record<string,string>={};
+ if(apiKey)headers.Authorization="Bearer "+apiKey;
+ const response=await fetch(base+"/audio/transcriptions",{method:"POST",headers,body:form,signal:AbortSignal.timeout(300000)});
+ if(!response.ok)throw new Error("Whisper-compatible transcription provider returned HTTP "+response.status);
  const result=await response.text();
  if(!result.includes("-->")||result.length<100)throw new Error("Whisper did not return a valid SRT caption track");
  const file=path.join(dir,"captions.srt");await fs.writeFile(file,result,"utf8");return file;
