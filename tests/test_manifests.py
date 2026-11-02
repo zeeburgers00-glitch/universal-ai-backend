@@ -199,3 +199,33 @@ def test_rea_path_scope_blocks_targets_outside_configured_root(monkeypatch, tmp_
     with pytest.raises(ReaBridgeError, match="outside"):
         _validate_argument_scope({"file_path": str(denied_target)})
 
+def test_youtube_creator_team_registers_four_specialists_and_workflow():
+    team = _read_json(CATALOG / "youtube_creator_team.json")
+    expected_agents = {
+        "youtube-thumbnail-designer",
+        "youtube-seo-specialist",
+        "youtube-longform-video-producer",
+        "youtube-shorts-video-producer",
+    }
+    members = team["members"]
+    assert team["team_size"] == 4
+    assert {member["agent_id"] for member in members} == expected_agents
+    assert len(members) == 4
+
+    agents = _read_json(CATALOG / "agents.json")
+    registered = {agent["id"]: agent for agent in agents}
+    assert expected_agents.issubset(registered)
+    assert all(registered[agent_id]["worker_service"] == "AGENT_WORKER_URL" for agent_id in expected_agents)
+    assert all(registered[agent_id].get("operating_instructions") for agent_id in expected_agents)
+    assert all(registered[agent_id].get("output_contract") for agent_id in expected_agents)
+
+    workflows = _read_json(CATALOG / "workflows.json")
+    workflow = next(item for item in workflows if item["id"] == "youtube-four-agent-team")
+    assert workflow["requires_human_approval"] is True
+    assert set(workflow["team_agent_ids"]) == expected_agents
+    steps = {step["id"]: step for step in workflow["steps"]}
+    assert steps["longform-video"]["agent_id"] == "youtube-longform-video-producer"
+    assert steps["shorts-video"]["agent_id"] == "youtube-shorts-video-producer"
+    assert steps["longform-video"]["parallel_group"] == steps["shorts-video"]["parallel_group"]
+    assert steps["publish"]["requires_user_approval"] is True
+
