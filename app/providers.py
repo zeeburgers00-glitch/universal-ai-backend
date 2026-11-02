@@ -188,6 +188,18 @@ PROVIDERS: dict[str, dict[str, Any]] = {
         "model_env": "JAN_DEFAULT_MODEL", "default_base": None, "requires_key": False, "mode": "openai-compatible",
     },
 
+    "z-ai": {
+        "label": "Z.ai / GLM API", "base_env": "ZAI_BASE_URL", "key_env": "ZAI_API_KEY",
+        "model_env": "ZAI_DEFAULT_MODEL", "default_base": "https://api.z.ai/api/paas/v4", "requires_key": True, "mode": "openai-compatible",
+    },
+    "hacker-ai": {
+        "label": "HackerAI OpenAI-compatible API", "base_env": "HACKER_AI_BASE_URL", "key_env": "HACKER_AI_API_KEY",
+        "model_env": "HACKER_AI_DEFAULT_MODEL", "default_base": "https://api.hackerai.sh/v1", "requires_key": True, "mode": "openai-compatible",
+    },
+    "opencode-zen": {
+        "label": "OpenCode Zen model gateway", "base_env": "OPENCODE_ZEN_BASE_URL", "key_env": "OPENCODE_ZEN_API_KEY",
+        "model_env": "OPENCODE_ZEN_DEFAULT_MODEL", "default_base": "https://opencode.ai/zen/v1", "requires_key": True, "mode": "openai-compatible",
+    },
     "anthropic": {
         "label": "Anthropic Messages API", "base_env": "ANTHROPIC_BASE_URL", "key_env": "ANTHROPIC_API_KEY",
         "model_env": "ANTHROPIC_DEFAULT_MODEL", "default_base": "https://api.anthropic.com", "requires_key": True, "mode": "anthropic",
