@@ -823,7 +823,6 @@ export default function AIStudio() {
               <a className="btn secondary mt-3 inline-flex" href={finalVideoUrl} download="youtube-studio-final.webm"><Download size={14}/> Download final WebM</a>
             </div>}
           </>}
-          </>}
         </section>
       </div>
     </div>
