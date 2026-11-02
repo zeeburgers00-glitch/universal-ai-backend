@@ -4,11 +4,11 @@ import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import {createClient} from "@supabase/supabase-js";
-import { Redis } from "ioredis";
+import Redis from "ioredis";
 import {Queue} from "bullmq";
 import {google} from "googleapis";
 import {z} from "zod";
-import {consumeOAuthState,createOAuthState,encryptSecret,decryptSecret} from "./security.js";
+import {consumeOAuthState,createOAuthState,encryptSecret,decryptSecret,RedisStateStore} from "./security.js";
 import {oauthClient,YOUTUBE_SCOPES} from "./youtube.js";
 
 const app=Fastify({logger:{level:process.env.LOG_LEVEL||"info",redact:{paths:["req.headers.authorization","req.headers.cookie"],censor:"[REDACTED]"}}});
@@ -49,13 +49,12 @@ app.get("/v1/health",async(_req,reply)=>{
   const checks={database:false,redis:false};
   if(db){const {error}=await db.from("creator_settings").select("user_id").limit(1);checks.database=!error;}
   if(redis){try{checks.redis=(await redis.ping())==="PONG"}catch{checks.redis=false}}
-  const healthy=checks.database&&checks.redis;
-  return reply.code(healthy?200:503).send({status:healthy?"ok":"degraded",service:"youtube-autopilot-api",checks});
+  return reply.code(checks.database?200:503).send({status:checks.database?"ok":"degraded",service:"youtube-autopilot-api",checks});
 });
 app.post("/v1/youtube/oauth/start",{preHandler:requireUser},async(req,reply)=>{
   if(!redis)return reply.code(503).send({message:"OAuth state store is not configured; Redis is required."});
   try{
-    const state=await createOAuthState(uid(req),redis);
+    const state=await createOAuthState(uid(req),redis as unknown as RedisStateStore);
     const url=oauthClient().generateAuthUrl({access_type:"offline",include_granted_scopes:true,prompt:"consent",scope:YOUTUBE_SCOPES,state});
     return {authorization_url:url,scopes:YOUTUBE_SCOPES};
   }catch(e){return reply.code(503).send({message:e instanceof Error?e.message:"OAuth is not configured"})}
@@ -65,7 +64,7 @@ app.get("/v1/youtube/oauth/callback",async(req,reply)=>{
   if(query.error)return reply.redirect(webUrl("/?youtube=denied"));
   if(!query.state||!query.code||!redis||!db)return reply.code(400).send({message:"OAuth callback is missing required state, code, or backend configuration."});
   try{
-    const userId=await consumeOAuthState(query.state,redis);
+    const userId=await consumeOAuthState(query.state,redis as unknown as RedisStateStore);
     const client=oauthClient();
     const {tokens}=await client.getToken(query.code);
     client.setCredentials(tokens);
@@ -157,15 +156,15 @@ app.post("/v1/automation/enable",{preHandler:requireUser},async(req,reply)=>{
   return {enabled:true,schedule:{time,timezone,frequency:"daily"}};
 });
 app.post("/v1/automation/disable",{preHandler:requireUser},async(req)=>{
-  const userId=uid(req);
-  if(queue)await queue.removeJobScheduler("daily-autopilot:"+userId);
+  const jobsQueue=requireQueue(),userId=uid(req);
+  await jobsQueue.removeJobScheduler("daily-autopilot:"+userId);
   const {error}=await requireDb().from("creator_settings").upsert({user_id:userId,autopublish_enabled:false,updated_at:new Date().toISOString()},{onConflict:"user_id"});
   if(error)throw error;
   return {enabled:false};
 });
 app.post("/v1/automation/stop-all",{preHandler:requireUser},async(req)=>{
-  const userId=uid(req);
-  if(queue)await queue.removeJobScheduler("daily-autopilot:"+userId);
+  const jobsQueue=requireQueue(),userId=uid(req);
+  await jobsQueue.removeJobScheduler("daily-autopilot:"+userId);
   const clientDb=requireDb();
   await clientDb.from("creator_settings").upsert({user_id:userId,autopublish_enabled:false,updated_at:new Date().toISOString()},{onConflict:"user_id"});
   await clientDb.from("production_jobs").update({status:"cancelled",stage:"stopped_by_user",updated_at:new Date().toISOString()}).eq("user_id",userId).in("status",["queued","running"]);
@@ -173,10 +172,9 @@ app.post("/v1/automation/stop-all",{preHandler:requireUser},async(req)=>{
 });
 
 app.setErrorHandler((error,req,reply)=>{
-  const err=error as Error & {statusCode?:number};
-  req.log.error({err},"Request failed");
-  const status=err.statusCode&&err.statusCode>=400?err.statusCode:500;
-  reply.code(status).send({message:status>=500?"The request could not be completed. Check service logs for the redacted error.":err.message});
+  req.log.error({err:error},"Request failed");
+  const status=error.statusCode&&error.statusCode>=400?error.statusCode:500;
+  reply.code(status).send({message:status>=500?"The request could not be completed. Check service logs for the redacted error.":error.message});
 });
 const port=Number(process.env.PORT||8080);
 try{await app.listen({host:"0.0.0.0",port})}catch(error){app.log.error(error);process.exit(1)}

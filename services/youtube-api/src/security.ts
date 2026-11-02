@@ -1,5 +1,5 @@
 import { createCipheriv,createDecipheriv,createHmac,randomBytes,timingSafeEqual } from "node:crypto";
-type RedisStateStore = { set(key:string,value:string,...args:(string|number)[]):Promise<unknown>; eval(script:string,numKeys:number,...args:(string|number)[]):Promise<unknown>; };
+export type RedisStateStore = { set(key:string,value:string,...args:(string|number)[]):Promise<unknown>; eval(script:string,numKeys:number,...args:(string|number)[]):Promise<unknown>; };
 
 function encryptionKey():Buffer {
   const raw=process.env.TOKEN_ENCRYPTION_KEY||"";
@@ -33,7 +33,7 @@ export async function createOAuthState(userId:string,redis:RedisStateStore):Prom
   const signature=createHmac("sha256",stateSecret()).update(encoded).digest("base64url");
   return encoded+"."+signature;
 }
-export async function consumeOAuthState(state:string,redis:Redis):Promise<string>{
+export async function consumeOAuthState(state:string,redis:RedisStateStore):Promise<string>{
   const [encoded,signature,...extra]=state.split(".");
   if(!encoded||!signature||extra.length)throw new Error("Invalid OAuth state");
   const expected=createHmac("sha256",stateSecret()).update(encoded).digest();
