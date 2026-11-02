@@ -12,7 +12,7 @@ import httpx
 
 from autopilot_worker.app import celery_app
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 FLEET_PATH = ROOT / "catalog" / "youtube_agent_fleet.json"
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip().rstrip("/")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
