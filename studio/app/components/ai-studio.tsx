@@ -349,12 +349,22 @@ export default function AIStudio() {
   const generateVideo = () => run("video", async () => {
     if (!videoModel) throw new Error("No video model is available in the live catalogue yet.");
     if (videoPrompt.trim().length < 8) throw new Error("Describe the video scene.");
-    const formatPrompt = videoFormat === "shorts" ? "Vertical 9:16 YouTube Shorts framing, clear central subject, safe caption margins. " : "Landscape 16:9 composition for a long-form YouTube scene. ";
-    const avatarPrompt = referenceAudioUrl.trim() ? " Use the reference audio as the speaking performance and synchronize visible mouth movement where this model supports audio guidance." : "";
+    if (generatedClips.length >= 20) throw new Error("This browser editor supports up to 20 scenes per project.");
+    const selectedModel = models.video.find((model) => model.id === videoModel);
+    const requestedSeconds = Number(videoDuration) || 5;
+    const minSeconds = selectedModel?.min_duration || 3;
+    const maxSeconds = selectedModel?.max_duration || 10;
+    const duration = Math.min(maxSeconds, Math.max(minSeconds, requestedSeconds));
+    const formatPrompt = videoFormat === "shorts"
+      ? "Vertical 9:16 YouTube Shorts framing, clear central subject, safe caption margins. "
+      : "Landscape 16:9 composition for a long-form YouTube scene. ";
+    const avatarPrompt = referenceAudioUrl.trim()
+      ? " Use the supplied reference audio as the speaking performance and synchronize visible mouth movement where this model supports audio-driven generation."
+      : "";
     const url = new URL(API + "/video/" + encodeURIComponent(formatPrompt + videoPrompt + avatarPrompt));
     url.searchParams.set("model", videoModel);
-    url.searchParams.set("duration", String(Math.min(10, Math.max(3, Number(videoDuration) || 5))));
-    const selectedModel = models.video.find((model) => model.id === videoModel);
+    url.searchParams.set("duration", String(duration));
+    url.searchParams.set("aspectRatio", videoFormat === "shorts" ? "9:16" : "16:9");
     if (referenceImageUrl.trim()) {
       const ref = safeHttpsUrl(referenceImageUrl.trim());
       if (selectedModel?.video_capabilities?.includes("start_frame")) url.searchParams.set("image", ref);
@@ -366,23 +376,77 @@ export default function AIStudio() {
       if (!selectedModel?.video_capabilities?.includes("reference_audios")) throw new Error("The selected video model does not advertise audio-reference support. Choose a model marked as audio-driven in the catalogue.");
       url.searchParams.set("reference_audios", safeHttpsUrl(referenceAudioUrl.trim()));
     }
-    const response = await fetch(url.toString(), { headers: { Authorization: "Bearer " + token } });
-    if (!response.ok) {
-      const body = await response.text();
-      throw new Error("Video generation failed (HTTP " + response.status + "): " + body.slice(0, 240));
-    }
-    const type = response.headers.get("content-type") || "";
-    if (type.startsWith("video/") || type.includes("octet-stream")) {
-      const blob = await response.blob();
-      if (!blob.size) throw new Error("Video provider returned an empty file.");
-      setVideoUrl(URL.createObjectURL(blob));
+
+    const headers = { Authorization: "Bearer " + token, Prefer: "respond-async" };
+    let response = await fetch(url.toString(), { headers });
+    let reportedDuration = duration;
+    let blob: Blob;
+
+    if (response.status === 202) {
+      const submitted = await response.json();
+      const jobId = String(submitted.id || "");
+      if (!jobId) throw new Error("Video provider accepted the request without returning a job ID.");
+      say("Video generation queued. Waiting for the rendered scene…");
+      let completed = false;
+      for (let attempt = 0; attempt < 240; attempt++) {
+        await new Promise((resolve) => window.setTimeout(resolve, 5000));
+        const statusResponse = await fetch(API + "/v1/jobs/" + encodeURIComponent(jobId), { headers: { Authorization: "Bearer " + token } });
+        const status = await statusResponse.json().catch(() => ({}));
+        if (!statusResponse.ok) throw new Error(status.error?.message || "Could not check the video job status.");
+        if (status.status === "failed") throw new Error(status.error?.message || "The video model failed this generation.");
+        if (status.status === "succeeded") {
+          const resultResponse = await fetch(API + "/v1/jobs/" + encodeURIComponent(jobId) + "/result", { headers: { Authorization: "Bearer " + token } });
+          if (!resultResponse.ok) throw new Error("The completed video job did not return a downloadable result.");
+          const resultType = resultResponse.headers.get("content-type") || "";
+          if (resultType.startsWith("video/") || resultType.includes("octet-stream")) {
+            blob = await resultResponse.blob();
+          } else {
+            const resultData = await resultResponse.json();
+            const resultUrl = resultData.data?.[0]?.url || resultData.url || resultData.result_url;
+            if (!resultUrl) throw new Error("The completed video job returned no media URL.");
+            const asset = await fetch(safeHttpsUrl(String(resultUrl)));
+            if (!asset.ok) throw new Error("Could not download the generated video asset.");
+            blob = await asset.blob();
+            reportedDuration = Number(resultData.usage?.duration || duration);
+          }
+          completed = true;
+          break;
+        }
+      }
+      if (!completed) throw new Error("Video generation is still running after 20 minutes. Check your provider job history before retrying.");
     } else {
-      const data = await response.json();
-      const urlValue = data.data?.[0]?.url || data.url;
-      if (!urlValue) throw new Error("Video model returned no playable MP4 URL.");
-      setVideoUrl(String(urlValue));
+      if (!response.ok) {
+        const body = await response.text();
+        throw new Error("Video generation failed (HTTP " + response.status + "): " + body.slice(0, 240));
+      }
+      const type = response.headers.get("content-type") || "";
+      if (type.startsWith("video/") || type.includes("octet-stream")) {
+        blob = await response.blob();
+      } else {
+        const data = await response.json();
+        const urlValue = data.data?.[0]?.url || data.url;
+        if (!urlValue) throw new Error("Video model returned no playable MP4 URL.");
+        const asset = await fetch(safeHttpsUrl(String(urlValue)));
+        if (!asset.ok) throw new Error("Could not download the generated video asset.");
+        blob = await asset.blob();
+        reportedDuration = Number(data.usage?.duration || data.data?.[0]?.usage?.duration || duration);
+      }
     }
-    say("AI video clip generated. Save it before leaving this page.");
+
+    if (!blob.size) throw new Error("Video provider returned an empty file.");
+    if (blob.size > 20 * 1024 * 1024) throw new Error("Generated video exceeds the provider's 20 MB response limit.");
+    if (!(blob.type.startsWith("video/") || blob.type === "application/octet-stream")) throw new Error("Generated asset is not a recognizable video file.");
+    const objectUrl = URL.createObjectURL(blob);
+    setVideoUrl(objectUrl);
+    setGeneratedClips((previous) => [...previous, {
+      id: crypto.randomUUID(),
+      url: objectUrl,
+      blob,
+      seconds: Math.max(1, reportedDuration),
+      format: videoFormat,
+      prompt: videoPrompt.trim(),
+    }]);
+    say("Video scene generated and added to your timeline.");
   });
 
   const generateSpeech = () => run("audio", async () => {
