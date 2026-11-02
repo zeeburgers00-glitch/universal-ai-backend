@@ -694,6 +694,7 @@ export default function AIStudio() {
           {tabButton("seo", "YouTube SEO", <Search size={16} />)}
           {tabButton("thumbnail", "Thumbnail Studio", <ImageIcon size={16} />)}
           {tabButton("voice", "AI Voice", <AudioLines size={16} />)}
+          {tabButton("editor", "Video Editor", <Film size={16} />)}
         </nav>
         <section className="panel min-w-0">
           {tab === "script" && <>
@@ -743,7 +744,45 @@ export default function AIStudio() {
               <div className="field"><label>Voice</label><input value={speechVoice} onChange={(e) => setSpeechVoice(e.target.value)} placeholder="nova" /></div>
               <div className="flex items-end"><button className="btn" onClick={generateSpeech} disabled={!connected || busy === "audio" || !audioModel}>{busy === "audio" ? <LoaderCircle size={14} className="animate-spin" /> : <AudioLines size={14} />} Generate voice</button></div>
             </div>
-            {audioUrl && <div className="mt-4"><audio src={audioUrl} controls className="w-full" /><div className="mt-3 flex flex-wrap gap-2"><a className="btn secondary inline-flex" href={audioUrl} download="voiceover.mp3"><Download size={14} /> Save voice-over</a><button className="btn secondary" onClick={publishVoiceReference} disabled={!shareReferenceMedia || busy === "upload-audio"}>{busy === "upload-audio" ? <LoaderCircle size={14} className="animate-spin" /> : <UploadCloud size={14} />} Upload as avatar audio reference</button></div></div>}
+            {audioUrl && <div className="mt-4"><audio src={audioUrl} controls className="w-full" /><div className="mt-3 flex flex-wrap gap-2"><a className="btn secondary inline-flex" href={audioUrl} download="voiceover.mp3"><Download size={14} /> Save voice-over</a><button className="btn secondary" onClick={publishVoiceReference} disabled={!shareReferenceMedia || busy === "upload-audio"}>{busy === "upload-audio" ? <LoaderCircle size={14} className="animate-spin" /> : <UploadCloud size={14} />} Upload as avatar audio reference</button><button className="btn secondary" onClick={transcribeAudio} disabled={!connected || busy === "captions"}>{busy === "captions" ? <LoaderCircle size={14} className="animate-spin" /> : <Film size={14} />} Generate Whisper captions</button></div><p className="muted mt-2">{captionCues.length ? captionCues.length + " timestamped caption cues ready." : "Captions have not been transcribed yet."}</p></div>}
+          {tab === "editor" && <>
+            <h2>Final Video Editor</h2>
+            <p className="muted mt-2">Combine your generated scenes into one video. Add a narration track and generate Whisper timestamps before rendering to burn captions into the picture.</p>
+            <div className="metrics mt-4">
+              <div className="metric"><small>Scenes</small><strong>{generatedClips.length}</strong><span>Generated video clips</span></div>
+              <div className="metric"><small>Scene duration</small><strong>{generatedClips.reduce((sum, clip) => sum + clip.seconds, 0)}s</strong><span>Approximate combined length</span></div>
+              <div className="metric"><small>Narration</small><strong>{audioBlob ? "Ready" : "Missing"}</strong><span>AI voice-over</span></div>
+              <div className="metric"><small>Captions</small><strong>{captionCues.length ? "Ready" : "Missing"}</strong><span>Whisper timestamps</span></div>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 mt-4">
+              <h3>Scene timeline</h3>
+              <button className="btn secondary" onClick={() => setTab("avatar")}><Plus size={14}/> Add another scene</button>
+            </div>
+            {generatedClips.length ? <div className="space-y-2 mt-3">
+              {generatedClips.map((clip, index) => <div key={clip.id} className="row items-center gap-3">
+                <video src={clip.url} controls playsInline className="h-16 w-28 rounded-md bg-black object-cover"/>
+                <div className="flex-1 min-w-0"><b>Scene {index + 1} · {clip.seconds}s</b><small>{clip.format === "shorts" ? "9:16 Shorts" : "16:9 Landscape"} · {clip.prompt}</small></div>
+                <button className="btn ghost" onClick={() => removeClip(clip.id)} aria-label={"Remove scene " + (index + 1)}><Trash2 size={14}/></button>
+              </div>)}
+            </div> : <div className="empty">No scenes yet. Go to AI Video / Avatar and generate your first scene.</div>}
+            <div className="callout mt-4">
+              <b>Render settings</b>
+              <p className="mt-1">Output: {videoFormat === "shorts" ? "1080 × 1920 vertical" : "1920 × 1080 landscape"} WebM. Scenes are fitted to the selected aspect ratio. The narration and captions use their timestamp timeline; short visual sequences repeat to cover longer narration.</p>
+              <p className="mt-1">Browser rendering is limited to five minutes per export and depends on your device memory and browser codec support.</p>
+            </div>
+            <div className="flex flex-wrap gap-2 mt-4">
+              <button className="btn" onClick={renderTimeline} disabled={!connected || !generatedClips.length || !audioBlob || !captionCues.length || busy === "render"}>
+                {busy === "render" ? <LoaderCircle size={14} className="animate-spin"/> : <Film size={14}/>} Render final video
+              </button>
+              <span className="muted self-center">{busy === "render" ? renderProgress + "% rendered" : "Requires at least one scene, narration and timestamped captions."}</span>
+            </div>
+            {busy === "render" && <div className="progress mt-3"><span style={{width: renderProgress + "%"}}/></div>}
+            {finalVideoUrl && <div className="mt-5">
+              <h3>Rendered video</h3>
+              <video src={finalVideoUrl} controls playsInline className="mt-3 max-h-[520px] w-full rounded-xl border border-line bg-black"/>
+              <a className="btn secondary mt-3 inline-flex" href={finalVideoUrl} download="youtube-studio-final.webm"><Download size={14}/> Download final WebM</a>
+            </div>}
+          </>}
           </>}
         </section>
       </div>
