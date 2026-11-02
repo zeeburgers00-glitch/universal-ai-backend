@@ -1,0 +1,39 @@
+name: YouTube Studio Node checks
+on:
+  push:
+    branches: [main]
+    paths:
+      - "studio/**"
+      - "services/youtube-api/**"
+      - "services/youtube-worker/**"
+      - "database/migrations/**"
+      - ".github/workflows/youtube-studio-node.yml"
+  pull_request:
+    paths:
+      - "studio/**"
+      - "services/youtube-api/**"
+      - "services/youtube-worker/**"
+      - "database/migrations/**"
+      - ".github/workflows/youtube-studio-node.yml"
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            studio/package.json
+            services/youtube-api/package.json
+            services/youtube-worker/package.json
+      - name: Build Next.js studio
+        working-directory: studio
+        run: npm install --no-audit --no-fund && npm run build
+      - name: Build Fastify API and run tests
+        working-directory: services/youtube-api
+        run: npm install --no-audit --no-fund && npm run build && npm test
+      - name: Build BullMQ worker
+        working-directory: services/youtube-worker
+        run: npm install --no-audit --no-fund && npm run build
