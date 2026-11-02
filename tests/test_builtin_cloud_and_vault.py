@@ -1,4 +1,4 @@
-"""Tests for built-in cloud runtime (45 providers, 9 workers, 37 channels, 229 REA tools, WAV TTS) and Vault API."""
+"""Tests for built-in cloud runtime (48 providers, 9 workers, 37 channels, 229 REA tools, WAV TTS) and Vault API."""
 
 from fastapi.testclient import TestClient
 
@@ -38,8 +38,8 @@ def test_builtin_cloud_runtime_makes_all_45_providers_9_workers_37_channels_and_
     prov_resp = client.get("/v1/providers")
     assert prov_resp.status_code == 200
     prov_data = prov_resp.json()
-    assert prov_data["total"] == 45
-    assert prov_data["ready_count"] == 45
+    assert prov_data["total"] == 48
+    assert prov_data["ready_count"] == 48
     assert all(p["ready"] is True for p in prov_data["providers"])
     assert len(prov_data["workers"]) == 9
     assert all(w["configured"] is True for w in prov_data["workers"])
