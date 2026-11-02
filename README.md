@@ -57,7 +57,7 @@ Open `http://127.0.0.1:8000/docs`.
 - `POST /v1/rea/inspect` — dispatch bounded static REA inspection to isolated `rea_worker` (requires `X-API-Key`, `authorized_target_confirmed=true`, `user_approved=true`)
 - `GET /v1/tools/{tool_id}` — one record
 - `GET /v1/skills?q=browser` — searchable skills/tool references
-- `GET /v1/providers` & `GET /v1/models/providers` — `45` provider configuration states (never returns secrets)
+- `GET /v1/providers` & `GET /v1/models/providers` — `48` provider configuration states (never returns secrets)
 - `POST /v1/chat/completions` — multi-provider chat proxy (requires `X-API-Key`)
 - `POST /v1/tools` — add catalog metadata (requires `X-API-Key`; does not install or execute code)
 - `GET /v1/discover/categories` — `30` built-in global AI discovery presets and live catalog counts
@@ -142,6 +142,6 @@ The separate AutoTube frontend is a minimal chat interface; all agent catalogues
 - `GET /v1/chat/tasks/{task_id}/events` — task activity stream snapshot.
 - `workers/autopilot_worker` — durable Celery worker that dispatches specialist model calls and persists progress events.
 - `catalog/youtube_agent_fleet.json` — role/capacity definitions. Slots are templates, not permanently running processes.
-- `GET /v1/integrations/metricool/status`, `/brands`, `/youtube/categories`, and `/scheduled-posts` — Metricool brand and planning integration.
+- `GET /v1/integrations/metricool/status`, `/brands`, `/youtube/categories`, and `/scheduled-posts` — Metricool brand and planning integration; `POST /v1/integrations/metricool/schedule-youtube` schedules a Metricool-uploaded video/Short after explicit approval.
 
 See [chat-first architecture and deployment requirements](docs/CHAT_FIRST_ARCHITECTURE.md). The chat task engine can generate and review content briefs; actual stock footage downloading, TTS, video rendering and YouTube publishing still require the corresponding configured workers. It must not display those stages as completed unless a worker returns a successful result.
