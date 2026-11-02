@@ -718,5 +718,52 @@
     ],
     "notes": "Self-hosted or private inference server; must be reachable securely from the backend.",
     "security": "Credentials are server-side environment variables; never send secret values to the frontend."
+  },
+  {
+    "id": "z-ai",
+    "name": "Z.ai / GLM API",
+    "category": "llm",
+    "protocol": "openai-compatible",
+    "base_url_env": "ZAI_BASE_URL",
+    "api_key_env": "ZAI_API_KEY",
+    "default_model_env": "ZAI_DEFAULT_MODEL",
+    "default_base_url": "https://api.z.ai/api/paas/v4",
+    "capabilities": [
+      "chat",
+      "structured-output",
+      "tool-calling"
+    ],
+    "integration_status": "adapter_available",
+    "notes": "General API endpoint; coding-plan accounts may require a separate coding-only endpoint."
+  },
+  {
+    "id": "hacker-ai",
+    "name": "HackerAI",
+    "category": "llm",
+    "protocol": "openai-compatible",
+    "base_url_env": "HACKER_AI_BASE_URL",
+    "api_key_env": "HACKER_AI_API_KEY",
+    "default_model_env": "HACKER_AI_DEFAULT_MODEL",
+    "default_base_url": "https://api.hackerai.sh/v1",
+    "capabilities": [
+      "chat"
+    ],
+    "integration_status": "adapter_available",
+    "notes": "OpenAI-compatible chat-completions gateway; model availability depends on account."
+  },
+  {
+    "id": "opencode-zen",
+    "name": "OpenCode Zen",
+    "category": "llm",
+    "protocol": "openai-compatible",
+    "base_url_env": "OPENCODE_ZEN_BASE_URL",
+    "api_key_env": "OPENCODE_ZEN_API_KEY",
+    "default_model_env": "OPENCODE_ZEN_DEFAULT_MODEL",
+    "default_base_url": "https://opencode.ai/zen/v1",
+    "capabilities": [
+      "chat"
+    ],
+    "integration_status": "adapter_available",
+    "notes": "This adapter uses /chat/completions; Zen also exposes other protocols and not every model uses this endpoint."
   }
 ]
