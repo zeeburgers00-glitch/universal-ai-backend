@@ -30,3 +30,20 @@ def test_metricool_status_never_returns_credentials(monkeypatch):
     assert data["configured"] is False
     assert "METRICOOL_API_TOKEN" in data["required_backend_secrets"]
     assert "secret_value" not in data
+
+
+def test_metricool_youtube_schedule_requires_explicit_approval(monkeypatch):
+    monkeypatch.setenv("BACKEND_API_KEY", "test-autopilot-secret")
+    response = client.post(
+        "/v1/integrations/metricool/schedule-youtube",
+        headers={"X-API-Key": "test-autopilot-secret"},
+        json={
+            "title": "Test video",
+            "description": "Test description",
+            "publication_datetime": "2026-11-10T12:00:00",
+            "timezone": "Asia/Karachi",
+            "media_ids": ["metricool-media-id"],
+            "user_approved": False,
+        },
+    )
+    assert response.status_code == 409
