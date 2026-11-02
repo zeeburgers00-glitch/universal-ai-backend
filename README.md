@@ -130,3 +130,18 @@ A scheduled GitHub Actions workflow runs every six hours and opens/updates a pul
 ## Provider and stock footage additions
 
 See [provider and stock footage integration guide](docs/AUTOPILOT_PROVIDERS_AND_DISCOVERY.md). Added OpenAI-compatible adapters for Z.ai, HackerAI and OpenCode Zen, plus authenticated Pexels video search at `POST /v1/media/stock/pexels/search`. Pexels assets are returned with creator/source attribution metadata; actual rendering and publishing still require configured media and YouTube workers.
+
+
+## Chat-first YouTube autopilot
+
+The separate AutoTube frontend is a minimal chat interface; all agent catalogues, orchestration, tool integrations and worker execution remain in the backend. The browser calls a Vercel server-side proxy so `BACKEND_API_KEY` is not exposed to the client.
+
+- `GET /v1/agent-fleet` — 17 YouTube specialist role families and 120 on-demand role slots.
+- `POST /v1/chat/tasks` — queue a durable chat task (requires Supabase, Redis/Celery, and a configured AI provider).
+- `GET /v1/chat/tasks/{task_id}` — run status and activity events.
+- `GET /v1/chat/tasks/{task_id}/events` — task activity stream snapshot.
+- `workers/autopilot_worker` — durable Celery worker that dispatches specialist model calls and persists progress events.
+- `catalog/youtube_agent_fleet.json` — role/capacity definitions. Slots are templates, not permanently running processes.
+- `GET /v1/integrations/metricool/status`, `/brands`, `/youtube/categories`, and `/scheduled-posts` — Metricool brand and planning integration.
+
+See [chat-first architecture and deployment requirements](docs/CHAT_FIRST_ARCHITECTURE.md). The chat task engine can generate and review content briefs; actual stock footage downloading, TTS, video rendering and YouTube publishing still require the corresponding configured workers. It must not display those stages as completed unless a worker returns a successful result.
