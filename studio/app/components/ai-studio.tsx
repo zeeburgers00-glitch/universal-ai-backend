@@ -380,7 +380,7 @@ export default function AIStudio() {
     const headers = { Authorization: "Bearer " + token, Prefer: "respond-async" };
     let response = await fetch(url.toString(), { headers });
     let reportedDuration = duration;
-    let blob: Blob;
+    let blob: Blob | null = null;
 
     if (response.status === 202) {
       const submitted = await response.json();
@@ -433,6 +433,7 @@ export default function AIStudio() {
       }
     }
 
+    if (!blob) throw new Error("Video generation finished without returning a media file.");
     if (!blob.size) throw new Error("Video provider returned an empty file.");
     if (blob.size > 20 * 1024 * 1024) throw new Error("Generated video exceeds the provider's 20 MB response limit.");
     if (!(blob.type.startsWith("video/") || blob.type === "application/octet-stream")) throw new Error("Generated asset is not a recognizable video file.");
