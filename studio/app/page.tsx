@@ -61,10 +61,13 @@ export default function HomePage(){
  const loadTeam=useCallback(async()=>{
   if(!session?.access_token)return;
   setTeamLoading(true);
-  try{const data=await api("/v1/youtube/team");setYoutubeTeam(data as CreatorTeam)}
-  catch(e){say(e instanceof Error?e.message:"Could not load YouTube team.",true)}
+  try{
+   const response=await fetch("/api/youtube/team",{cache:"no-store"});
+   if(!response.ok)throw new Error("Could not load the bundled YouTube team manifest.");
+   const data=await response.json();setYoutubeTeam(data as CreatorTeam);
+  }catch(e){say(e instanceof Error?e.message:"Could not load YouTube team.",true)}
   finally{setTeamLoading(false)}
- },[api,session?.access_token]);
+ },[session?.access_token]);
  useEffect(()=>{if(page==="Agent team"&&session?.access_token){void loadTeam()}},[page,session?.access_token,loadTeam]);
  if(!sb||!session)return <main className="min-h-screen flex items-center justify-center p-5"><div className="w-full max-w-md rounded-2xl border border-line bg-panel p-7 shadow-2xl"><div className="flex items-center gap-3 mb-7"><div className="logo"><Sparkles size={19}/></div><div><b className="text-lg">AI YouTube Studio</b><small className="block text-slate-400 text-[10px] tracking-widest">AUTOPILOT WORKSPACE</small></div></div><div className="eyebrow">SECURE CREATOR SIGN-IN</div><h1 className="text-2xl font-extrabold mt-2">Welcome to your studio.</h1><p className="text-sm text-slate-400 leading-6 mt-3">Sign in with a secure email link. YouTube permissions are requested separately through Google's official OAuth consent screen.</p>{!sb?<div className="notice error mt-5">Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel to enable sign-in.</div>:<><label className="field mt-6"><span>Email address</span><input value={email} onChange={e=>setEmail(e.target.value)} type="email" placeholder="you@example.com"/></label><button className="btn w-full mt-2" onClick={signIn} disabled={busy==="signin"}>{busy==="signin"?<LoaderCircle className="animate-spin" size={15}/>:<KeyRound size={15}/>} Send secure sign-in link</button>{sent&&<div className="callout mt-4">Your sign-in link is on its way. Check your inbox.</div>}</>}<p className="muted mt-6">Never enter your Google password here. Provider API keys are not stored in the browser.</p></div></main>;
  const [eyebrow,title,subtitle]=intro[page];
