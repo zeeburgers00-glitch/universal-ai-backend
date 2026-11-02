@@ -73,6 +73,7 @@ export default function AIStudio() {
   const [referenceImageUrl, setReferenceImageUrl] = useState("");
   const [referenceAudioUrl, setReferenceAudioUrl] = useState("");
   const [videoDuration, setVideoDuration] = useState("5");
+  const [videoFormat, setVideoFormat] = useState<"longform" | "shorts">("longform");
   const [videoUrl, setVideoUrl] = useState("");
   const [speechText, setSpeechText] = useState("");
   const [speechVoice, setSpeechVoice] = useState("nova");
@@ -298,7 +299,9 @@ export default function AIStudio() {
   const generateVideo = () => run("video", async () => {
     if (!videoModel) throw new Error("No video model is available in the live catalogue yet.");
     if (videoPrompt.trim().length < 8) throw new Error("Describe the video scene.");
-    const url = new URL(API + "/video/" + encodeURIComponent(videoPrompt));
+    const formatPrompt = videoFormat === "shorts" ? "Vertical 9:16 YouTube Shorts framing, clear central subject, safe caption margins. " : "Landscape 16:9 composition for a long-form YouTube scene. ";
+    const avatarPrompt = referenceAudioUrl.trim() ? " Use the reference audio as the speaking performance and synchronize visible mouth movement where this model supports audio guidance." : "";
+    const url = new URL(API + "/video/" + encodeURIComponent(formatPrompt + videoPrompt + avatarPrompt));
     url.searchParams.set("model", videoModel);
     url.searchParams.set("duration", String(Math.min(10, Math.max(3, Number(videoDuration) || 5))));
     if (referenceImageUrl.trim()) url.searchParams.set("image", safeHttpsUrl(referenceImageUrl.trim()));
@@ -424,6 +427,7 @@ export default function AIStudio() {
             <div className="field mt-4"><label>Video prompt</label><textarea value={videoPrompt} onChange={(e) => setVideoPrompt(e.target.value)} placeholder="A friendly presenter speaking directly to camera in a modern studio, natural facial motion, expressive gestures, cinematic lighting..." /></div>
             <div className="grid gap-3 md:grid-cols-2">
               <div className="field"><label>Video model</label>{modelSelect(videoModel, setVideoModel, models.video, "No video models listed in the live catalogue")}</div>
+              <div className="field"><label>Video format</label><select value={videoFormat} onChange={(e) => setVideoFormat(e.target.value as "longform" | "shorts")} className="w-full rounded-lg border border-line bg-panel p-3 text-sm"><option value="longform">Long-form scene · 16:9</option><option value="shorts">Shorts scene · 9:16</option></select></div>
               <div className="field"><label>Clip duration (seconds)</label><select value={videoDuration} onChange={(e) => setVideoDuration(e.target.value)} className="w-full rounded-lg border border-line bg-panel p-3 text-sm"><option value="3">3 seconds</option><option value="5">5 seconds</option><option value="8">8 seconds</option><option value="10">10 seconds</option></select></div>
               <div className="field"><label>Reference image URL (optional)</label><input value={referenceImageUrl} onChange={(e) => setReferenceImageUrl(e.target.value)} placeholder="https://.../avatar.png" /></div>
               <div className="field"><label>Reference audio URL (optional)</label><input value={referenceAudioUrl} onChange={(e) => setReferenceAudioUrl(e.target.value)} placeholder="https://.../voice.mp3" /></div>
