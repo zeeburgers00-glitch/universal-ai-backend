@@ -80,7 +80,7 @@ export default function AIStudio() {
   const [isError, setIsError] = useState(false);
 
   const connected = Boolean(token) && expiresAt > Date.now();
-  const redirectUri = useMemo(() => typeof window === "undefined" ? "" : window.location.origin + "/", []);
+  const redirectUri = useMemo(() => typeof window === "undefined" ? "" : window.location.origin + "/ai/connect", []);
 
   const say = useCallback((message: string, error = false) => {
     setNotice(message);
