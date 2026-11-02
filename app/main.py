@@ -967,6 +967,15 @@ def youtube_agent_fleet():
     }
 
 
+@app.get("/v1/youtube/team")
+def youtube_creator_team():
+    try:
+        team = load_manifest("youtube_creator_team.json")
+    except (ValueError, FileNotFoundError, json.JSONDecodeError):
+        raise HTTPException(status_code=500, detail="YouTube creator team manifest unavailable")
+    return team
+
+
 @app.post("/v1/chat/tasks", dependencies=[Depends(require_api_key)], status_code=202)
 async def create_chat_task(request: ChatTaskRequest):
     if not autopilot_store_configured():
