@@ -6,14 +6,14 @@ on:
       - "studio/**"
       - "services/youtube-api/**"
       - "services/youtube-worker/**"
-      - "database/migrations/**"
+      - "supabase/migrations/**"
       - ".github/workflows/youtube-studio-node.yml"
   pull_request:
     paths:
       - "studio/**"
       - "services/youtube-api/**"
       - "services/youtube-worker/**"
-      - "database/migrations/**"
+      - "supabase/migrations/**"
       - ".github/workflows/youtube-studio-node.yml"
 jobs:
   build:

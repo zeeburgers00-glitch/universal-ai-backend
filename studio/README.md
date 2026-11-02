@@ -20,6 +20,6 @@ Only the Supabase anon key may be public. Never add provider keys, the Google OA
 
 ## Backend
 
-The Fastify API and BullMQ worker live under services/youtube-api and services/youtube-worker. Apply database/migrations/202611020001_youtube_studio.sql before connecting the app. Read docs/YOUTUBE_STUDIO_ARCHITECTURE.md for OAuth, provider and deployment setup.
+The Fastify API and BullMQ worker live under services/youtube-api and services/youtube-worker. Apply supabase/migrations/20261102160246_create_youtube_studio_autopilot.sql before connecting the app. Read docs/YOUTUBE_STUDIO_ARCHITECTURE.md for OAuth, provider and deployment setup.
 
 The user interface calls authenticated API endpoints and reports the backend's actual job and channel state. It does not claim a video is generated or uploaded until the worker and YouTube API confirm success.
