@@ -24,6 +24,8 @@ from .explorer_ui import EXPLORER_HTML
 from .github_discovery import list_discovery_presets, search_github_repositories
 from .providers import chat_with_provider, provider_status
 from .pexels import search_pexels_videos
+from .metricool import metricool_request, metricool_status
+from .autopilot_store import configured as autopilot_store_configured, create_run, add_event, get_run as get_autopilot_run, get_events as get_autopilot_events, update_run
 from .registry import Registry
 from .security import require_api_key
 from .supabase_store import save_custom_tool, supabase_configured
@@ -78,6 +80,11 @@ class ChatRequest(BaseModel):
     messages: list[dict[str, Any]] = Field(min_length=1, max_length=200)
     temperature: float = Field(default=0.7, ge=0, le=2)
     max_tokens: int | None = Field(default=1024, ge=1, le=32768)
+
+
+class ChatTaskRequest(BaseModel):
+    message: str = Field(min_length=2, max_length=8000)
+    conversation_id: str | None = Field(default=None, min_length=8, max_length=120, pattern=r"^[A-Za-z0-9_-]+$")
 
 
 class ToolRegistration(BaseModel):
@@ -926,3 +933,96 @@ async def search_stock_video(request: PexelsVideoSearchRequest):
         raise HTTPException(status_code=502, detail="Pexels returned an invalid response") from exc
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Pexels search failed: {type(exc).__name__}") from exc
+
+
+@app.get("/v1/agent-fleet")
+def youtube_agent_fleet():
+    try:
+        fleet = load_manifest("youtube_agent_fleet.json")
+    except (ValueError, FileNotFoundError, json.JSONDecodeError):
+        raise HTTPException(status_code=500, detail="YouTube agent fleet manifest unavailable")
+    return {
+        "name": fleet.get("name"),
+        "role_count": fleet.get("role_count"),
+        "agent_slots": fleet.get("agent_slots"),
+        "max_parallel_default": fleet.get("max_parallel_default"),
+        "execution_policy": fleet.get("execution_policy"),
+        "roles": fleet.get("roles", []),
+    }
+
+
+@app.post("/v1/chat/tasks", dependencies=[Depends(require_api_key)], status_code=202)
+async def create_chat_task(request: ChatTaskRequest):
+    if not autopilot_store_configured():
+        raise HTTPException(status_code=503, detail="Durable chat storage is not configured; set Supabase backend secrets")
+    from .autopilot_queue import enqueue_chat
+    task_id = str(uuid4())
+    conversation_id = request.conversation_id or str(uuid4())
+    row = {"id": task_id, "conversation_id": conversation_id, "prompt": request.message,
+           "status": "queued", "plan": {}, "result": None}
+    try:
+        create_run(row)
+        add_event(task_id, "queued", "Request queue mein add ho gayi", "queued")
+        enqueue_chat({"task_id": task_id, "conversation_id": conversation_id, "message": request.message})
+    except Exception as exc:
+        try:
+            update_run(task_id, {"status": "failed", "error_message": f"{type(exc).__name__}: {str(exc)[:400]}"})
+        except Exception:
+            pass
+        raise HTTPException(status_code=503, detail=f"Autopilot queue is not ready: {type(exc).__name__}") from exc
+    return {"task_id": task_id, "conversation_id": conversation_id, "status": "queued",
+            "status_url": f"/v1/chat/tasks/{task_id}", "events_url": f"/v1/chat/tasks/{task_id}/events"}
+
+
+@app.get("/v1/chat/tasks/{task_id}", dependencies=[Depends(require_api_key)])
+def chat_task_status(task_id: str):
+    try:
+        run = get_autopilot_run(task_id)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Autopilot task storage is unavailable") from exc
+    if not run:
+        raise HTTPException(status_code=404, detail="Chat task not found")
+    return {"task": run, "events": get_autopilot_events(task_id)}
+
+
+@app.get("/v1/chat/tasks/{task_id}/events", dependencies=[Depends(require_api_key)])
+def chat_task_events(task_id: str):
+    if not get_autopilot_run(task_id):
+        raise HTTPException(status_code=404, detail="Chat task not found")
+    return {"task_id": task_id, "events": get_autopilot_events(task_id)}
+
+
+@app.get("/v1/integrations/metricool/status")
+def metricool_integration_status():
+    return metricool_status()
+
+
+@app.get("/v1/integrations/metricool/brands", dependencies=[Depends(require_api_key)])
+async def metricool_brands():
+    try:
+        return await metricool_request("GET", "/admin/simpleProfiles")
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="Metricool brand lookup failed") from exc
+
+
+@app.get("/v1/integrations/metricool/youtube/categories", dependencies=[Depends(require_api_key)])
+async def metricool_youtube_categories(language: str = "en"):
+    try:
+        return await metricool_request("GET", "/v2/scheduler/catalogs/youtube/categories", params={"lang": language})
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="Metricool YouTube category lookup failed") from exc
+
+
+@app.get("/v1/integrations/metricool/scheduled-posts", dependencies=[Depends(require_api_key)])
+async def metricool_scheduled_posts(start: str, end: str, timezone: str = "Asia/Karachi"):
+    try:
+        return await metricool_request("GET", "/v2/scheduler/posts",
+            params={"start": start, "end": end, "timezone": timezone})
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="Metricool scheduled-post lookup failed") from exc
