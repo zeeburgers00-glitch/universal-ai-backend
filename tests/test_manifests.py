@@ -136,6 +136,7 @@ def test_control_plane_imports_and_exposes_worker_and_base44_routes():
         "/v1/agents/{agent_id}/run",
         "/v1/channels/{channel_id}/actions",
         "/v1/youtube/publish",
+        "/v1/youtube/team",
         "/v1/desktop/actions",
         "/v1/rea/status",
         "/v1/rea/tools",
