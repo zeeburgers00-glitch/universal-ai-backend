@@ -28,4 +28,5 @@ def test_metricool_status_never_returns_credentials(monkeypatch):
     assert response.status_code == 200
     data = response.json()
     assert data["configured"] is False
-    assert "token" not in str(data).lower()
+    assert "METRICOOL_API_TOKEN" in data["required_backend_secrets"]
+    assert "secret_value" not in data
