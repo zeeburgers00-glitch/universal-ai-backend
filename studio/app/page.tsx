@@ -88,10 +88,14 @@ export default function HomePage(){
  <section className="panel">
   <div className="flex items-center justify-between gap-3"><h2>Four specialist agents</h2><button className="btn secondary" onClick={loadTeam} disabled={teamLoading}><RefreshCw size={13}/> Refresh team</button></div>
   <p className="muted mt-2">One thumbnail designer, one SEO specialist and two separate video production agents.</p>
-  {teamLoading&&!youtubeTeam?<div className="empty">Loading team manifest…</div>:youtubeTeam?.members?.map(member=><div className="row items-start" key={member.agent_id}>
-   <div className="flex-1 min-w-0"><b>{member.seat}. {member.name}</b><small>{member.agent_id}</small><p className="muted mt-2">{member.responsibility}</p><div className="mt-2 flex flex-wrap gap-1">{member.outputs.slice(0,5).map(output=><span className="pill" key={output}>{output.replaceAll("_"," ")}</span>)}</div></div>
-   <span className="status">{member.execution_mode==="plan_only"?"Plan only":"Blueprint"}</span>
-  </div>):!youtubeTeam?<div className="empty">The team manifest is not available yet. Check the API deployment and refresh.</div>:null}
+  {teamLoading&&!youtubeTeam
+   ? <div className="empty">Loading team manifest…</div>
+   : !youtubeTeam
+     ? <div className="empty">The team manifest is not available yet. Check the API deployment and refresh.</div>
+     : youtubeTeam.members.map(member=><div className="row items-start" key={member.agent_id}>
+      <div className="flex-1 min-w-0"><b>{member.seat}. {member.name}</b><small>{member.agent_id}</small><p className="muted mt-2">{member.responsibility}</p><div className="mt-2 flex flex-wrap gap-1">{member.outputs.slice(0,5).map(output=><span className="pill" key={output}>{output.replaceAll("_"," ")}</span>)}</div></div>
+      <span className="status">{member.execution_mode==="plan_only"?"Plan only":"Blueprint"}</span>
+     </div>)}
   {youtubeTeam&&<div className="callout mt-4">Team status: {youtubeTeam.status.replaceAll("_"," ")}. These are task-scoped blueprints, not four always-running background processes.</div>}
  </section>
  <section className="panel">
