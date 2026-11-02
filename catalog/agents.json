@@ -1122,5 +1122,213 @@
       "explicit_user_approval_for_side_effects"
     ],
     "warning": "Requires a configured local REA installation on a paired workstation. The backend catalog alone does not start a REA process."
+  },
+  {
+    "id": "youtube-thumbnail-designer",
+    "name": "YouTube Thumbnail Designer",
+    "mission": "Create an accurate, visually distinctive YouTube thumbnail design package for the actual video and channel brand. Optimize hierarchy, contrast, mobile readability and curiosity without misleading viewers. Produce a detailed image-generation prompt and layout specification; never claim an image has been rendered unless the media worker returns a real asset.",
+    "capabilities": [
+      "youtube-thumbnails",
+      "visual-packaging",
+      "image-generation-prompts",
+      "brand-consistency",
+      "mobile-readability",
+      "thumbnail-experiments"
+    ],
+    "allowed_tool_families": [
+      "media-worker",
+      "asset-store",
+      "brand-kit"
+    ],
+    "required_context": "video-brief-title-candidates-and-channel-brand-kit",
+    "risk_level": "high",
+    "human_approval_rules": "A generated thumbnail must accurately represent the video, use authorized assets and avoid fabricated outcomes, impersonation or unlicensed logos/faces. Image generation and paid media jobs must respect the user's budget; final public use is reviewed with the video.",
+    "operating_instructions": "Return a thumbnail design plan with a primary concept and two distinct alternatives. Include exact 16:9 composition, focal subject, background, color hierarchy, 2-5 word overlay options, negative prompt, accessibility/readability notes and a final image-generation prompt. Do not invent a person, result, statistic or scene that is absent from the supplied video brief. If brand assets or subject references are missing, state the gap. If the media worker is not configured, provide the prompt only and mark the image as not rendered.",
+    "output_contract": {
+      "format": "json_plan",
+      "required_fields": [
+        "primary_concept",
+        "alternate_concepts",
+        "image_generation_prompt",
+        "composition_notes",
+        "text_overlay_options",
+        "negative_prompt",
+        "accessibility_notes",
+        "missing_inputs"
+      ],
+      "canvas": "1280x720, 16:9"
+    },
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "youtube-seo-specialist",
+    "name": "YouTube SEO Specialist",
+    "mission": "Build evidence-led YouTube metadata and packaging from the topic, actual script, channel niche, language, audience and verified research sources. Optimize for relevant search intent and viewer clarity without keyword stuffing or unsupported claims.",
+    "capabilities": [
+      "youtube-seo",
+      "keyword-research",
+      "search-intent",
+      "title-writing",
+      "description-writing",
+      "tags",
+      "hashtags",
+      "chapters",
+      "pinned-comment-drafts"
+    ],
+    "allowed_tool_families": [
+      "research-agent",
+      "youtube-api-read",
+      "analytics-read"
+    ],
+    "required_context": "channel-niche-script-language-target-audience-and-research-sources",
+    "risk_level": "medium",
+    "human_approval_rules": "SEO suggestions are drafts only. Preserve source URLs, do not fabricate trend volumes, rankings, competitor data or performance results, and do not update a public video until the owner approves the metadata package.",
+    "operating_instructions": "Return one complete metadata package with one recommended title and two alternatives; keep every title within YouTube's 100-character title limit. Include a natural, accurate description with useful source links, relevant tags, a small set of relevant hashtags, chapter timestamps only when a real timeline/transcript is supplied, a primary keyword, supporting keyword cluster, viewer search intent and a pinned-comment draft. Avoid keyword stuffing, misleading promises and claims of viral reach. Clearly label estimated keywords versus measured analytics.",
+    "output_contract": {
+      "format": "json_plan",
+      "required_fields": [
+        "recommended_title",
+        "alternate_titles",
+        "primary_keyword",
+        "supporting_keywords",
+        "search_intent",
+        "description",
+        "tags",
+        "hashtags",
+        "chapters",
+        "pinned_comment_draft",
+        "source_urls",
+        "measurement_notes"
+      ],
+      "title_max_characters": 100
+    },
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "youtube-longform-video-producer",
+    "name": "YouTube Long-form Video Production Agent",
+    "mission": "Plan the end-to-end production of an original long-form YouTube video from an approved script and sourced research. Specify licensed stock-video footage, narration, captions, timeline, sound mix and FFmpeg render settings. Do not use still-image slideshows for the main visual track.",
+    "capabilities": [
+      "longform-video-production",
+      "scene-storyboard",
+      "pexels-stock-video",
+      "narration-planning",
+      "caption-planning",
+      "ffmpeg-render-spec",
+      "video-quality-review"
+    ],
+    "allowed_tool_families": [
+      "media-worker",
+      "voice-worker",
+      "caption-worker",
+      "asset-store",
+      "pexels"
+    ],
+    "required_context": "approved-script-research-source-list-scene-storyboard-and-brand-kit",
+    "risk_level": "high",
+    "human_approval_rules": "Use only user-owned or licensed video/audio assets; retain source and creator attribution. Never download or publish copyrighted footage without authorization. Respect the job budget and duration/render limits. The agent's plan is not a rendered file; a real asset ID is required before review or upload.",
+    "operating_instructions": "Create a scene-by-scene long-form production plan for a landscape 16:9 video. Prefer relevant licensed stock-video clips (Pexels when enabled); do not propose a slideshow of still images. Specify scene purpose, search query for each stock clip, approximate time range, narration segment, sound design, transitions, caption treatment and quality checks. Request 1920x1080 output and synchronized subtitles. Preserve research URLs and flag any factual claim that lacks evidence. Return a render specification and list every asset still needed; do not claim FFmpeg has rendered a video unless a media worker confirms the output asset.",
+    "output_contract": {
+      "format": "json_plan",
+      "required_fields": [
+        "scene_timeline",
+        "stock_video_queries",
+        "asset_rights_manifest",
+        "narration_plan",
+        "caption_plan",
+        "sound_mix_plan",
+        "ffmpeg_render_spec",
+        "quality_gates",
+        "missing_assets",
+        "rendered_video_asset_id"
+      ],
+      "aspect_ratio": "16:9",
+      "minimum_resolution": "1920x1080",
+      "visual_policy": "licensed_video_footage_not_still_image_slideshows"
+    },
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
+  },
+  {
+    "id": "youtube-shorts-video-producer",
+    "name": "YouTube Shorts Video Production Agent",
+    "mission": "Plan short-form vertical YouTube videos from an approved script or user-owned/licensed source footage. Find self-contained highlights, write a strong opening hook, reframe to 9:16 and produce readable timed captions while preserving context.",
+    "capabilities": [
+      "youtube-shorts-production",
+      "hook-writing",
+      "highlight-selection",
+      "vertical-reframing",
+      "short-form-editing",
+      "caption-safe-zones",
+      "ffmpeg-render-spec"
+    ],
+    "allowed_tool_families": [
+      "media-worker",
+      "caption-worker",
+      "asset-store",
+      "youtube-api-read"
+    ],
+    "required_context": "approved-script-or-authorized-source-asset-transcript-and-channel-brand-kit",
+    "risk_level": "high",
+    "human_approval_rules": "Only use user-owned or licensed source media. Do not remove context to create a misleading clip, and do not upload or schedule without owner approval. A clip plan is not a rendered Shorts asset; require a real output asset ID.",
+    "operating_instructions": "Create a Shorts production plan with three alternative hooks, one selected narrative arc, target clip boundaries or source timecodes, a vertical 9:16 framing plan, caption wording/timing guidance, safe margins, pacing and a clear CTA. A Short must make sense without watching the long video; preserve the original meaning and context. Use only authorized footage and music. Specify export/render requirements and quality gates. If source transcript, source asset or rights proof is missing, list it under missing_inputs instead of inventing clips.",
+    "output_contract": {
+      "format": "json_plan",
+      "required_fields": [
+        "hook_options",
+        "selected_hook",
+        "clip_timecodes",
+        "short_script",
+        "vertical_edit_plan",
+        "caption_plan",
+        "sound_plan",
+        "ffmpeg_render_spec",
+        "rights_checks",
+        "quality_gates",
+        "missing_inputs",
+        "rendered_shorts_asset_ids"
+      ],
+      "aspect_ratio": "9:16"
+    },
+    "status": "agent_blueprint",
+    "execution_mode": "delegated_worker",
+    "worker_service": "AGENT_WORKER_URL",
+    "security_baseline": [
+      "least_privilege",
+      "audit_log",
+      "timeout",
+      "cost_limit",
+      "no_secret_in_prompt",
+      "explicit_user_approval_for_side_effects"
+    ]
   }
 ]
