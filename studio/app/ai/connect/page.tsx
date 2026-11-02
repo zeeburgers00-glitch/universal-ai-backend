@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { LoaderCircle, ShieldCheck } from "lucide-react";
 
 const AUTH = "https://enter.pollinations.ai";
+const APP_BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "";
 
 export default function PollinationsConnectCallback() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function PollinationsConnectCallback() {
         const expectedState = sessionStorage.getItem("pollinations_oauth_state") || "";
         const verifier = sessionStorage.getItem("pollinations_pkce_verifier") || "";
         const clientId = sessionStorage.getItem("pollinations_pending_app_key") || "";
-        const redirectUri = sessionStorage.getItem("pollinations_redirect_uri") || window.location.origin + "/ai/connect";
+        const redirectUri = sessionStorage.getItem("pollinations_redirect_uri") || window.location.origin + APP_BASE_PATH + "/ai/connect";
 
         if (!code || !returnedState || !expectedState || returnedState !== expectedState || !verifier || !clientId) {
           throw new Error("The AI credit authorization could not be verified. Return to AI Studio and reconnect.");
@@ -76,7 +77,7 @@ export default function PollinationsConnectCallback() {
         <div className="mt-5 flex items-center gap-2 text-violet-300">
           <LoaderCircle size={16} className="animate-spin"/><span className="text-sm">Secure authorization</span>
         </div>
-        <a className="text-violet-300 underline text-sm inline-block mt-6" href="/">Return to AI YouTube Studio</a>
+        <a className="text-violet-300 underline text-sm inline-block mt-6" href={APP_BASE_PATH + "/"}>Return to AI YouTube Studio</a>
       </div>
     </main>
   );
