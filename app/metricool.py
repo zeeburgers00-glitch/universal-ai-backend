@@ -43,3 +43,28 @@ def metricool_status() -> dict[str, Any]:
         "capabilities": ["connected_brands", "scheduled_posts", "youtube_categories"],
         "channel_connection": "Connect the YouTube channel inside Metricool as the channel owner; the API token does not create a YouTube channel.",
     }
+
+
+async def schedule_youtube_video(*, title: str, description: str, publication_datetime: str,
+                                 timezone: str, media_ids: list[str], tags: list[str],
+                                 category: str, privacy: str, made_for_kids: bool,
+                                 ai_generated_content: bool, video_type: str) -> Any:
+    if not media_ids:
+        raise ValueError("At least one Metricool-uploaded media ID is required")
+    body = {
+        "publicationDate": {"dateTime": publication_datetime, "timezone": timezone},
+        "text": description,
+        "providers": [{"network": "youtube"}],
+        "media": media_ids,
+        "autoPublish": True,
+        "youtubeData": {
+            "title": title[:100],
+            "type": video_type,
+            "privacy": privacy,
+            "tags": tags[:500],
+            "category": category,
+            "madeForKids": made_for_kids,
+            "isAiGeneratedContent": ai_generated_content,
+        },
+    }
+    return await metricool_request("POST", "/v2/scheduler/posts", body=body)
