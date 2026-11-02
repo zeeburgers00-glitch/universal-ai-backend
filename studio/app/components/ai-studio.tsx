@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { AudioLines, CheckCircle2, Copy, Download, Image as ImageIcon, LoaderCircle, LogOut, Play, RefreshCw, Search, Sparkles, Video, WandSparkles } from "lucide-react";
+import { AudioLines, CheckCircle2, Copy, Download, Image as ImageIcon, LoaderCircle, LogOut, Play, RefreshCw, Search, Sparkles, UploadCloud, Video, WandSparkles } from "lucide-react";
 
 type Model = { id: string; name?: string; description?: string; video_capabilities?: string[]; input_modalities?: string[]; min_duration?: number; max_duration?: number; paid_only?: boolean; pricing?: Record<string, string> };
 type Models = { text: Model[]; image: Model[]; video: Model[]; audio: Model[] };
@@ -350,9 +350,11 @@ export default function AIStudio() {
     url.searchParams.set("duration", String(Math.min(10, Math.max(3, Number(videoDuration) || 5))));
     const selectedModel = models.video.find((model) => model.id === videoModel);
     if (referenceImageUrl.trim()) {
-      const canAcceptImage = selectedModel?.video_capabilities?.some((cap) => ["start_frame", "reference_images"].includes(cap)) || selectedModel?.input_modalities?.includes("image");
-      if (!canAcceptImage) throw new Error("The selected video model does not advertise image-reference support. Choose a compatible model or remove the reference image.");
-      url.searchParams.set("image", safeHttpsUrl(referenceImageUrl.trim()));
+      const ref = safeHttpsUrl(referenceImageUrl.trim());
+      if (selectedModel?.video_capabilities?.includes("start_frame")) url.searchParams.set("image", ref);
+      else if (selectedModel?.video_capabilities?.includes("reference_images")) url.searchParams.set("reference_images", ref);
+      else if (selectedModel?.input_modalities?.includes("image")) url.searchParams.set("image", ref);
+      else throw new Error("The selected video model does not advertise image-reference support. Choose a compatible model or remove the reference image.");
     }
     if (referenceAudioUrl.trim()) {
       if (!selectedModel?.video_capabilities?.includes("reference_audios")) throw new Error("The selected video model does not advertise audio-reference support. Choose a model marked as audio-driven in the catalogue.");
@@ -399,7 +401,7 @@ export default function AIStudio() {
   const modelSelect = (value: string, onChange: (v: string) => void, list: Model[], placeholder: string) => (
     <select className="w-full rounded-lg border border-line bg-panel p-3 text-sm" value={value} onChange={(e) => onChange(e.target.value)}>
       {!list.length && <option value="">{catalogLoading ? "Loading live models…" : placeholder}</option>}
-      {list.map((model) => <option key={model.id} value={model.id}>{model.id}</option>)}
+      {list.map((model) => <option key={model.id} value={model.id}>{model.id}{model.video_capabilities?.includes("reference_audios") ? " · audio-driven" : ""}{model.paid_only ? " · paid Pollen" : ""}</option>)}
     </select>
   );
 
