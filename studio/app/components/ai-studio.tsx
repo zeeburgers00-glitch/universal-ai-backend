@@ -82,6 +82,8 @@ export default function AIStudio() {
   const [imagePrompt, setImagePrompt] = useState("");
   const [thumbnailUrl, setThumbnailUrl] = useState("");
   const [videoPrompt, setVideoPrompt] = useState("");
+  const [avatarPrompt, setAvatarPrompt] = useState("A fictional adult presenter, friendly professional appearance, natural skin texture, shoulders-up portrait, clean modern studio background, soft cinematic lighting, centered face, vertical composition, no text, no logos");
+  const [avatarPortraitUrl, setAvatarPortraitUrl] = useState("");
   const [referenceImageUrl, setReferenceImageUrl] = useState("");
   const [referenceImageFile, setReferenceImageFile] = useState<File | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -344,6 +346,36 @@ export default function AIStudio() {
     if (!url) throw new Error("The image model returned no thumbnail URL.");
     setThumbnailUrl(url);
     say("Thumbnail generated.");
+  });
+
+  const generateAvatarPortrait = () => run("avatar-image", async () => {
+    if (avatarPrompt.trim().length < 12) throw new Error("Describe the presenter appearance first.");
+    const data = await aiRequest("/v1/images/generations", {
+      model: imageModel,
+      prompt: avatarPrompt + ". Photorealistic fictional adult presenter avatar, single person only, natural front-facing eye contact, shoulders-up framing, vertical 9:16 portrait, realistic hands out of frame, neutral professional background.",
+      n: 1,
+      size: "1024x1536",
+      response_format: "url",
+    });
+    const item = data.data?.[0] || {};
+    const returnedUrl = String(item.url || "");
+    if (returnedUrl) {
+      const safe = safeHttpsUrl(returnedUrl);
+      setAvatarPortraitUrl(safe);
+      setReferenceImageUrl(safe);
+      setReferenceImageFile(null);
+      say("AI presenter portrait created and selected as the video reference image.");
+      return;
+    }
+    if (item.b64_json) {
+      const dataUrl = "data:image/png;base64," + String(item.b64_json);
+      const blob = await (await fetch(dataUrl)).blob();
+      setAvatarPortraitUrl(URL.createObjectURL(blob));
+      setReferenceImageFile(new File([blob], "ai-avatar-portrait.png", { type: "image/png" }));
+      say("AI presenter portrait created. Confirm public media upload to use it as a video reference.");
+      return;
+    }
+    throw new Error("The image model returned no portrait URL or image data.");
   });
 
   const generateVideo = () => run("video", async () => {
@@ -722,7 +754,13 @@ export default function AIStudio() {
           </>}
 
           {tab === "avatar" && <>
-            <h2>AI Video / Avatar Studio</h2><p className="muted mt-2">Generate a short AI video clip. Supply a public HTTPS image or audio reference for models that support those inputs.</p>
+            <h2>AI Video / Avatar Studio</h2><p className="muted mt-2">Create a presenter portrait, generate voice, then animate it with a video model that advertises reference-image or audio support.</p>
+            <div className="panel mt-4">
+              <h3>Step 1 · Create an AI presenter portrait</h3>
+              <div className="field"><label>Presenter appearance</label><textarea value={avatarPrompt} onChange={(e) => setAvatarPrompt(e.target.value)} /></div>
+              <div className="flex flex-wrap items-end gap-3"><div className="field min-w-[240px] flex-1"><label>Image model</label>{modelSelect(imageModel, setImageModel, models.image, "No image models listed")}</div><button className="btn" onClick={generateAvatarPortrait} disabled={!connected || busy === "avatar-image"}>{busy === "avatar-image" ? <LoaderCircle size={14} className="animate-spin" /> : <ImageIcon size={14} />} Generate AI avatar</button></div>
+              {avatarPortraitUrl && <div className="mt-3 flex flex-wrap gap-3 items-start"><img src={avatarPortraitUrl} alt="Generated AI presenter portrait" className="w-40 rounded-lg border border-line"/><div className="flex-1"><p className="muted">Portrait preview. It is selected as the video reference when the model supports image input.</p>{referenceImageFile && <button className="btn secondary mt-3" onClick={publishAvatarReference} disabled={!connected || !shareReferenceMedia || busy === "upload-image"}>{busy === "upload-image" ? <LoaderCircle size={14} className="animate-spin" /> : <UploadCloud size={14} />} Upload portrait to media host</button>}</div></div>}
+            </div>
             <div className="field mt-4"><label>Video prompt</label><textarea value={videoPrompt} onChange={(e) => setVideoPrompt(e.target.value)} placeholder="A friendly presenter speaking directly to camera in a modern studio, natural facial motion, expressive gestures, cinematic lighting..." /></div>
             <div className="callout mt-3"><label className="flex items-center gap-2"><input type="checkbox" checked={shareReferenceMedia} onChange={(e) => setShareReferenceMedia(e.target.checked)} /> I authorize uploading my selected avatar/voice reference to a public media URL</label><p className="mt-2">Anyone who has the resulting URL may be able to access the file. Use only your own media or material you have permission to share. Leave unchecked to use an already-public HTTPS URL instead.</p></div>
             <div className="grid gap-3 md:grid-cols-2">
