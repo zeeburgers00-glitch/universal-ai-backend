@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "policy": "Plugins are reviewed connectors, not arbitrary executable code. Secrets are stored server-side. OAuth scopes are least-privilege. External actions require per-action approval.",
+  "plugins": [
+    {
+      "id": "youtube-data",
+      "name": "YouTube Data API",
+      "category": "creator",
+      "provider": "Google",
+      "capabilities": [
+        "channel_analytics",
+        "video_metadata",
+        "approved_upload"
+      ],
+      "status": "catalog_only",
+      "auth": "oauth2",
+      "risk": "high",
+      "approval_required": [
+        "publish",
+        "delete",
+        "change_channel_settings"
+      ]
+    },
+    {
+      "id": "google-adsense",
+      "name": "Google AdSense",
+      "category": "monetization",
+      "provider": "Google",
+      "capabilities": [
+        "publisher_reports",
+        "estimated_earnings"
+      ],
+      "status": "catalog_only",
+      "auth": "oauth2",
+      "risk": "high",
+      "approval_required": [
+        "account_changes",
+        "payment_profile_changes"
+      ]
+    },
+    {
+      "id": "pexels",
+      "name": "Pexels",
+      "category": "media",
+      "provider": "Pexels",
+      "capabilities": [
+        "licensed_stock_video_search"
+      ],
+      "status": "catalog_only",
+      "auth": "api_key",
+      "risk": "low",
+      "approval_required": []
+    },
+    {
+      "id": "github",
+      "name": "GitHub",
+      "category": "development",
+      "provider": "GitHub",
+      "capabilities": [
+        "repository_read",
+        "issue_management",
+        "approved_commits"
+      ],
+      "status": "catalog_only",
+      "auth": "oauth_or_app",
+      "risk": "high",
+      "approval_required": [
+        "write_repository",
+        "merge_pull_request",
+        "delete_repository"
+      ]
+    },
+    {
+      "id": "gmail",
+      "name": "Gmail",
+      "category": "communications",
+      "provider": "Google",
+      "capabilities": [
+        "draft_email",
+        "read_authorized_mail"
+      ],
+      "status": "catalog_only",
+      "auth": "oauth2",
+      "risk": "high",
+      "approval_required": [
+        "send_email",
+        "delete_email"
+      ]
+    },
+    {
+      "id": "stripe",
+      "name": "Stripe",
+      "category": "payments",
+      "provider": "Stripe",
+      "capabilities": [
+        "payment_links",
+        "payment_status",
+        "revenue_reports"
+      ],
+      "status": "catalog_only",
+      "auth": "oauth_or_api_key",
+      "risk": "critical",
+      "approval_required": [
+        "create_refund",
+        "transfer",
+        "payout",
+        "change_account"
+      ]
+    },
+    {
+      "id": "mailpit-qa",
+      "name": "Mailpit QA Inbox",
+      "category": "testing",
+      "provider": "Self-hosted",
+      "capabilities": [
+        "create_test_inbox",
+        "read_test_messages"
+      ],
+      "status": "requires_worker",
+      "auth": "worker_token",
+      "risk": "low",
+      "approval_required": []
+    }
+  ]
+}
