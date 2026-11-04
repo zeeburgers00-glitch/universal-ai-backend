@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "policies": {
+    "ad_traffic": "Only genuine human traffic and policy-compliant placements. Never click, refresh, incentivize, or automate ad interactions.",
+    "affiliate": "Disclose affiliate relationships clearly and follow program terms.",
+    "revenue": "Only finalized provider statements or verified payment events count as realized revenue; estimates are tracked separately."
+  },
+  "streams": [
+    {
+      "id": "adsense",
+      "name": "YouTube / Website Ad Revenue",
+      "providers": [
+        "Google AdSense",
+        "YouTube Partner Program"
+      ],
+      "capabilities": [
+        "eligibility_checklist",
+        "policy_review",
+        "report_import",
+        "revenue_analytics"
+      ],
+      "status": "connect_provider_to_enable"
+    },
+    {
+      "id": "affiliate",
+      "name": "Affiliate Commissions",
+      "providers": [
+        "Approved affiliate programs"
+      ],
+      "capabilities": [
+        "disclosure_check",
+        "click_and_conversion_reporting",
+        "commission_reconciliation"
+      ],
+      "status": "connect_provider_to_enable"
+    },
+    {
+      "id": "sponsorships",
+      "name": "Sponsorships",
+      "providers": [
+        "Direct business clients"
+      ],
+      "capabilities": [
+        "media_kit",
+        "rate_card",
+        "proposal_drafts",
+        "deal_tracking"
+      ],
+      "status": "workflow_ready"
+    },
+    {
+      "id": "services",
+      "name": "Agency Services",
+      "providers": [
+        "Direct clients",
+        "Freelance marketplaces"
+      ],
+      "capabilities": [
+        "lead_pipeline",
+        "proposals",
+        "delivery_tracking",
+        "invoices"
+      ],
+      "status": "workflow_ready"
+    },
+    {
+      "id": "saas",
+      "name": "SaaS Subscriptions",
+      "providers": [
+        "Stripe"
+      ],
+      "capabilities": [
+        "subscription_metrics",
+        "churn",
+        "mrr_reporting"
+      ],
+      "status": "connect_provider_to_enable"
+    }
+  ]
+}
