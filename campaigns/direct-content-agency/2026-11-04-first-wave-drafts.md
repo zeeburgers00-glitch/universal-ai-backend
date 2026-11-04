@@ -49,11 +49,11 @@ Subject: Short-form video concepts for GetFitDXB partnerships
 
 Hello GetFitDXB team,
 
-Your website has a dedicated route for gym/studio partnerships and media enquiries. I have an idea for short, coach-led videos that could explain the partner experience and introduce participating gyms.
+I noticed your site publishes practical guides about discovering fitness services in Dubai. I have a concept for a short educational video series for your own brand channels — for example, useful questions people can ask before choosing a trainer or studio.
 
 Our content service covers short-form editing, captions and a monthly content calendar. I can prepare a speculative concept for your review, without using your branding or claiming fitness outcomes.
 
-Would the partnerships or media team be the right people to review a short concept?
+Would the team handling your own marketing content be the right contact for a brief proposal?
 
 Best,  
 Content Studio
