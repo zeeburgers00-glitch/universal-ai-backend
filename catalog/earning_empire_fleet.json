@@ -1,0 +1,3889 @@
+{
+  "name": "AI Earning Empire Fleet",
+  "version": "1.0.0",
+  "agent_slots": 120,
+  "department_count": 12,
+  "execution_policy": "120 role templates are not 120 always-on processes. Spawn task-scoped agents only when worker capacity and budget permit. Drafting and analysis may run autonomously; external side effects require explicit approval.",
+  "default_max_parallel": 5,
+  "monthly_budget_usd": 100,
+  "budget_policy": "Soft budget ceiling target of USD 100/month. Configure provider-level hard limits and usage alerts separately; never assume this manifest enforces provider billing limits.",
+  "departments": [
+    {
+      "id": "youtube",
+      "name": "YouTube Automation",
+      "capacity": 15,
+      "mission": "Build and operate original YouTube content workflows from research through approved publishing.",
+      "skills": [
+        "topic_research",
+        "scripts",
+        "thumbnails",
+        "seo",
+        "video_editing",
+        "captions",
+        "publishing"
+      ]
+    },
+    {
+      "id": "freelance",
+      "name": "Freelancing Agency",
+      "capacity": 12,
+      "mission": "Find suitable client opportunities, prepare proposals, scope work and deliver approved client projects.",
+      "skills": [
+        "lead_research",
+        "proposal_writing",
+        "scoping",
+        "delivery",
+        "client_support"
+      ]
+    },
+    {
+      "id": "content-agency",
+      "name": "AI Content Agency",
+      "capacity": 10,
+      "mission": "Produce and quality-check social content packages for paying business clients.",
+      "skills": [
+        "social_content",
+        "reels",
+        "copywriting",
+        "content_calendar",
+        "brand_voice"
+      ]
+    },
+    {
+      "id": "affiliate",
+      "name": "Affiliate Marketing",
+      "capacity": 10,
+      "mission": "Research eligible products and create compliant comparison content and affiliate campaigns.",
+      "skills": [
+        "product_research",
+        "comparison_content",
+        "seo",
+        "campaign_analytics"
+      ]
+    },
+    {
+      "id": "saas",
+      "name": "AI SaaS Business",
+      "capacity": 10,
+      "mission": "Research, design, validate and support small AI software products and subscriptions.",
+      "skills": [
+        "market_validation",
+        "product_specs",
+        "onboarding",
+        "support",
+        "retention"
+      ]
+    },
+    {
+      "id": "ecommerce",
+      "name": "E-commerce",
+      "capacity": 10,
+      "mission": "Research products, prepare store listings and improve customer experience and conversion.",
+      "skills": [
+        "product_research",
+        "listing_copy",
+        "catalog_ops",
+        "customer_support",
+        "analytics"
+      ]
+    },
+    {
+      "id": "sales",
+      "name": "Marketing & Sales",
+      "capacity": 10,
+      "mission": "Identify permission-based prospects, create outreach drafts and manage sales pipeline workflows.",
+      "skills": [
+        "lead_qualification",
+        "crm",
+        "email_drafts",
+        "sales_enablement",
+        "funnel_analysis"
+      ]
+    },
+    {
+      "id": "research",
+      "name": "Research & Trends",
+      "capacity": 10,
+      "mission": "Collect evidence-backed market, competitor and demand research for business decisions.",
+      "skills": [
+        "market_research",
+        "trend_analysis",
+        "competitor_analysis",
+        "fact_checking"
+      ]
+    },
+    {
+      "id": "production",
+      "name": "Media Production",
+      "capacity": 10,
+      "mission": "Create production plans and coordinate licensed assets, narration, captions and rendering workers.",
+      "skills": [
+        "stock_footage",
+        "tts",
+        "captions",
+        "ffmpeg",
+        "render_qa"
+      ]
+    },
+    {
+      "id": "operations",
+      "name": "Business Operations",
+      "capacity": 8,
+      "mission": "Coordinate work, monitor task dependencies, schedule approved tasks and report progress.",
+      "skills": [
+        "orchestration",
+        "project_management",
+        "scheduling",
+        "documentation"
+      ]
+    },
+    {
+      "id": "finance",
+      "name": "Finance & Analytics",
+      "capacity": 7,
+      "mission": "Track actual revenue, costs, margins and agent/provider usage without inventing income.",
+      "skills": [
+        "revenue_tracking",
+        "cost_tracking",
+        "unit_economics",
+        "analytics"
+      ]
+    },
+    {
+      "id": "trust",
+      "name": "Quality, Risk & Compliance",
+      "capacity": 8,
+      "mission": "Review factual quality, rights, privacy, platform rules, security and approval requirements.",
+      "skills": [
+        "quality_review",
+        "rights_review",
+        "policy_review",
+        "security",
+        "approval_gates"
+      ]
+    }
+  ],
+  "agents": [
+    {
+      "id": "youtube-01",
+      "department_id": "youtube",
+      "name": "YouTube Automation Agent 01",
+      "mission": "Build and operate original YouTube content workflows from research through approved publishing.",
+      "capabilities": [
+        "topic_research",
+        "scripts",
+        "thumbnails",
+        "seo",
+        "video_editing",
+        "captions",
+        "publishing"
+      ],
+      "slot": 1,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "youtube-02",
+      "department_id": "youtube",
+      "name": "YouTube Automation Agent 02",
+      "mission": "Build and operate original YouTube content workflows from research through approved publishing.",
+      "capabilities": [
+        "topic_research",
+        "scripts",
+        "thumbnails",
+        "seo",
+        "video_editing",
+        "captions",
+        "publishing"
+      ],
+      "slot": 2,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "youtube-03",
+      "department_id": "youtube",
+      "name": "YouTube Automation Agent 03",
+      "mission": "Build and operate original YouTube content workflows from research through approved publishing.",
+      "capabilities": [
+        "topic_research",
+        "scripts",
+        "thumbnails",
+        "seo",
+        "video_editing",
+        "captions",
+        "publishing"
+      ],
+      "slot": 3,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "youtube-04",
+      "department_id": "youtube",
+      "name": "YouTube Automation Agent 04",
+      "mission": "Build and operate original YouTube content workflows from research through approved publishing.",
+      "capabilities": [
+        "topic_research",
+        "scripts",
+        "thumbnails",
+        "seo",
+        "video_editing",
+        "captions",
+        "publishing"
+      ],
+      "slot": 4,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "youtube-05",
+      "department_id": "youtube",
+      "name": "YouTube Automation Agent 05",
+      "mission": "Build and operate original YouTube content workflows from research through approved publishing.",
+      "capabilities": [
+        "topic_research",
+        "scripts",
+        "thumbnails",
+        "seo",
+        "video_editing",
+        "captions",
+        "publishing"
+      ],
+      "slot": 5,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "youtube-06",
+      "department_id": "youtube",
+      "name": "YouTube Automation Agent 06",
+      "mission": "Build and operate original YouTube content workflows from research through approved publishing.",
+      "capabilities": [
+        "topic_research",
+        "scripts",
+        "thumbnails",
+        "seo",
+        "video_editing",
+        "captions",
+        "publishing"
+      ],
+      "slot": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "youtube-07",
+      "department_id": "youtube",
+      "name": "YouTube Automation Agent 07",
+      "mission": "Build and operate original YouTube content workflows from research through approved publishing.",
+      "capabilities": [
+        "topic_research",
+        "scripts",
+        "thumbnails",
+        "seo",
+        "video_editing",
+        "captions",
+        "publishing"
+      ],
+      "slot": 7,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "youtube-08",
+      "department_id": "youtube",
+      "name": "YouTube Automation Agent 08",
+      "mission": "Build and operate original YouTube content workflows from research through approved publishing.",
+      "capabilities": [
+        "topic_research",
+        "scripts",
+        "thumbnails",
+        "seo",
+        "video_editing",
+        "captions",
+        "publishing"
+      ],
+      "slot": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "youtube-09",
+      "department_id": "youtube",
+      "name": "YouTube Automation Agent 09",
+      "mission": "Build and operate original YouTube content workflows from research through approved publishing.",
+      "capabilities": [
+        "topic_research",
+        "scripts",
+        "thumbnails",
+        "seo",
+        "video_editing",
+        "captions",
+        "publishing"
+      ],
+      "slot": 9,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "youtube-10",
+      "department_id": "youtube",
+      "name": "YouTube Automation Agent 10",
+      "mission": "Build and operate original YouTube content workflows from research through approved publishing.",
+      "capabilities": [
+        "topic_research",
+        "scripts",
+        "thumbnails",
+        "seo",
+        "video_editing",
+        "captions",
+        "publishing"
+      ],
+      "slot": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "youtube-11",
+      "department_id": "youtube",
+      "name": "YouTube Automation Agent 11",
+      "mission": "Build and operate original YouTube content workflows from research through approved publishing.",
+      "capabilities": [
+        "topic_research",
+        "scripts",
+        "thumbnails",
+        "seo",
+        "video_editing",
+        "captions",
+        "publishing"
+      ],
+      "slot": 11,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "youtube-12",
+      "department_id": "youtube",
+      "name": "YouTube Automation Agent 12",
+      "mission": "Build and operate original YouTube content workflows from research through approved publishing.",
+      "capabilities": [
+        "topic_research",
+        "scripts",
+        "thumbnails",
+        "seo",
+        "video_editing",
+        "captions",
+        "publishing"
+      ],
+      "slot": 12,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "youtube-13",
+      "department_id": "youtube",
+      "name": "YouTube Automation Agent 13",
+      "mission": "Build and operate original YouTube content workflows from research through approved publishing.",
+      "capabilities": [
+        "topic_research",
+        "scripts",
+        "thumbnails",
+        "seo",
+        "video_editing",
+        "captions",
+        "publishing"
+      ],
+      "slot": 13,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "youtube-14",
+      "department_id": "youtube",
+      "name": "YouTube Automation Agent 14",
+      "mission": "Build and operate original YouTube content workflows from research through approved publishing.",
+      "capabilities": [
+        "topic_research",
+        "scripts",
+        "thumbnails",
+        "seo",
+        "video_editing",
+        "captions",
+        "publishing"
+      ],
+      "slot": 14,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "youtube-15",
+      "department_id": "youtube",
+      "name": "YouTube Automation Agent 15",
+      "mission": "Build and operate original YouTube content workflows from research through approved publishing.",
+      "capabilities": [
+        "topic_research",
+        "scripts",
+        "thumbnails",
+        "seo",
+        "video_editing",
+        "captions",
+        "publishing"
+      ],
+      "slot": 15,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "freelance-01",
+      "department_id": "freelance",
+      "name": "Freelancing Agency Agent 01",
+      "mission": "Find suitable client opportunities, prepare proposals, scope work and deliver approved client projects.",
+      "capabilities": [
+        "lead_research",
+        "proposal_writing",
+        "scoping",
+        "delivery",
+        "client_support"
+      ],
+      "slot": 1,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "freelance-02",
+      "department_id": "freelance",
+      "name": "Freelancing Agency Agent 02",
+      "mission": "Find suitable client opportunities, prepare proposals, scope work and deliver approved client projects.",
+      "capabilities": [
+        "lead_research",
+        "proposal_writing",
+        "scoping",
+        "delivery",
+        "client_support"
+      ],
+      "slot": 2,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "freelance-03",
+      "department_id": "freelance",
+      "name": "Freelancing Agency Agent 03",
+      "mission": "Find suitable client opportunities, prepare proposals, scope work and deliver approved client projects.",
+      "capabilities": [
+        "lead_research",
+        "proposal_writing",
+        "scoping",
+        "delivery",
+        "client_support"
+      ],
+      "slot": 3,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "freelance-04",
+      "department_id": "freelance",
+      "name": "Freelancing Agency Agent 04",
+      "mission": "Find suitable client opportunities, prepare proposals, scope work and deliver approved client projects.",
+      "capabilities": [
+        "lead_research",
+        "proposal_writing",
+        "scoping",
+        "delivery",
+        "client_support"
+      ],
+      "slot": 4,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "freelance-05",
+      "department_id": "freelance",
+      "name": "Freelancing Agency Agent 05",
+      "mission": "Find suitable client opportunities, prepare proposals, scope work and deliver approved client projects.",
+      "capabilities": [
+        "lead_research",
+        "proposal_writing",
+        "scoping",
+        "delivery",
+        "client_support"
+      ],
+      "slot": 5,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "freelance-06",
+      "department_id": "freelance",
+      "name": "Freelancing Agency Agent 06",
+      "mission": "Find suitable client opportunities, prepare proposals, scope work and deliver approved client projects.",
+      "capabilities": [
+        "lead_research",
+        "proposal_writing",
+        "scoping",
+        "delivery",
+        "client_support"
+      ],
+      "slot": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "freelance-07",
+      "department_id": "freelance",
+      "name": "Freelancing Agency Agent 07",
+      "mission": "Find suitable client opportunities, prepare proposals, scope work and deliver approved client projects.",
+      "capabilities": [
+        "lead_research",
+        "proposal_writing",
+        "scoping",
+        "delivery",
+        "client_support"
+      ],
+      "slot": 7,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "freelance-08",
+      "department_id": "freelance",
+      "name": "Freelancing Agency Agent 08",
+      "mission": "Find suitable client opportunities, prepare proposals, scope work and deliver approved client projects.",
+      "capabilities": [
+        "lead_research",
+        "proposal_writing",
+        "scoping",
+        "delivery",
+        "client_support"
+      ],
+      "slot": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "freelance-09",
+      "department_id": "freelance",
+      "name": "Freelancing Agency Agent 09",
+      "mission": "Find suitable client opportunities, prepare proposals, scope work and deliver approved client projects.",
+      "capabilities": [
+        "lead_research",
+        "proposal_writing",
+        "scoping",
+        "delivery",
+        "client_support"
+      ],
+      "slot": 9,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "freelance-10",
+      "department_id": "freelance",
+      "name": "Freelancing Agency Agent 10",
+      "mission": "Find suitable client opportunities, prepare proposals, scope work and deliver approved client projects.",
+      "capabilities": [
+        "lead_research",
+        "proposal_writing",
+        "scoping",
+        "delivery",
+        "client_support"
+      ],
+      "slot": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "freelance-11",
+      "department_id": "freelance",
+      "name": "Freelancing Agency Agent 11",
+      "mission": "Find suitable client opportunities, prepare proposals, scope work and deliver approved client projects.",
+      "capabilities": [
+        "lead_research",
+        "proposal_writing",
+        "scoping",
+        "delivery",
+        "client_support"
+      ],
+      "slot": 11,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "freelance-12",
+      "department_id": "freelance",
+      "name": "Freelancing Agency Agent 12",
+      "mission": "Find suitable client opportunities, prepare proposals, scope work and deliver approved client projects.",
+      "capabilities": [
+        "lead_research",
+        "proposal_writing",
+        "scoping",
+        "delivery",
+        "client_support"
+      ],
+      "slot": 12,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "content-agency-01",
+      "department_id": "content-agency",
+      "name": "AI Content Agency Agent 01",
+      "mission": "Produce and quality-check social content packages for paying business clients.",
+      "capabilities": [
+        "social_content",
+        "reels",
+        "copywriting",
+        "content_calendar",
+        "brand_voice"
+      ],
+      "slot": 1,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "content-agency-02",
+      "department_id": "content-agency",
+      "name": "AI Content Agency Agent 02",
+      "mission": "Produce and quality-check social content packages for paying business clients.",
+      "capabilities": [
+        "social_content",
+        "reels",
+        "copywriting",
+        "content_calendar",
+        "brand_voice"
+      ],
+      "slot": 2,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "content-agency-03",
+      "department_id": "content-agency",
+      "name": "AI Content Agency Agent 03",
+      "mission": "Produce and quality-check social content packages for paying business clients.",
+      "capabilities": [
+        "social_content",
+        "reels",
+        "copywriting",
+        "content_calendar",
+        "brand_voice"
+      ],
+      "slot": 3,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "content-agency-04",
+      "department_id": "content-agency",
+      "name": "AI Content Agency Agent 04",
+      "mission": "Produce and quality-check social content packages for paying business clients.",
+      "capabilities": [
+        "social_content",
+        "reels",
+        "copywriting",
+        "content_calendar",
+        "brand_voice"
+      ],
+      "slot": 4,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "content-agency-05",
+      "department_id": "content-agency",
+      "name": "AI Content Agency Agent 05",
+      "mission": "Produce and quality-check social content packages for paying business clients.",
+      "capabilities": [
+        "social_content",
+        "reels",
+        "copywriting",
+        "content_calendar",
+        "brand_voice"
+      ],
+      "slot": 5,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "content-agency-06",
+      "department_id": "content-agency",
+      "name": "AI Content Agency Agent 06",
+      "mission": "Produce and quality-check social content packages for paying business clients.",
+      "capabilities": [
+        "social_content",
+        "reels",
+        "copywriting",
+        "content_calendar",
+        "brand_voice"
+      ],
+      "slot": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "content-agency-07",
+      "department_id": "content-agency",
+      "name": "AI Content Agency Agent 07",
+      "mission": "Produce and quality-check social content packages for paying business clients.",
+      "capabilities": [
+        "social_content",
+        "reels",
+        "copywriting",
+        "content_calendar",
+        "brand_voice"
+      ],
+      "slot": 7,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "content-agency-08",
+      "department_id": "content-agency",
+      "name": "AI Content Agency Agent 08",
+      "mission": "Produce and quality-check social content packages for paying business clients.",
+      "capabilities": [
+        "social_content",
+        "reels",
+        "copywriting",
+        "content_calendar",
+        "brand_voice"
+      ],
+      "slot": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "content-agency-09",
+      "department_id": "content-agency",
+      "name": "AI Content Agency Agent 09",
+      "mission": "Produce and quality-check social content packages for paying business clients.",
+      "capabilities": [
+        "social_content",
+        "reels",
+        "copywriting",
+        "content_calendar",
+        "brand_voice"
+      ],
+      "slot": 9,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "content-agency-10",
+      "department_id": "content-agency",
+      "name": "AI Content Agency Agent 10",
+      "mission": "Produce and quality-check social content packages for paying business clients.",
+      "capabilities": [
+        "social_content",
+        "reels",
+        "copywriting",
+        "content_calendar",
+        "brand_voice"
+      ],
+      "slot": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "affiliate-01",
+      "department_id": "affiliate",
+      "name": "Affiliate Marketing Agent 01",
+      "mission": "Research eligible products and create compliant comparison content and affiliate campaigns.",
+      "capabilities": [
+        "product_research",
+        "comparison_content",
+        "seo",
+        "campaign_analytics"
+      ],
+      "slot": 1,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "affiliate-02",
+      "department_id": "affiliate",
+      "name": "Affiliate Marketing Agent 02",
+      "mission": "Research eligible products and create compliant comparison content and affiliate campaigns.",
+      "capabilities": [
+        "product_research",
+        "comparison_content",
+        "seo",
+        "campaign_analytics"
+      ],
+      "slot": 2,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "affiliate-03",
+      "department_id": "affiliate",
+      "name": "Affiliate Marketing Agent 03",
+      "mission": "Research eligible products and create compliant comparison content and affiliate campaigns.",
+      "capabilities": [
+        "product_research",
+        "comparison_content",
+        "seo",
+        "campaign_analytics"
+      ],
+      "slot": 3,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "affiliate-04",
+      "department_id": "affiliate",
+      "name": "Affiliate Marketing Agent 04",
+      "mission": "Research eligible products and create compliant comparison content and affiliate campaigns.",
+      "capabilities": [
+        "product_research",
+        "comparison_content",
+        "seo",
+        "campaign_analytics"
+      ],
+      "slot": 4,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "affiliate-05",
+      "department_id": "affiliate",
+      "name": "Affiliate Marketing Agent 05",
+      "mission": "Research eligible products and create compliant comparison content and affiliate campaigns.",
+      "capabilities": [
+        "product_research",
+        "comparison_content",
+        "seo",
+        "campaign_analytics"
+      ],
+      "slot": 5,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "affiliate-06",
+      "department_id": "affiliate",
+      "name": "Affiliate Marketing Agent 06",
+      "mission": "Research eligible products and create compliant comparison content and affiliate campaigns.",
+      "capabilities": [
+        "product_research",
+        "comparison_content",
+        "seo",
+        "campaign_analytics"
+      ],
+      "slot": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "affiliate-07",
+      "department_id": "affiliate",
+      "name": "Affiliate Marketing Agent 07",
+      "mission": "Research eligible products and create compliant comparison content and affiliate campaigns.",
+      "capabilities": [
+        "product_research",
+        "comparison_content",
+        "seo",
+        "campaign_analytics"
+      ],
+      "slot": 7,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "affiliate-08",
+      "department_id": "affiliate",
+      "name": "Affiliate Marketing Agent 08",
+      "mission": "Research eligible products and create compliant comparison content and affiliate campaigns.",
+      "capabilities": [
+        "product_research",
+        "comparison_content",
+        "seo",
+        "campaign_analytics"
+      ],
+      "slot": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "affiliate-09",
+      "department_id": "affiliate",
+      "name": "Affiliate Marketing Agent 09",
+      "mission": "Research eligible products and create compliant comparison content and affiliate campaigns.",
+      "capabilities": [
+        "product_research",
+        "comparison_content",
+        "seo",
+        "campaign_analytics"
+      ],
+      "slot": 9,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "affiliate-10",
+      "department_id": "affiliate",
+      "name": "Affiliate Marketing Agent 10",
+      "mission": "Research eligible products and create compliant comparison content and affiliate campaigns.",
+      "capabilities": [
+        "product_research",
+        "comparison_content",
+        "seo",
+        "campaign_analytics"
+      ],
+      "slot": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "saas-01",
+      "department_id": "saas",
+      "name": "AI SaaS Business Agent 01",
+      "mission": "Research, design, validate and support small AI software products and subscriptions.",
+      "capabilities": [
+        "market_validation",
+        "product_specs",
+        "onboarding",
+        "support",
+        "retention"
+      ],
+      "slot": 1,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "saas-02",
+      "department_id": "saas",
+      "name": "AI SaaS Business Agent 02",
+      "mission": "Research, design, validate and support small AI software products and subscriptions.",
+      "capabilities": [
+        "market_validation",
+        "product_specs",
+        "onboarding",
+        "support",
+        "retention"
+      ],
+      "slot": 2,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "saas-03",
+      "department_id": "saas",
+      "name": "AI SaaS Business Agent 03",
+      "mission": "Research, design, validate and support small AI software products and subscriptions.",
+      "capabilities": [
+        "market_validation",
+        "product_specs",
+        "onboarding",
+        "support",
+        "retention"
+      ],
+      "slot": 3,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "saas-04",
+      "department_id": "saas",
+      "name": "AI SaaS Business Agent 04",
+      "mission": "Research, design, validate and support small AI software products and subscriptions.",
+      "capabilities": [
+        "market_validation",
+        "product_specs",
+        "onboarding",
+        "support",
+        "retention"
+      ],
+      "slot": 4,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "saas-05",
+      "department_id": "saas",
+      "name": "AI SaaS Business Agent 05",
+      "mission": "Research, design, validate and support small AI software products and subscriptions.",
+      "capabilities": [
+        "market_validation",
+        "product_specs",
+        "onboarding",
+        "support",
+        "retention"
+      ],
+      "slot": 5,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "saas-06",
+      "department_id": "saas",
+      "name": "AI SaaS Business Agent 06",
+      "mission": "Research, design, validate and support small AI software products and subscriptions.",
+      "capabilities": [
+        "market_validation",
+        "product_specs",
+        "onboarding",
+        "support",
+        "retention"
+      ],
+      "slot": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "saas-07",
+      "department_id": "saas",
+      "name": "AI SaaS Business Agent 07",
+      "mission": "Research, design, validate and support small AI software products and subscriptions.",
+      "capabilities": [
+        "market_validation",
+        "product_specs",
+        "onboarding",
+        "support",
+        "retention"
+      ],
+      "slot": 7,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "saas-08",
+      "department_id": "saas",
+      "name": "AI SaaS Business Agent 08",
+      "mission": "Research, design, validate and support small AI software products and subscriptions.",
+      "capabilities": [
+        "market_validation",
+        "product_specs",
+        "onboarding",
+        "support",
+        "retention"
+      ],
+      "slot": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "saas-09",
+      "department_id": "saas",
+      "name": "AI SaaS Business Agent 09",
+      "mission": "Research, design, validate and support small AI software products and subscriptions.",
+      "capabilities": [
+        "market_validation",
+        "product_specs",
+        "onboarding",
+        "support",
+        "retention"
+      ],
+      "slot": 9,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "saas-10",
+      "department_id": "saas",
+      "name": "AI SaaS Business Agent 10",
+      "mission": "Research, design, validate and support small AI software products and subscriptions.",
+      "capabilities": [
+        "market_validation",
+        "product_specs",
+        "onboarding",
+        "support",
+        "retention"
+      ],
+      "slot": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "ecommerce-01",
+      "department_id": "ecommerce",
+      "name": "E-commerce Agent 01",
+      "mission": "Research products, prepare store listings and improve customer experience and conversion.",
+      "capabilities": [
+        "product_research",
+        "listing_copy",
+        "catalog_ops",
+        "customer_support",
+        "analytics"
+      ],
+      "slot": 1,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "ecommerce-02",
+      "department_id": "ecommerce",
+      "name": "E-commerce Agent 02",
+      "mission": "Research products, prepare store listings and improve customer experience and conversion.",
+      "capabilities": [
+        "product_research",
+        "listing_copy",
+        "catalog_ops",
+        "customer_support",
+        "analytics"
+      ],
+      "slot": 2,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "ecommerce-03",
+      "department_id": "ecommerce",
+      "name": "E-commerce Agent 03",
+      "mission": "Research products, prepare store listings and improve customer experience and conversion.",
+      "capabilities": [
+        "product_research",
+        "listing_copy",
+        "catalog_ops",
+        "customer_support",
+        "analytics"
+      ],
+      "slot": 3,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "ecommerce-04",
+      "department_id": "ecommerce",
+      "name": "E-commerce Agent 04",
+      "mission": "Research products, prepare store listings and improve customer experience and conversion.",
+      "capabilities": [
+        "product_research",
+        "listing_copy",
+        "catalog_ops",
+        "customer_support",
+        "analytics"
+      ],
+      "slot": 4,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "ecommerce-05",
+      "department_id": "ecommerce",
+      "name": "E-commerce Agent 05",
+      "mission": "Research products, prepare store listings and improve customer experience and conversion.",
+      "capabilities": [
+        "product_research",
+        "listing_copy",
+        "catalog_ops",
+        "customer_support",
+        "analytics"
+      ],
+      "slot": 5,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "ecommerce-06",
+      "department_id": "ecommerce",
+      "name": "E-commerce Agent 06",
+      "mission": "Research products, prepare store listings and improve customer experience and conversion.",
+      "capabilities": [
+        "product_research",
+        "listing_copy",
+        "catalog_ops",
+        "customer_support",
+        "analytics"
+      ],
+      "slot": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "ecommerce-07",
+      "department_id": "ecommerce",
+      "name": "E-commerce Agent 07",
+      "mission": "Research products, prepare store listings and improve customer experience and conversion.",
+      "capabilities": [
+        "product_research",
+        "listing_copy",
+        "catalog_ops",
+        "customer_support",
+        "analytics"
+      ],
+      "slot": 7,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "ecommerce-08",
+      "department_id": "ecommerce",
+      "name": "E-commerce Agent 08",
+      "mission": "Research products, prepare store listings and improve customer experience and conversion.",
+      "capabilities": [
+        "product_research",
+        "listing_copy",
+        "catalog_ops",
+        "customer_support",
+        "analytics"
+      ],
+      "slot": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "ecommerce-09",
+      "department_id": "ecommerce",
+      "name": "E-commerce Agent 09",
+      "mission": "Research products, prepare store listings and improve customer experience and conversion.",
+      "capabilities": [
+        "product_research",
+        "listing_copy",
+        "catalog_ops",
+        "customer_support",
+        "analytics"
+      ],
+      "slot": 9,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "ecommerce-10",
+      "department_id": "ecommerce",
+      "name": "E-commerce Agent 10",
+      "mission": "Research products, prepare store listings and improve customer experience and conversion.",
+      "capabilities": [
+        "product_research",
+        "listing_copy",
+        "catalog_ops",
+        "customer_support",
+        "analytics"
+      ],
+      "slot": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "sales-01",
+      "department_id": "sales",
+      "name": "Marketing & Sales Agent 01",
+      "mission": "Identify permission-based prospects, create outreach drafts and manage sales pipeline workflows.",
+      "capabilities": [
+        "lead_qualification",
+        "crm",
+        "email_drafts",
+        "sales_enablement",
+        "funnel_analysis"
+      ],
+      "slot": 1,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "sales-02",
+      "department_id": "sales",
+      "name": "Marketing & Sales Agent 02",
+      "mission": "Identify permission-based prospects, create outreach drafts and manage sales pipeline workflows.",
+      "capabilities": [
+        "lead_qualification",
+        "crm",
+        "email_drafts",
+        "sales_enablement",
+        "funnel_analysis"
+      ],
+      "slot": 2,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "sales-03",
+      "department_id": "sales",
+      "name": "Marketing & Sales Agent 03",
+      "mission": "Identify permission-based prospects, create outreach drafts and manage sales pipeline workflows.",
+      "capabilities": [
+        "lead_qualification",
+        "crm",
+        "email_drafts",
+        "sales_enablement",
+        "funnel_analysis"
+      ],
+      "slot": 3,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "sales-04",
+      "department_id": "sales",
+      "name": "Marketing & Sales Agent 04",
+      "mission": "Identify permission-based prospects, create outreach drafts and manage sales pipeline workflows.",
+      "capabilities": [
+        "lead_qualification",
+        "crm",
+        "email_drafts",
+        "sales_enablement",
+        "funnel_analysis"
+      ],
+      "slot": 4,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "sales-05",
+      "department_id": "sales",
+      "name": "Marketing & Sales Agent 05",
+      "mission": "Identify permission-based prospects, create outreach drafts and manage sales pipeline workflows.",
+      "capabilities": [
+        "lead_qualification",
+        "crm",
+        "email_drafts",
+        "sales_enablement",
+        "funnel_analysis"
+      ],
+      "slot": 5,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "sales-06",
+      "department_id": "sales",
+      "name": "Marketing & Sales Agent 06",
+      "mission": "Identify permission-based prospects, create outreach drafts and manage sales pipeline workflows.",
+      "capabilities": [
+        "lead_qualification",
+        "crm",
+        "email_drafts",
+        "sales_enablement",
+        "funnel_analysis"
+      ],
+      "slot": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "sales-07",
+      "department_id": "sales",
+      "name": "Marketing & Sales Agent 07",
+      "mission": "Identify permission-based prospects, create outreach drafts and manage sales pipeline workflows.",
+      "capabilities": [
+        "lead_qualification",
+        "crm",
+        "email_drafts",
+        "sales_enablement",
+        "funnel_analysis"
+      ],
+      "slot": 7,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "sales-08",
+      "department_id": "sales",
+      "name": "Marketing & Sales Agent 08",
+      "mission": "Identify permission-based prospects, create outreach drafts and manage sales pipeline workflows.",
+      "capabilities": [
+        "lead_qualification",
+        "crm",
+        "email_drafts",
+        "sales_enablement",
+        "funnel_analysis"
+      ],
+      "slot": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "sales-09",
+      "department_id": "sales",
+      "name": "Marketing & Sales Agent 09",
+      "mission": "Identify permission-based prospects, create outreach drafts and manage sales pipeline workflows.",
+      "capabilities": [
+        "lead_qualification",
+        "crm",
+        "email_drafts",
+        "sales_enablement",
+        "funnel_analysis"
+      ],
+      "slot": 9,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "sales-10",
+      "department_id": "sales",
+      "name": "Marketing & Sales Agent 10",
+      "mission": "Identify permission-based prospects, create outreach drafts and manage sales pipeline workflows.",
+      "capabilities": [
+        "lead_qualification",
+        "crm",
+        "email_drafts",
+        "sales_enablement",
+        "funnel_analysis"
+      ],
+      "slot": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "research-01",
+      "department_id": "research",
+      "name": "Research & Trends Agent 01",
+      "mission": "Collect evidence-backed market, competitor and demand research for business decisions.",
+      "capabilities": [
+        "market_research",
+        "trend_analysis",
+        "competitor_analysis",
+        "fact_checking"
+      ],
+      "slot": 1,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "research-02",
+      "department_id": "research",
+      "name": "Research & Trends Agent 02",
+      "mission": "Collect evidence-backed market, competitor and demand research for business decisions.",
+      "capabilities": [
+        "market_research",
+        "trend_analysis",
+        "competitor_analysis",
+        "fact_checking"
+      ],
+      "slot": 2,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "research-03",
+      "department_id": "research",
+      "name": "Research & Trends Agent 03",
+      "mission": "Collect evidence-backed market, competitor and demand research for business decisions.",
+      "capabilities": [
+        "market_research",
+        "trend_analysis",
+        "competitor_analysis",
+        "fact_checking"
+      ],
+      "slot": 3,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "research-04",
+      "department_id": "research",
+      "name": "Research & Trends Agent 04",
+      "mission": "Collect evidence-backed market, competitor and demand research for business decisions.",
+      "capabilities": [
+        "market_research",
+        "trend_analysis",
+        "competitor_analysis",
+        "fact_checking"
+      ],
+      "slot": 4,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "research-05",
+      "department_id": "research",
+      "name": "Research & Trends Agent 05",
+      "mission": "Collect evidence-backed market, competitor and demand research for business decisions.",
+      "capabilities": [
+        "market_research",
+        "trend_analysis",
+        "competitor_analysis",
+        "fact_checking"
+      ],
+      "slot": 5,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "research-06",
+      "department_id": "research",
+      "name": "Research & Trends Agent 06",
+      "mission": "Collect evidence-backed market, competitor and demand research for business decisions.",
+      "capabilities": [
+        "market_research",
+        "trend_analysis",
+        "competitor_analysis",
+        "fact_checking"
+      ],
+      "slot": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "research-07",
+      "department_id": "research",
+      "name": "Research & Trends Agent 07",
+      "mission": "Collect evidence-backed market, competitor and demand research for business decisions.",
+      "capabilities": [
+        "market_research",
+        "trend_analysis",
+        "competitor_analysis",
+        "fact_checking"
+      ],
+      "slot": 7,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "research-08",
+      "department_id": "research",
+      "name": "Research & Trends Agent 08",
+      "mission": "Collect evidence-backed market, competitor and demand research for business decisions.",
+      "capabilities": [
+        "market_research",
+        "trend_analysis",
+        "competitor_analysis",
+        "fact_checking"
+      ],
+      "slot": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "research-09",
+      "department_id": "research",
+      "name": "Research & Trends Agent 09",
+      "mission": "Collect evidence-backed market, competitor and demand research for business decisions.",
+      "capabilities": [
+        "market_research",
+        "trend_analysis",
+        "competitor_analysis",
+        "fact_checking"
+      ],
+      "slot": 9,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "research-10",
+      "department_id": "research",
+      "name": "Research & Trends Agent 10",
+      "mission": "Collect evidence-backed market, competitor and demand research for business decisions.",
+      "capabilities": [
+        "market_research",
+        "trend_analysis",
+        "competitor_analysis",
+        "fact_checking"
+      ],
+      "slot": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "production-01",
+      "department_id": "production",
+      "name": "Media Production Agent 01",
+      "mission": "Create production plans and coordinate licensed assets, narration, captions and rendering workers.",
+      "capabilities": [
+        "stock_footage",
+        "tts",
+        "captions",
+        "ffmpeg",
+        "render_qa"
+      ],
+      "slot": 1,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "production-02",
+      "department_id": "production",
+      "name": "Media Production Agent 02",
+      "mission": "Create production plans and coordinate licensed assets, narration, captions and rendering workers.",
+      "capabilities": [
+        "stock_footage",
+        "tts",
+        "captions",
+        "ffmpeg",
+        "render_qa"
+      ],
+      "slot": 2,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "production-03",
+      "department_id": "production",
+      "name": "Media Production Agent 03",
+      "mission": "Create production plans and coordinate licensed assets, narration, captions and rendering workers.",
+      "capabilities": [
+        "stock_footage",
+        "tts",
+        "captions",
+        "ffmpeg",
+        "render_qa"
+      ],
+      "slot": 3,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "production-04",
+      "department_id": "production",
+      "name": "Media Production Agent 04",
+      "mission": "Create production plans and coordinate licensed assets, narration, captions and rendering workers.",
+      "capabilities": [
+        "stock_footage",
+        "tts",
+        "captions",
+        "ffmpeg",
+        "render_qa"
+      ],
+      "slot": 4,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "production-05",
+      "department_id": "production",
+      "name": "Media Production Agent 05",
+      "mission": "Create production plans and coordinate licensed assets, narration, captions and rendering workers.",
+      "capabilities": [
+        "stock_footage",
+        "tts",
+        "captions",
+        "ffmpeg",
+        "render_qa"
+      ],
+      "slot": 5,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "production-06",
+      "department_id": "production",
+      "name": "Media Production Agent 06",
+      "mission": "Create production plans and coordinate licensed assets, narration, captions and rendering workers.",
+      "capabilities": [
+        "stock_footage",
+        "tts",
+        "captions",
+        "ffmpeg",
+        "render_qa"
+      ],
+      "slot": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "production-07",
+      "department_id": "production",
+      "name": "Media Production Agent 07",
+      "mission": "Create production plans and coordinate licensed assets, narration, captions and rendering workers.",
+      "capabilities": [
+        "stock_footage",
+        "tts",
+        "captions",
+        "ffmpeg",
+        "render_qa"
+      ],
+      "slot": 7,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "production-08",
+      "department_id": "production",
+      "name": "Media Production Agent 08",
+      "mission": "Create production plans and coordinate licensed assets, narration, captions and rendering workers.",
+      "capabilities": [
+        "stock_footage",
+        "tts",
+        "captions",
+        "ffmpeg",
+        "render_qa"
+      ],
+      "slot": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "production-09",
+      "department_id": "production",
+      "name": "Media Production Agent 09",
+      "mission": "Create production plans and coordinate licensed assets, narration, captions and rendering workers.",
+      "capabilities": [
+        "stock_footage",
+        "tts",
+        "captions",
+        "ffmpeg",
+        "render_qa"
+      ],
+      "slot": 9,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "production-10",
+      "department_id": "production",
+      "name": "Media Production Agent 10",
+      "mission": "Create production plans and coordinate licensed assets, narration, captions and rendering workers.",
+      "capabilities": [
+        "stock_footage",
+        "tts",
+        "captions",
+        "ffmpeg",
+        "render_qa"
+      ],
+      "slot": 10,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "high",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "operations-01",
+      "department_id": "operations",
+      "name": "Business Operations Agent 01",
+      "mission": "Coordinate work, monitor task dependencies, schedule approved tasks and report progress.",
+      "capabilities": [
+        "orchestration",
+        "project_management",
+        "scheduling",
+        "documentation"
+      ],
+      "slot": 1,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "operations-02",
+      "department_id": "operations",
+      "name": "Business Operations Agent 02",
+      "mission": "Coordinate work, monitor task dependencies, schedule approved tasks and report progress.",
+      "capabilities": [
+        "orchestration",
+        "project_management",
+        "scheduling",
+        "documentation"
+      ],
+      "slot": 2,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "operations-03",
+      "department_id": "operations",
+      "name": "Business Operations Agent 03",
+      "mission": "Coordinate work, monitor task dependencies, schedule approved tasks and report progress.",
+      "capabilities": [
+        "orchestration",
+        "project_management",
+        "scheduling",
+        "documentation"
+      ],
+      "slot": 3,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "operations-04",
+      "department_id": "operations",
+      "name": "Business Operations Agent 04",
+      "mission": "Coordinate work, monitor task dependencies, schedule approved tasks and report progress.",
+      "capabilities": [
+        "orchestration",
+        "project_management",
+        "scheduling",
+        "documentation"
+      ],
+      "slot": 4,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "operations-05",
+      "department_id": "operations",
+      "name": "Business Operations Agent 05",
+      "mission": "Coordinate work, monitor task dependencies, schedule approved tasks and report progress.",
+      "capabilities": [
+        "orchestration",
+        "project_management",
+        "scheduling",
+        "documentation"
+      ],
+      "slot": 5,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "operations-06",
+      "department_id": "operations",
+      "name": "Business Operations Agent 06",
+      "mission": "Coordinate work, monitor task dependencies, schedule approved tasks and report progress.",
+      "capabilities": [
+        "orchestration",
+        "project_management",
+        "scheduling",
+        "documentation"
+      ],
+      "slot": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "operations-07",
+      "department_id": "operations",
+      "name": "Business Operations Agent 07",
+      "mission": "Coordinate work, monitor task dependencies, schedule approved tasks and report progress.",
+      "capabilities": [
+        "orchestration",
+        "project_management",
+        "scheduling",
+        "documentation"
+      ],
+      "slot": 7,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "operations-08",
+      "department_id": "operations",
+      "name": "Business Operations Agent 08",
+      "mission": "Coordinate work, monitor task dependencies, schedule approved tasks and report progress.",
+      "capabilities": [
+        "orchestration",
+        "project_management",
+        "scheduling",
+        "documentation"
+      ],
+      "slot": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "finance-01",
+      "department_id": "finance",
+      "name": "Finance & Analytics Agent 01",
+      "mission": "Track actual revenue, costs, margins and agent/provider usage without inventing income.",
+      "capabilities": [
+        "revenue_tracking",
+        "cost_tracking",
+        "unit_economics",
+        "analytics"
+      ],
+      "slot": 1,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "finance-02",
+      "department_id": "finance",
+      "name": "Finance & Analytics Agent 02",
+      "mission": "Track actual revenue, costs, margins and agent/provider usage without inventing income.",
+      "capabilities": [
+        "revenue_tracking",
+        "cost_tracking",
+        "unit_economics",
+        "analytics"
+      ],
+      "slot": 2,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "finance-03",
+      "department_id": "finance",
+      "name": "Finance & Analytics Agent 03",
+      "mission": "Track actual revenue, costs, margins and agent/provider usage without inventing income.",
+      "capabilities": [
+        "revenue_tracking",
+        "cost_tracking",
+        "unit_economics",
+        "analytics"
+      ],
+      "slot": 3,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "finance-04",
+      "department_id": "finance",
+      "name": "Finance & Analytics Agent 04",
+      "mission": "Track actual revenue, costs, margins and agent/provider usage without inventing income.",
+      "capabilities": [
+        "revenue_tracking",
+        "cost_tracking",
+        "unit_economics",
+        "analytics"
+      ],
+      "slot": 4,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "finance-05",
+      "department_id": "finance",
+      "name": "Finance & Analytics Agent 05",
+      "mission": "Track actual revenue, costs, margins and agent/provider usage without inventing income.",
+      "capabilities": [
+        "revenue_tracking",
+        "cost_tracking",
+        "unit_economics",
+        "analytics"
+      ],
+      "slot": 5,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "finance-06",
+      "department_id": "finance",
+      "name": "Finance & Analytics Agent 06",
+      "mission": "Track actual revenue, costs, margins and agent/provider usage without inventing income.",
+      "capabilities": [
+        "revenue_tracking",
+        "cost_tracking",
+        "unit_economics",
+        "analytics"
+      ],
+      "slot": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "finance-07",
+      "department_id": "finance",
+      "name": "Finance & Analytics Agent 07",
+      "mission": "Track actual revenue, costs, margins and agent/provider usage without inventing income.",
+      "capabilities": [
+        "revenue_tracking",
+        "cost_tracking",
+        "unit_economics",
+        "analytics"
+      ],
+      "slot": 7,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "trust-01",
+      "department_id": "trust",
+      "name": "Quality, Risk & Compliance Agent 01",
+      "mission": "Review factual quality, rights, privacy, platform rules, security and approval requirements.",
+      "capabilities": [
+        "quality_review",
+        "rights_review",
+        "policy_review",
+        "security",
+        "approval_gates"
+      ],
+      "slot": 1,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "trust-02",
+      "department_id": "trust",
+      "name": "Quality, Risk & Compliance Agent 02",
+      "mission": "Review factual quality, rights, privacy, platform rules, security and approval requirements.",
+      "capabilities": [
+        "quality_review",
+        "rights_review",
+        "policy_review",
+        "security",
+        "approval_gates"
+      ],
+      "slot": 2,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "trust-03",
+      "department_id": "trust",
+      "name": "Quality, Risk & Compliance Agent 03",
+      "mission": "Review factual quality, rights, privacy, platform rules, security and approval requirements.",
+      "capabilities": [
+        "quality_review",
+        "rights_review",
+        "policy_review",
+        "security",
+        "approval_gates"
+      ],
+      "slot": 3,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "trust-04",
+      "department_id": "trust",
+      "name": "Quality, Risk & Compliance Agent 04",
+      "mission": "Review factual quality, rights, privacy, platform rules, security and approval requirements.",
+      "capabilities": [
+        "quality_review",
+        "rights_review",
+        "policy_review",
+        "security",
+        "approval_gates"
+      ],
+      "slot": 4,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "trust-05",
+      "department_id": "trust",
+      "name": "Quality, Risk & Compliance Agent 05",
+      "mission": "Review factual quality, rights, privacy, platform rules, security and approval requirements.",
+      "capabilities": [
+        "quality_review",
+        "rights_review",
+        "policy_review",
+        "security",
+        "approval_gates"
+      ],
+      "slot": 5,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "trust-06",
+      "department_id": "trust",
+      "name": "Quality, Risk & Compliance Agent 06",
+      "mission": "Review factual quality, rights, privacy, platform rules, security and approval requirements.",
+      "capabilities": [
+        "quality_review",
+        "rights_review",
+        "policy_review",
+        "security",
+        "approval_gates"
+      ],
+      "slot": 6,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "trust-07",
+      "department_id": "trust",
+      "name": "Quality, Risk & Compliance Agent 07",
+      "mission": "Review factual quality, rights, privacy, platform rules, security and approval requirements.",
+      "capabilities": [
+        "quality_review",
+        "rights_review",
+        "policy_review",
+        "security",
+        "approval_gates"
+      ],
+      "slot": 7,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    },
+    {
+      "id": "trust-08",
+      "department_id": "trust",
+      "name": "Quality, Risk & Compliance Agent 08",
+      "mission": "Review factual quality, rights, privacy, platform rules, security and approval requirements.",
+      "capabilities": [
+        "quality_review",
+        "rights_review",
+        "policy_review",
+        "security",
+        "approval_gates"
+      ],
+      "slot": 8,
+      "status": "blueprint_available",
+      "execution": "spawn_on_demand",
+      "risk_level": "medium",
+      "permissions": [
+        "read_assigned_inputs",
+        "draft_outputs",
+        "record_task_events"
+      ],
+      "requires_approval_for": [
+        "external_messages",
+        "publishing",
+        "purchases",
+        "payments",
+        "account_changes",
+        "deleting_data"
+      ]
+    }
+  ],
+  "workflows": [
+    {
+      "id": "youtube-content-package",
+      "name": "YouTube Content Package",
+      "department_ids": [
+        "youtube",
+        "research",
+        "production",
+        "trust"
+      ],
+      "description": "Research a topic, draft a script, SEO metadata, storyboard, captions plan and pre-publish review.",
+      "requires_human_approval": true,
+      "external_actions": [
+        "download_assets_if_licensed",
+        "publish_video"
+      ]
+    },
+    {
+      "id": "freelance-client-delivery",
+      "name": "Freelance Client Delivery",
+      "department_ids": [
+        "freelance",
+        "content-agency",
+        "trust"
+      ],
+      "description": "Qualify a lead, draft a proposal, define deliverables, produce work and prepare client delivery.",
+      "requires_human_approval": true,
+      "external_actions": [
+        "send_proposal",
+        "send_client_message",
+        "deliver_files"
+      ]
+    },
+    {
+      "id": "content-retainer",
+      "name": "Content Agency Retainer",
+      "department_ids": [
+        "content-agency",
+        "production",
+        "sales",
+        "trust"
+      ],
+      "description": "Create a monthly content calendar and draft a client-ready content batch.",
+      "requires_human_approval": true,
+      "external_actions": [
+        "send_client_message",
+        "publish_content"
+      ]
+    },
+    {
+      "id": "affiliate-campaign",
+      "name": "Affiliate Campaign",
+      "department_ids": [
+        "affiliate",
+        "research",
+        "content-agency",
+        "trust"
+      ],
+      "description": "Research products, verify terms and create clearly disclosed affiliate content.",
+      "requires_human_approval": true,
+      "external_actions": [
+        "join_program",
+        "publish_affiliate_content"
+      ]
+    },
+    {
+      "id": "micro-saas-validation",
+      "name": "AI SaaS Validation",
+      "department_ids": [
+        "saas",
+        "research",
+        "finance",
+        "trust"
+      ],
+      "description": "Validate demand, estimate costs, define MVP scope and prepare a launch checklist.",
+      "requires_human_approval": true,
+      "external_actions": [
+        "create_paid_resources",
+        "launch_product"
+      ]
+    },
+    {
+      "id": "ecommerce-listing",
+      "name": "E-commerce Listing Sprint",
+      "department_ids": [
+        "ecommerce",
+        "research",
+        "content-agency",
+        "trust"
+      ],
+      "description": "Research product demand and create compliant product listing assets.",
+      "requires_human_approval": true,
+      "external_actions": [
+        "purchase_inventory",
+        "publish_listing"
+      ]
+    },
+    {
+      "id": "outbound-sales-pipeline",
+      "name": "Permission-based Sales Pipeline",
+      "department_ids": [
+        "sales",
+        "research",
+        "freelance",
+        "trust"
+      ],
+      "description": "Find relevant public business leads, qualify fit and draft personalized outreach for approval.",
+      "requires_human_approval": true,
+      "external_actions": [
+        "send_email",
+        "contact_prospect"
+      ]
+    },
+    {
+      "id": "weekly-business-review",
+      "name": "Weekly Business Review",
+      "department_ids": [
+        "operations",
+        "finance",
+        "research"
+      ],
+      "description": "Summarize verified work, actual income, costs, blockers and next actions.",
+      "requires_human_approval": false,
+      "external_actions": []
+    }
+  ]
+}
