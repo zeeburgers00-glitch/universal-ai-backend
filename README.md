@@ -162,3 +162,16 @@ Configure `AGENT_WORKER_URL` and `AGENT_WORKER_API_KEY` (or enable the supported
 
 The default budget target is USD 100/month. This is a planning target, **not an automatic billing cap**: set hard spending limits and alerts at each model/provider account, monitor usage, and keep paid external actions behind approval. Agents may draft and analyze autonomously; sending messages, publishing, purchases, payments, account changes, and other consequential actions require separate explicit approval. Revenue is never assumed: only verified payment records count as income.
 
+
+
+## Plugin hub, QA inboxes, and monetization
+
+- `GET /v1/business/plugins` lists reviewed connector metadata. A catalog listing does not mean a plugin is connected.
+- `POST /v1/business/plugins/{plugin_id}/actions` dispatches approved connector actions to the configured plugin worker. Configure `PLUGIN_WORKER_URL` and `PLUGIN_WORKER_API_KEY`; store provider credentials server-side and use least-privilege scopes.
+- `POST /v1/business/testing/inboxes` and `POST /v1/business/testing/inboxes/read` use a separately configured Mailpit-compatible QA worker (`MAIL_WORKER_URL`, `MAIL_WORKER_API_KEY`). These temporary inboxes are restricted to authorized QA/staging; they must not be used for mass signups or bypassing third-party account verification.
+- `GET /v1/business/monetization` lists ad, affiliate, sponsorship, agency, and SaaS income streams.
+- `POST /v1/business/monetization/reports` sends provider statements, verified payments, or estimates to the finance worker (`FINANCE_WORKER_URL`, `FINANCE_WORKER_API_KEY`). Estimates are not recognized as realized revenue.
+- `GET /v1/business/monetization/policy` returns ad and affiliate compliance rules.
+
+Ad revenue workflows focus on eligibility, original content, real audiences, policy review, and provider reporting. Automated clicks, refreshes, incentivized ad interactions, fake traffic, and impression manipulation are prohibited. Provider account approval and monetization eligibility are not guaranteed by this software.
+
