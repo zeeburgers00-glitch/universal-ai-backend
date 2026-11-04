@@ -32,6 +32,7 @@ from .security import require_api_key
 from .supabase_store import save_custom_tool, supabase_configured
 from .task_gateway import get_worker, post_worker, service_status
 from .earning_empire import router as earning_empire_router
+from .finance_ledger import router as finance_ledger_router
 from .business_hub import router as business_hub_router
 from .client_campaign import router as client_campaign_router
 from .vault import (
@@ -64,6 +65,7 @@ app = FastAPI(
 )
 
 app.include_router(earning_empire_router)
+app.include_router(finance_ledger_router)
 app.include_router(business_hub_router)
 app.include_router(client_campaign_router)
 
