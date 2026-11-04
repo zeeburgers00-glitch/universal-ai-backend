@@ -1,0 +1,184 @@
+{
+  "name": "universal-ai-empire-free-stack",
+  "reviewed_on": "2026-11-04",
+  "policy": {
+    "default": "free_and_open_source_first",
+    "no_paid_services_by_default": true,
+    "free_api_tiers_are_quota_limited": true,
+    "never_enable_paid_usage_without_explicit_approval": true,
+    "no_credentials_in_frontend": true,
+    "role_templates_are_not_running_agents": true
+  },
+  "hosting": [
+    {
+      "name": "Railway Free",
+      "role": "FastAPI backend hosting",
+      "price": "$0/month plan with $1 resource credit per month",
+      "limits": "1 service replica, 0.5 GB RAM, 1 vCPU, 1 GB ephemeral storage; sleep when idle",
+      "caveat": "Only suitable for a light API and low traffic; monitor usage and suspend if credits run out",
+      "url": "https://docs.railway.com/pricing/plans"
+    },
+    {
+      "name": "Vercel Hobby",
+      "role": "Frontend hosting for personal/non-commercial prototype only",
+      "price": "$0/month",
+      "limits": "Hobby usage quotas",
+      "caveat": "Official plan terms restrict Hobby to personal, non-commercial use. Do not host this business/agency frontend on Hobby; deploy to Vercel after an appropriate commercial plan is approved, or choose a compatible free commercial host.",
+      "url": "https://vercel.com/docs/plans/hobby"
+    }
+  ],
+  "backend": [
+    {
+      "name": "Python",
+      "role": "Runtime",
+      "license": "PSF",
+      "free": true
+    },
+    {
+      "name": "FastAPI",
+      "role": "HTTP API",
+      "license": "MIT",
+      "free": true
+    },
+    {
+      "name": "Uvicorn",
+      "role": "ASGI server",
+      "license": "BSD-3-Clause",
+      "free": true
+    },
+    {
+      "name": "Pydantic",
+      "role": "Validation",
+      "license": "MIT",
+      "free": true
+    },
+    {
+      "name": "HTTPX",
+      "role": "HTTP client",
+      "license": "BSD-3-Clause",
+      "free": true
+    }
+  ],
+  "database": [
+    {
+      "name": "Existing Supabase PostgreSQL project",
+      "role": "CRM and proposals",
+      "plan": "Free",
+      "free": true,
+      "caveat": "Use the existing project; no second DB or paid add-on. Watch storage, egress and compute quotas.",
+      "url": "https://supabase.com/pricing"
+    },
+    {
+      "name": "Redis",
+      "role": "Optional queue/cache only",
+      "license": "RSALv2/SSPLv1 for current Redis; evaluate Valkey if needed",
+      "free": true,
+      "default_enabled": false,
+      "caveat": "Not provisioned by default. PostgreSQL remains the source of truth; avoid extra service cost."
+    }
+  ],
+  "frontend": [
+    {
+      "name": "Next.js",
+      "role": "Frontend framework and server-side API proxy",
+      "license": "MIT",
+      "free": true,
+      "url": "https://github.com/vercel/next.js"
+    },
+    {
+      "name": "React",
+      "role": "UI framework",
+      "license": "MIT",
+      "free": true,
+      "url": "https://github.com/facebook/react"
+    },
+    {
+      "name": "Three.js",
+      "role": "3D rendering",
+      "license": "MIT",
+      "free": true,
+      "url": "https://github.com/mrdoob/three.js"
+    },
+    {
+      "name": "@react-three/fiber",
+      "role": "React renderer for Three.js",
+      "license": "MIT",
+      "free": true,
+      "url": "https://github.com/pmndrs/react-three-fiber"
+    },
+    {
+      "name": "@react-three/drei",
+      "role": "3D scene helpers",
+      "license": "MIT",
+      "free": true,
+      "url": "https://github.com/pmndrs/drei"
+    }
+  ],
+  "optional_ai": [
+    {
+      "name": "Groq API",
+      "role": "Fast hosted open-model inference",
+      "price": "Free developer tier with per-model RPM/RPD/TPM/TPD limits",
+      "free": true,
+      "default_enabled": false,
+      "caveat": "Exact quotas depend on model and account. Never treat free limits as guaranteed capacity.",
+      "url": "https://console.groq.com/docs/rate-limits"
+    },
+    {
+      "name": "OpenRouter Free models",
+      "role": "Fallback for prototyping and low-volume jobs",
+      "price": "Free variants; usage currently capped at 50 requests/day and 20 requests/minute",
+      "free": true,
+      "default_enabled": false,
+      "caveat": "Model availability and quotas can change; unsuitable as guaranteed production capacity.",
+      "url": "https://openrouter.ai/collections/free-models"
+    },
+    {
+      "name": "Ollama",
+      "role": "Self-hosted inference on a user's own compatible machine",
+      "price": "Software is free; compute/hardware is not",
+      "free": true,
+      "default_enabled": false,
+      "caveat": "Do not run large models on Railway Free 0.5 GB RAM.",
+      "url": "https://ollama.com/"
+    }
+  ],
+  "media": [
+    {
+      "name": "Pexels API",
+      "role": "Stock footage search",
+      "price": "Free API subject to provider limits and attribution rules",
+      "free": true,
+      "default_enabled": false,
+      "caveat": "Check license and creator attribution for every downloaded asset; do not imply endorsement.",
+      "url": "https://www.pexels.com/api/"
+    },
+    {
+      "name": "Whisper.cpp",
+      "role": "Local speech transcription",
+      "license": "MIT",
+      "free": true,
+      "default_enabled": false,
+      "caveat": "Run on a capable user-owned machine; not enabled on Railway Free.",
+      "url": "https://github.com/ggml-org/whisper.cpp"
+    },
+    {
+      "name": "Piper",
+      "role": "Local text-to-speech",
+      "license": "MIT (runtime); voice-model licenses vary",
+      "free": true,
+      "default_enabled": false,
+      "caveat": "Check the individual voice/model license and commercial-use terms; local CPU/RAM needed.",
+      "url": "https://github.com/rhasspy/piper"
+    }
+  ],
+  "excluded_by_default": [
+    "paid model APIs",
+    "hosted GPU inference",
+    "paid automation plans",
+    "unlimited free-tier claims",
+    "public outreach and auto-send",
+    "paid stock media and fonts",
+    "permanently running specialist agents"
+  ]
+}
