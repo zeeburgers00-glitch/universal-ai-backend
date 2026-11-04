@@ -32,6 +32,7 @@ from .security import require_api_key
 from .supabase_store import save_custom_tool, supabase_configured
 from .task_gateway import get_worker, post_worker, service_status
 from .earning_empire import router as earning_empire_router
+from .business_hub import router as business_hub_router
 from .vault import (
     delete_runtime_secret,
     has_secret,
@@ -62,6 +63,7 @@ app = FastAPI(
 )
 
 app.include_router(earning_empire_router)
+app.include_router(business_hub_router)
 
 origins = [x.strip() for x in os.getenv("CORS_ORIGINS", "").split(",") if x.strip()]
 origin_regex = (os.getenv("CORS_ORIGIN_REGEX") or "").strip() or None
