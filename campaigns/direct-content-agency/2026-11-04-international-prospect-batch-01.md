@@ -122,3 +122,16 @@ Content Studio
 
 ## Source notes
 The prospect details above are taken from the linked public business pages. Public contact information is included for business enquiry purposes only. This is not a claim that the businesses want the service, have a budget, or have been contacted.
+
+
+## Additional prospects (batch expanded to 20)
+
+| Priority | Prospect | Sector / market | Public contact | Publicly visible fit signal | Suggested content angle | Source |
+|---|---|---|---|---|---|---|
+| B | Fable & Mirth | Independent homeware / gifts / jewellery, London UK | hello@fableandmirth.com; press@fableandmirth.com | Boutique retail with design-led objects, gift curation and press route. | "Gift finder in 20 seconds" reel; new-arrivals and styling carousel. | https://fableandmirth.com/pages/contact |
+| A | Figaro London | Hair & beauty salon, London UK | Business: viktor@figarolondon.uk; Marketing/PR: gabriella@figarolondon.uk | Online bookings, clear business and PR contacts, multiple beauty services. | Stylist-approved hair-care tips; service explainer reels; salon atmosphere. | https://figarolondon.uk/contact-us/ |
+| B | Mavrichi Hair Boutique | Hair salon, London UK | contact@mavrichi.com | Boutique hair salon with public contact details and service-led visual potential. | Stylist intro, appointment prep checklist and hair trend explainers (no unverified claims). | https://mavrichi.com/ |
+| B | Isola Space | Design / events venue, Dubai UAE | hello@isola.design; Dubai: dubai@isola.design | Design venue invites event and venue enquiries; visual exhibitions and event programming. | Exhibition walkthrough reels; event recap template; designer spotlight. | https://isola.space/contact |
+| B | Hotel Indigo Dubai Downtown | Boutique hotel, Dubai UAE | stay.hotelindigodubai@ihg.com | Hotel positioning emphasizes local culture, design, food and guest experiences. | Neighbourhood guide reels; room/design details; dining and guest-experience stories. | https://www.hotelindigodubai.com/contact/ |
+| B | Calibre 88 | Luxury watch retailer, Dubai UAE | info@calibre88.com | Official retailer positioning and flagship boutique; product storytelling fit. | Craftsmanship/detail macro reels; watch-care education; occasion gift guide. | https://www.calibre88.com/pages/contact |
+
