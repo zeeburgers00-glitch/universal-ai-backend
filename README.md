@@ -145,3 +145,20 @@ The separate AutoTube frontend is a minimal chat interface; all agent catalogues
 - `GET /v1/integrations/metricool/status`, `/brands`, `/youtube/categories`, and `/scheduled-posts` — Metricool brand and planning integration; `POST /v1/integrations/metricool/schedule-youtube` schedules a Metricool-uploaded video/Short after explicit approval.
 
 See [chat-first architecture and deployment requirements](docs/CHAT_FIRST_ARCHITECTURE.md). The chat task engine can generate and review content briefs; actual stock footage downloading, TTS, video rendering and YouTube publishing still require the corresponding configured workers. It must not display those stages as completed unless a worker returns a successful result.
+
+
+## Multi-business AI Earning Empire
+
+The earning fleet extends the on-demand agent architecture beyond YouTube. It provides **120 role templates across 12 departments**: YouTube, freelancing, content agency, affiliate marketing, AI SaaS, e-commerce, sales, research, media production, operations, finance, and quality/risk.
+
+- `GET /v1/earning/fleet` — fleet summary and department capacities.
+- `GET /v1/earning/departments` — department missions and skills.
+- `GET /v1/earning/agents?department=freelance` — searchable agent blueprints.
+- `GET /v1/earning/workflows` — business workflow templates.
+- `POST /v1/earning/plan` — send a planning-only objective to the configured agent worker (requires `X-API-Key`).
+- `POST /v1/earning/agents/{agent_id}/run` — dispatch a selected agent to the configured agent worker (requires `X-API-Key`).
+
+Configure `AGENT_WORKER_URL` and `AGENT_WORKER_API_KEY` (or enable the supported built-in cloud runtime) to execute agent jobs. The fleet is a set of blueprints, not 120 continuously running agents. Start with a small worker concurrency and increase only after measuring latency, provider limits, and cost.
+
+The default budget target is USD 100/month. This is a planning target, **not an automatic billing cap**: set hard spending limits and alerts at each model/provider account, monitor usage, and keep paid external actions behind approval. Agents may draft and analyze autonomously; sending messages, publishing, purchases, payments, account changes, and other consequential actions require separate explicit approval. Revenue is never assumed: only verified payment records count as income.
+
