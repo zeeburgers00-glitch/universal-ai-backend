@@ -151,6 +151,10 @@ Content Studio
 - Work starts after a written scope and any agreed deposit
 - No guarantee of views, followers, bookings, leads or sales
 
+## Introductory retainer pricing
+
+Suggested follow-on: USD 249/month for 8 short-form edits, 8 captions and one content calendar, using client-supplied or authorized footage. This introductory rate excludes filming, paid advertising, account management, community replies, paid-stock purchases and translation. Pricing is experimental and must be reviewed against real production capacity before any quote is sent.
+
 ## Approval and send policy
 
 All 15 records are stored with `approval_status=awaiting_approval`. This pack is for review, not dispatch. No emails or forms have been sent. Even changing a draft to `approved_to_send` only records approval in the CRM; the backend deliberately has no send route.
