@@ -346,7 +346,7 @@ def health():
 def runtime_capabilities():
     services = service_status()
     return {
-        "control_plane": "vercel-fastapi",
+        "control_plane": os.getenv("DEPLOY_PLATFORM", "fastapi"),
         "control_plane_ready": True,
         "workers": services,
         "ready_workers": sum(1 for x in services if x["configured"]),
