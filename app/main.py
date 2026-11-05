@@ -43,6 +43,7 @@ from .ai_router import router as ai_router_router
 from .code_routes import router as code_router
 from .video_routes import router as video_router
 from .job_routes import router as job_router
+from . import sdk as sdk_generator
 from .vault import (
     delete_runtime_secret,
     has_secret,
@@ -349,6 +350,39 @@ def root(accept: str | None = Header(default=None)):
 @app.get("/explorer", response_class=HTMLResponse)
 def explorer():
     return HTMLResponse(content=EXPLORER_HTML)
+
+
+@app.get("/v1/sdk")
+def generate_sdk(
+    lang: str = Query(default="python", pattern="^(python|ts|typescript)$"),
+    prefix: str | None = Query(default=None, max_length=80, description="Only routes under this prefix, e.g. /v1/code"),
+    save_to: str | None = Query(default=None, max_length=200, description="Optional repo path to write the SDK into"),
+    _key: str = Depends(require_api_key),
+):
+    """Generate a client SDK for this API from its own OpenAPI schema."""
+
+    language = "ts" if lang in {"ts", "typescript"} else "python"
+    code = (
+        sdk_generator.generate_typescript(app, prefix)
+        if language == "ts"
+        else sdk_generator.generate_python(app, prefix)
+    )
+    response: dict[str, Any] = {
+        "language": language,
+        "bytes": len(code.encode("utf-8")),
+        "summary": sdk_generator.summary(app),
+        "content": code,
+    }
+    if save_to:
+        from .code_assistant import CodeAssistantError, write_file
+
+        try:
+            saved = write_file(save_to, code, dry_run=False)
+        except CodeAssistantError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        response["saved_to"] = saved["path"]
+        response["backup"] = saved.get("backup")
+    return response
 
 
 @app.get("/editor", response_class=HTMLResponse)
