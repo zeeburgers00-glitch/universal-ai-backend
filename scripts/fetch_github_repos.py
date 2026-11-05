@@ -26,6 +26,17 @@ OUTPUT = ROOT / "catalog" / "github_repos.json"
 PINNED = (
     ("CopilotKit/OpenDots", "agents"),
     ("cedroid/groq-bot", "rag-bots"),
+    # Core stack: things this backend literally talks to or builds on.
+    ("ollama/ollama", "inference"),
+    ("ggml-org/llama.cpp", "inference"),
+    ("vllm-project/vllm", "inference"),
+    ("Comfy-Org/ComfyUI", "comfyui"),
+    ("CopilotKit/CopilotKit", "agent-ui"),
+    ("openai/openai-python", "agents"),
+    ("groq/groq-python", "agents"),
+    ("google-gemini/cookbook", "agents"),
+    ("yt-dlp/yt-dlp", "youtube"),
+    ("FFmpeg/FFmpeg", "video"),
 )
 
 # category -> (search query, max results)
@@ -53,6 +64,16 @@ SEARCHES: dict[str, tuple[str, int]] = {
 
 # Which of our pieces a category maps onto. Reference only -- these repos are
 # not vendored and their code does not run inside this backend.
+# Repos our code actually talks to today (not just references).
+INTEGRATED = {
+    "ollama/ollama": "provider wired: app/ai_router.py (local, unlimited, no key)",
+    "Comfy-Org/ComfyUI": "target of media_worker COMFYUI_BASE_URL",
+    "FFmpeg/FFmpeg": "render/thumbnail/audio via ffmpeg (system or imageio-ffmpeg)",
+    "CopilotKit/OpenDots": "pattern source for agent approvals (not vendored)",
+    "cedroid/groq-bot": "pattern source for channel auto-reply (not vendored)",
+}
+
+
 CATEGORY_MAP = {
     "agents": ("agent_worker", "patterns to borrow: planner/executor split, human-in-the-loop approvals"),
     "agent-ui": ("studio / frontend", "chat UI + tool-renderer ideas for the studio console"),
@@ -171,8 +192,8 @@ def main(dry_run: bool = False) -> None:
             ("catalog", "reference"),
         )
         repo["maps_to"] = target
-        repo["integration"] = "reference-only"
-        repo["note"] = note
+        repo["integration"] = "wired" if repo["full_name"] in INTEGRATED else "reference-only"
+        repo["note"] = INTEGRATED.get(repo["full_name"], note)
 
     payload = {
         "generated_by": "scripts/fetch_github_repos.py",

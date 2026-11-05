@@ -41,10 +41,23 @@ def test_pinned_repos_requested_by_owner_are_present(snapshot):
     assert "cedroid/groq-bot" in names
 
 
-def test_nothing_claims_to_be_integrated(snapshot):
-    """These repos are references. Calling them 'integrated' would be a lie."""
+WIRED_ALLOWLIST = {
+    "ollama/ollama",                 # app/ai_router.py provider
+    "Comfy-Org/ComfyUI",             # target of media_worker COMFYUI_BASE_URL
+    "FFmpeg/FFmpeg",                 # render/thumbnail/audio
+    "CopilotKit/OpenDots",           # pattern source (documented as not vendored)
+    "cedroid/groq-bot",              # pattern source (documented as not vendored)
+}
 
-    assert all(repo["integration"] == "reference-only" for repo in snapshot["repos"])
+
+def test_only_allowlisted_repos_claim_to_be_wired(snapshot):
+    """'wired' must be a short, reviewable list — never a marketing label."""
+
+    wired = {repo["full_name"] for repo in snapshot["repos"] if repo["integration"] == "wired"}
+    assert wired <= WIRED_ALLOWLIST, f"unexpected wired repos: {wired - WIRED_ALLOWLIST}"
+    assert all(
+        repo["integration"] in {"wired", "reference-only"} for repo in snapshot["repos"]
+    )
     assert "NOT vendored" in snapshot["disclaimer"]
 
 
