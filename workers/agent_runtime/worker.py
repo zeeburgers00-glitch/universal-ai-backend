@@ -205,6 +205,18 @@ def main() -> None:
     lease_seconds = max(30, min(3600, int(os.getenv("AGENT_RUNTIME_LEASE_SECONDS", "300"))))
     poll_seconds = max(1, min(60, int(os.getenv("AGENT_RUNTIME_POLL_SECONDS", "5"))))
     with httpx.Client(timeout=30, follow_redirects=False) as api:
+        registration = api.post(
+            f"{api_base}/v1/agent-runtime/workers/register",
+            headers={"X-API-Key": api_key},
+            json={"worker_id": worker_id, "capabilities": {
+                "executor": "agent_worker",
+                "execution_mode": "plan_only",
+                "supports_heartbeat": True,
+                "no_paid_provider_fallback": True,
+            }},
+            timeout=20,
+        )
+        registration.raise_for_status()
         while True:
             try:
                 found = execute_one(

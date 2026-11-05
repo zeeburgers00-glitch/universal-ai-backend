@@ -613,10 +613,11 @@ def runtime_status():
         "workers_seen_within_90s": online_workers,
         "running_tasks": counts.get("running", 0),
         "max_parallel_tasks": _bounded_env_int("AGENT_RUNTIME_MAX_PARALLEL_TASKS", 5, 1, 20),
+        "max_parallel_per_agent": _bounded_env_int("AGENT_RUNTIME_MAX_PARALLEL_PER_AGENT", 1, 1, 10),
         "execution_attested_no_card": attested,
         "no_card_only": True,
         "paid_provider_fallback": False,
-        "features": ["task_queue", "leases", "retries", "workflow_dag", "human_approvals", "scoped_memory", "event_log", "unified_agent_catalog", "worker_registry"],
+        "features": ["task_queue", "leases", "retries", "workflow_dag", "workflow_output_handoffs", "bounded_concurrency", "human_approvals", "scoped_memory", "event_log", "unified_agent_catalog", "worker_registry"],
     }
 
 
