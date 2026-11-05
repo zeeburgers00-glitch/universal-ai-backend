@@ -115,3 +115,7 @@ curl -s localhost:8000/health/deep | python -m json.tool
 - Data `uai-data` volume par rehta hai → restart ke baad jobs/quota/renders bache rehte hain
 - Healthcheck khud `/health/deep` hit karta hai (volume, sqlite, ffmpeg, queue worker)
 - `make audit`, `make sdk`, `make backup` bhi ready hain
+
+## Vercel / Render
+
+Dono ke exact steps aur kya-kya kaam karega: `docs/DEPLOY_VERCEL_RENDER.md`.
