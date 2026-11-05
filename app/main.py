@@ -41,6 +41,7 @@ from .client_campaign import router as client_campaign_router
 from .command_center import router as command_center_router
 from .ai_router import router as ai_router_router
 from .code_routes import router as code_router
+from .video_routes import router as video_router
 from .vault import (
     delete_runtime_secret,
     has_secret,
@@ -77,6 +78,7 @@ app.include_router(client_campaign_router)
 app.include_router(command_center_router)
 app.include_router(ai_router_router)
 app.include_router(code_router)
+app.include_router(video_router)
 
 origins = [x.strip() for x in os.getenv("CORS_ORIGINS", "").split(",") if x.strip()]
 origin_regex = (os.getenv("CORS_ORIGIN_REGEX") or "").strip() or None

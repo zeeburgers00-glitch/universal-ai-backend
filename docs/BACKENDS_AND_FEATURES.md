@@ -79,6 +79,11 @@ Real HTTP upload (`multipart`) → asset → task:
 - **Fixed:** `gemini-2.0-flash` default dead tha (Google ne June 2026 me band kiya) → ab
   `gemini-3.8-flash`.
 
+## 3.5b Naya: video toolkit (FFmpeg, zero keys)
+
+`/v1/video/*` — probe, **silence cut**, **auto-chapters**, thumbnail set, loudnorm (−14 LUFS),
+vertical clip (9:16 / 1:1 / 4:5), SRT↔VTT. Sab local FFmpeg, koi key nahi. Detail: `docs/VIDEO_TOOLKIT.md`.
+
 ## 3.6 Naya: AI editor + code assistant (zero keys)
 
 **`GET /editor`** — backend-served poora code editor (21 KB single HTML, zero CDN/npm):
