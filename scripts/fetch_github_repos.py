@@ -21,6 +21,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT = ROOT / "catalog" / "github_repos.json"
+# A partial run (rate limit, network hiccup) must not shrink the catalog.
+MINIMUM_REPOS = 100
 
 # Repos the owner asked to track explicitly.
 PINNED = (
@@ -216,6 +218,22 @@ def main(dry_run: bool = False) -> None:
         print(json.dumps(payload["by_category"], indent=2))
         print(f"total: {len(repos)}")
         return
+
+    # Guard: a rate-limited or partially-failed fetch must never replace a good catalog.
+    # (This actually happened: 205 repos were overwritten by a 2-repo snapshot.)
+    minimum = MINIMUM_REPOS
+    if len(repos) < minimum:
+        existing = 0
+        if OUTPUT.is_file():
+            try:
+                existing = len(json.loads(OUTPUT.read_text(encoding="utf-8")).get("repos", []))
+            except (OSError, json.JSONDecodeError):
+                existing = 0
+        print(
+            f"refusing to write {len(repos)} repos (minimum {minimum}); "
+            f"the existing catalog has {existing}. Re-run when the GitHub API cooperates."
+        )
+        raise SystemExit(2)
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")

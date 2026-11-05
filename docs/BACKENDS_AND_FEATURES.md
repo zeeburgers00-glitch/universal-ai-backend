@@ -79,6 +79,12 @@ Real HTTP upload (`multipart`) → asset → task:
 - **Fixed:** `gemini-2.0-flash` default dead tha (Google ne June 2026 me band kiya) → ab
   `gemini-3.8-flash`.
 
+## 3.3a Naya: agent runtime (37 runnable agents)
+
+`/v1/agents/runtime/*` — 37 agents jo is process me chalte hain (ffmpeg, code index, rules,
+model optional), crews, job-queue integration aur audit log. 42 catalog blueprints alag hain
+aur honest tareeqe se `runnable_here: false` dikhate hain. Detail: `docs/AGENTS.md`.
+
 ## 3.3b Naya: scopes + audit log + approval gates + BM25 tool search
 
 Scoped API keys (reads free, writes scope-bound), append-only `audit.jsonl` with key
