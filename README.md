@@ -13,9 +13,14 @@ API-only backend for an existing app. It is designed as an extensible integratio
 - Live GitHub discovery with `30` built-in AI category presets (`GET /v1/discover/categories`) and filters: `GET /v1/discover/github?category_preset=mcp-servers&license_filter=mit&min_stars=100&sort=stars`.
 - API-key protection for chat, worker dispatches, and catalog writes.
 - Vercel-compatible FastAPI entrypoint and unified Docker Compose stack (`workers/docker-compose.yml`) for GPU/async workers.
-- Safe-by-default integration model: listing a repo never installs or executes its code.
+- Universal Agent Runtime (`/v1/agent-runtime`): SQLite-backed task queue, worker leases/heartbeats, retries, DAG workflows, approval gates, scoped memory and task event history; polling executor at `workers/agent_runtime`.
+- Safe-by-default integration model: listing a repo never installs or executes its code. Agent runtime execution is disabled until the worker is explicitly attested as free/no-card; high/critical tasks require approval.
 
 
+
+## Universal Agent Runtime
+
+See [`docs/AGENT_RUNTIME.md`](docs/AGENT_RUNTIME.md) for API examples, worker setup, no-card attestation and storage durability notes. The runtime uses SQLite; on serverless hosts the default `/tmp` filesystem is ephemeral, so use a persistent mounted disk for durable queues and memory.
 
 ## Quick start (Windows PowerShell)
 

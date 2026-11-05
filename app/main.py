@@ -39,6 +39,7 @@ from .client_campaign import router as client_campaign_router
 from .command_center import router as command_center_router
 from .ai_router import router as ai_router_router
 from .openavatar import router as openavatar_router
+from .agent_runtime import router as agent_runtime_router
 from .vault import (
     delete_runtime_secret,
     has_secret,
@@ -75,6 +76,7 @@ app.include_router(client_campaign_router)
 app.include_router(command_center_router)
 app.include_router(ai_router_router)
 app.include_router(openavatar_router)
+app.include_router(agent_runtime_router)
 
 origins = [x.strip() for x in os.getenv("CORS_ORIGINS", "").split(",") if x.strip()]
 origin_regex = (os.getenv("CORS_ORIGIN_REGEX") or "").strip() or None
