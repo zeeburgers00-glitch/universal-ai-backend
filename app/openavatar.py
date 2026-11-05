@@ -367,9 +367,16 @@ def _validate_payload_assets(conn: sqlite3.Connection, request: JobCreate) -> No
 def _select_provider(request: JobCreate) -> str:
     if request.provider != "auto":
         selected = request.provider
-    elif request.job_type in {"talking_head", "lip_sync"}:
+    elif request.job_type == "talking_head":
         selected = "huggingface_zerogpu"
-    elif request.job_type == "voice":
+    elif request.job_type == "lip_sync":
+        if _provider_enabled("kaggle"):
+            selected = "kaggle"
+        elif _provider_enabled("lightning"):
+            selected = "lightning"
+        else:
+            raise HTTPException(status_code=503, detail="No optional no-card GPU worker is enabled for MuseTalk lip-sync jobs")
+    elif request.job_type in {"voice", "transcribe", "captions", "render"}:
         selected = "local_cpu"
     else:
         selected = "local_cpu"
@@ -506,8 +513,14 @@ def create_job(request: JobCreate) -> dict[str, Any]:
         raise HTTPException(status_code=422, detail="text is required for voice generation")
     engine = _JOB_ENGINES[request.job_type]
     provider = _select_provider(request)
-    if provider == "huggingface_zerogpu" and request.job_type != "talking_head":
-        raise HTTPException(status_code=422, detail="The current Hugging Face Space worker supports talking_head jobs only")
+    supported_engines = {
+        "local_cpu": {"openvoice_v2", "whisper_cpp", "ffmpeg"},
+        "huggingface_zerogpu": {"sadtalker"},
+        "kaggle": {"sadtalker", "musetalk", "openvoice_v2", "whisper_cpp", "ffmpeg"},
+        "lightning": {"sadtalker", "musetalk", "openvoice_v2", "whisper_cpp", "ffmpeg"},
+    }
+    if engine not in supported_engines[provider]:
+        raise HTTPException(status_code=422, detail=f"Engine {engine} is not supported by provider {provider}")
     if provider == "huggingface_zerogpu" and request.max_gpu_seconds > _hf_job_limit():
         raise HTTPException(status_code=422, detail=f"max_gpu_seconds exceeds the configured ZeroGPU limit ({_hf_job_limit()})")
     conn = _connect()
@@ -677,6 +690,32 @@ def claim_job(request: ClaimRequest) -> dict[str, Any]:
                 **payload,
             }
         }
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+@internal.post("/jobs/{job_id}/heartbeat", dependencies=[Depends(_worker_auth)])
+def worker_job_heartbeat(
+    job_id: str,
+    worker_id: str = Header(alias="X-OpenAvatar-Worker-Id"),
+) -> dict[str, Any]:
+    conn = _connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute("SELECT * FROM jobs WHERE job_id=?", (job_id,)).fetchone()
+        if not row or row["status"] != "running" or row["worker_id"] != worker_id:
+            raise HTTPException(status_code=409, detail="Job is not leased to this worker")
+        lease_until = _iso(_now() + timedelta(seconds=180))
+        conn.execute(
+            "UPDATE jobs SET lease_until=?, updated_at=? WHERE job_id=?",
+            (lease_until, _iso(), job_id),
+        )
+        conn.execute("UPDATE workers SET status='busy', last_seen=? WHERE worker_id=?", (_iso(), worker_id))
+        conn.commit()
+        return {"ok": True, "job_id": job_id, "lease_until": lease_until}
     except Exception:
         conn.rollback()
         raise

@@ -122,6 +122,14 @@ GET /v1/openavatar/jobs/{job_id}/artifact after status becomes completed.
 - captions: whisper.cpp; audio → SRT subtitles; default route local_cpu.
 - render: FFmpeg; video + audio → MP4; default route local_cpu.
 
+Provider routing:
+- talking_head with provider=auto selects Hugging Face ZeroGPU.
+- voice, transcribe, captions, and render with provider=auto select local_cpu.
+- lip_sync with provider=auto selects Kaggle only when explicitly enabled, otherwise
+  Lightning only when both no-card flags are explicitly enabled. If neither optional
+  GPU worker is enabled, the API returns 503 rather than queueing a job to the wrong Space.
+- Provider/engine combinations are validated before a job is queued.
+
 For a Kaggle experiment, set provider=kaggle and commercial_use=false. Enable the worker
 server-side with OPENAVATAR_KAGGLE_ENABLED=true. For Lightning, both explicit server flags
 must be true and the worker must confirm no-card/free-credit-only operation.
@@ -132,12 +140,13 @@ Workers use X-OpenAvatar-Worker-Token, not the public backend API key.
 
 - POST /internal/openavatar/heartbeat
 - POST /internal/openavatar/jobs/claim
+- POST /internal/openavatar/jobs/{job_id}/heartbeat
 - GET /internal/openavatar/assets/{asset_id}
 - PUT /internal/openavatar/jobs/{job_id}/artifact
 - POST /internal/openavatar/jobs/{job_id}/complete
 - POST /internal/openavatar/jobs/{job_id}/fail
 
-Job claims are atomic. A worker must upload an artifact before marking a job completed.
+Job claims are atomic and leased for 180 seconds. Long-running workers renew their lease every 45 seconds. A worker must upload an artifact before marking a job completed.
 Expired jobs fail closed and the reserved ZeroGPU budget is conservatively counted as used.
 Workers process one job and exit; no hidden keepalive loop is included.
 

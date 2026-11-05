@@ -24,4 +24,20 @@ if __name__ == "__main__":
     if os.getenv("OPENAVATAR_KAGGLE_PERSONAL_USE_CONFIRMED", "").lower() != "true":
         raise RuntimeError("Set OPENAVATAR_KAGGLE_PERSONAL_USE_CONFIRMED=true only for personal, non-commercial jobs")
     from workers.openavatar.worker_client import run_once
-    print(run_once("kaggle", ["sadtalker", "musetalk", "openvoice_v2", "whisper_cpp", "ffmpeg"]))
+    capabilities = []
+    if (Path(os.getenv("SADTALKER_ROOT", "")).expanduser() / "inference.py").is_file():
+        capabilities.append("sadtalker")
+    if ":" in os.getenv("OPENAVATAR_MUSETALK_ADAPTER", ""):
+        capabilities.append("musetalk")
+    if ":" in os.getenv("OPENAVATAR_OPENVOICE_ADAPTER", ""):
+        capabilities.append("openvoice_v2")
+    if Path(os.getenv("WHISPER_CPP_MODEL", "")).is_file():
+        capabilities.append("whisper_cpp")
+    try:
+        import imageio_ffmpeg  # noqa: F401
+        capabilities.append("ffmpeg")
+    except Exception:
+        pass
+    if not capabilities:
+        raise RuntimeError("No compatible engine is installed; configure a model adapter or CPU tool first")
+    print(run_once("kaggle", capabilities))

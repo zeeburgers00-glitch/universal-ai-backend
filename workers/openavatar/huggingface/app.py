@@ -102,7 +102,14 @@ def process_one_job() -> str:
             audio = _download_asset(job["audio_asset_id"], work / "speech.wav")
             gpu_started = True
             video_path, gpu_seconds = _run_sadtalker(job, str(image), str(audio))
+            lease_pulse = requests.post(
+                f"{API_URL}/internal/openavatar/jobs/{job['job_id']}/heartbeat",
+                headers={**_headers(), "X-OpenAvatar-Worker-Id": WORKER_ID},
+                timeout=30,
+            )
+            lease_pulse.raise_for_status()
             artifact = Path(video_path)
+
             with artifact.open("rb") as stream:
                 response = requests.put(
                     f"{API_URL}/internal/openavatar/jobs/{job['job_id']}/artifact",

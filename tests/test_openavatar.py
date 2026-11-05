@@ -91,6 +91,28 @@ def test_kaggle_is_disabled_by_default_and_blocks_commercial_jobs(monkeypatch, t
     assert client.post("/v1/openavatar/jobs", headers=API_HEADERS, json=payload).status_code == 403
 
 
+def test_lip_sync_never_routes_to_the_sadtalker_only_zero_gpu_worker(monkeypatch, tmp_path):
+    monkeypatch.setenv("BACKEND_API_KEY", "test-backend-api-key")
+    monkeypatch.setenv("OPENAVATAR_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("OPENAVATAR_HF_ENABLED", "true")
+    monkeypatch.delenv("OPENAVATAR_KAGGLE_ENABLED", raising=False)
+    monkeypatch.delenv("OPENAVATAR_LIGHTNING_ENABLED", raising=False)
+    monkeypatch.delenv("OPENAVATAR_LIGHTNING_NO_CARD_CONFIRMED", raising=False)
+    audio_id = _upload("audio", b"RIFF0000WAVEfmt ", "audio/wav", "speech.wav")
+    video_id = _upload("video", b"fake-mp4", "video/mp4", "source.mp4")
+    payload = {
+        "job_type": "lip_sync",
+        "audio_asset_id": audio_id,
+        "video_asset_id": video_id,
+        "consent_confirmed": True,
+    }
+    auto = client.post("/v1/openavatar/jobs", headers=API_HEADERS, json=payload)
+    assert auto.status_code == 503
+    payload["provider"] = "huggingface_zerogpu"
+    unsupported = client.post("/v1/openavatar/jobs", headers=API_HEADERS, json=payload)
+    assert unsupported.status_code == 422
+
+
 def test_worker_claim_reserves_huggingface_quota_and_completes(monkeypatch, tmp_path):
     monkeypatch.setenv("BACKEND_API_KEY", "test-backend-api-key")
     monkeypatch.setenv("OPENAVATAR_DATA_DIR", str(tmp_path))
@@ -120,6 +142,16 @@ def test_worker_claim_reserves_huggingface_quota_and_completes(monkeypatch, tmp_
     )
     assert claim.status_code == 200
     assert claim.json()["job"]["job_id"] == job["job_id"]
+    pulse = client.post(
+        f"/internal/openavatar/jobs/{job['job_id']}/heartbeat",
+        headers={**worker_headers, "X-OpenAvatar-Worker-Id": "test-hf"},
+    )
+    assert pulse.status_code == 200
+    wrong_pulse = client.post(
+        f"/internal/openavatar/jobs/{job['job_id']}/heartbeat",
+        headers={**worker_headers, "X-OpenAvatar-Worker-Id": "other-worker"},
+    )
+    assert wrong_pulse.status_code == 409
     quota = client.get("/v1/openavatar/quota", headers=API_HEADERS).json()["huggingface_zerogpu"]
     assert quota["reserved_seconds"] == 60
     second = client.post("/v1/openavatar/jobs", headers=API_HEADERS, json=payload).json()

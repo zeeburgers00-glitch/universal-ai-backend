@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from pathlib import Path
 from typing import Any
@@ -132,8 +133,19 @@ def _run_openvoice(job: dict[str, Any], reference_audio: Path, output_dir: Path)
     return final_path
 
 
+def _ffmpeg_binary() -> str:
+    configured = os.getenv("FFMPEG_BIN", "").strip()
+    if configured:
+        return configured
+    try:
+        import imageio_ffmpeg
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        return "ffmpeg"
+
+
 def _run_ffmpeg(job: dict[str, Any], video: Path, audio: Path, output_dir: Path) -> Path:
-    binary = os.getenv("FFMPEG_BIN", "ffmpeg")
+    binary = _ffmpeg_binary()
     output = output_dir / "rendered.mp4"
     subprocess.run(
         [binary, "-y", "-i", str(video), "-i", str(audio), "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy", "-c:a", "aac", "-shortest", str(output)],
@@ -142,6 +154,21 @@ def _run_ffmpeg(job: dict[str, Any], video: Path, audio: Path, output_dir: Path)
     if not output.is_file():
         raise RuntimeError("FFmpeg did not produce an MP4")
     return output
+
+
+def _lease_pulse(api_url: str, token: str, worker_id: str, job_id: str, stop: threading.Event) -> None:
+    while not stop.wait(45):
+        try:
+            _request(
+                "POST",
+                f"{api_url}/internal/openavatar/jobs/{job_id}/heartbeat",
+                token,
+                headers={"X-OpenAvatar-Worker-Id": worker_id},
+                timeout=20,
+            )
+        except Exception:
+            # The final completion/failure request remains authoritative.
+            continue
 
 
 def run_once(provider: str, capabilities: list[str]) -> dict[str, Any]:
@@ -163,6 +190,13 @@ def run_once(provider: str, capabilities: list[str]) -> dict[str, Any]:
     if not job:
         return {"status": "idle", "reason": claimed.get("reason", "no_compatible_job"), "quota": claimed.get("quota")}
     started = time.monotonic()
+    heartbeat_stop = threading.Event()
+    heartbeat_thread = threading.Thread(
+        target=_lease_pulse,
+        args=(api_url, token, worker_id, job["job_id"], heartbeat_stop),
+        daemon=True,
+    )
+    heartbeat_thread.start()
     try:
         with tempfile.TemporaryDirectory(prefix="openavatar-") as temp:
             work = Path(temp)
@@ -212,6 +246,9 @@ def run_once(provider: str, capabilities: list[str]) -> dict[str, Any]:
         except Exception:
             pass
         raise
+    finally:
+        heartbeat_stop.set()
+        heartbeat_thread.join(timeout=2)
 
 
 def main() -> None:
