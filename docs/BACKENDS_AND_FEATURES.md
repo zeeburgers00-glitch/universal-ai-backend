@@ -68,6 +68,17 @@ Real HTTP upload (`multipart`) → asset → task:
 
 ---
 
+## 3.5 Naya: model catalog + GitHub tool registry
+
+- **`catalog/models.json`** — OpenAI / Gemini / Groq ke latest models (ID, kind, capabilities,
+  status, free-tier, confidence). Endpoints: `/v1/ai/models`, `/v1/ai/models?capability=image-out`,
+  `/v1/ai/models/resolve?capability=vision`, `/v1/ai/models/stats`. Detail: `docs/MODELS.md`.
+- **`catalog/github_repos.json`** — **196 verified repos**, GitHub API se generate, 19 categories
+  (agents, mcp, voice, video, whatsapp, comfyui...). Endpoints: `/v1/discover/github/registry`
+  (+ `/stats`, `/{owner}/{repo}`). Detail: `docs/GITHUB_TOOL_REGISTRY.md`.
+- **Fixed:** `gemini-2.0-flash` default dead tha (Google ne June 2026 me band kiya) → ab
+  `gemini-3.8-flash`.
+
 ## 4. Features jo aap use kar sakte hain
 
 ### Command Center — ek prompt se video

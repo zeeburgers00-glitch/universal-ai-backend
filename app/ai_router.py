@@ -48,7 +48,9 @@ PROVIDERS: dict[str, Provider] = {
     "groq": Provider("groq", "Groq", "GROQ_API_KEY", "GROQ_DEFAULT_MODEL",
                      "llama-3.3-70b-versatile", "https://api.groq.com/openai/v1"),
     "gemini": Provider("gemini", "Google Gemini", "GEMINI_API_KEY", "GEMINI_DEFAULT_MODEL",
-                       "gemini-2.0-flash", "https://generativelanguage.googleapis.com/v1beta/openai",
+                       # gemini-2.0-flash was shut down by Google in June 2026; 3.8 Flash is
+                       # the current free-tier workhorse (see catalog/models.json).
+                       "gemini-3.8-flash", "https://generativelanguage.googleapis.com/v1beta/openai",
                        note="Uses Google's OpenAI-compatible endpoint."),
     "mistral": Provider("mistral", "Mistral AI", "MISTRAL_API_KEY", "MISTRAL_DEFAULT_MODEL",
                         "mistral-large-latest", "https://api.mistral.ai/v1"),

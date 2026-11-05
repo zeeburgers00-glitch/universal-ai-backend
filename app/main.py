@@ -24,7 +24,7 @@ from .builtin_workers import builtin_runtime_enabled
 from .explorer_ui import EXPLORER_HTML
 from .studio_ui import STUDIO_HTML
 from .github_discovery import list_discovery_presets, search_github_repositories
-from . import github_registry
+from . import github_registry, model_catalog
 from .providers import chat_with_provider, provider_status
 from .pexels import search_pexels_videos
 from .metricool import metricool_request, metricool_status, schedule_youtube_video
@@ -971,6 +971,51 @@ def discover_github_registry(
         )
     except github_registry.RegistryUnavailable as exc:
         raise HTTPException(status_code=503, detail=str(exc))
+
+
+@app.get("/v1/ai/models")
+def ai_models(
+    provider: str | None = Query(default=None, max_length=40),
+    capability: str | None = Query(default=None, max_length=40, description="e.g. vision, tools, image-out, audio-in"),
+    kind: str | None = Query(default=None, max_length=40, description="chat, image, video, tts, stt, live, omni, agent, moderation"),
+    status: str | None = Query(default=None, max_length=20, description="stable, preview, deprecated, shutdown"),
+    free_only: bool = Query(default=False),
+    include_shutdown: bool = Query(default=False),
+):
+    """Dated model catalog: what each provider's key can actually call."""
+
+    try:
+        return model_catalog.list_models(
+            provider=provider, capability=capability, kind=kind, status=status,
+            free_only=free_only, include_shutdown=include_shutdown,
+        )
+    except model_catalog.CatalogUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@app.get("/v1/ai/models/stats")
+def ai_models_stats():
+    try:
+        return model_catalog.stats()
+    except model_catalog.CatalogUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@app.get("/v1/ai/models/resolve")
+def ai_models_resolve(
+    capability: str = Query(min_length=2, max_length=40),
+    prefer_free: bool = Query(default=True),
+    provider: str | None = Query(default=None, max_length=40),
+):
+    """Best live model for a capability. Never returns a shut-down model."""
+
+    try:
+        picked = model_catalog.resolve(capability, prefer_free=prefer_free, provider=provider)
+    except model_catalog.CatalogUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+    if not picked:
+        raise HTTPException(status_code=404, detail=f"No usable model offers capability '{capability}'")
+    return picked
 
 
 @app.get("/v1/discover/github/registry/stats")
