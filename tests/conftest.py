@@ -24,9 +24,13 @@ def isolated_data_root():
     # Tests fire thousands of requests from one client id; the limiter is tested
     # explicitly in tests/test_observability.py instead of tripping here.
     os.environ["UAI_RATE_LIMIT"] = "0"
+    # The app starts queue workers on startup. In the suite they would race the
+    # explicit jobs.run_once() calls, so keep them off globally and drive jobs by hand.
+    os.environ["UAI_JOBS_DISABLE"] = "1"
     yield path
     if previous is None:
         os.environ.pop("UAI_DATA_ROOT", None)
     else:
         os.environ["UAI_DATA_ROOT"] = previous
     os.environ.pop("UAI_RATE_LIMIT", None)
+    os.environ.pop("UAI_JOBS_DISABLE", None)

@@ -32,6 +32,7 @@ from .pexels import search_pexels_videos
 from .metricool import metricool_request, metricool_status, schedule_youtube_video
 from .autopilot_store import configured as autopilot_store_configured, create_run, add_event, get_run as get_autopilot_run, get_events as get_autopilot_events, update_run
 from .registry import Registry
+from . import jobs
 from .security import require_api_key
 from .supabase_store import save_custom_tool, supabase_configured
 from .task_gateway import get_worker, post_worker, service_status
@@ -480,6 +481,20 @@ def studio():
 @app.get("/studio", response_class=HTMLResponse)
 def studio_alias():
     return HTMLResponse(content=STUDIO_HTML)
+
+
+@app.on_event("startup")
+def _start_job_workers() -> None:
+    """Bring the queue workers up with the process, not with the first job.
+
+    Without this, `/health/deep` reports "workers=off" on a fresh boot even though
+    the service is perfectly able to work — confusing during an incident.
+    """
+
+    try:
+        jobs.ensure_started()
+    except Exception:  # a queue problem must never stop the API from serving
+        pass
 
 
 @app.get("/health")
