@@ -21,6 +21,7 @@ from .base44_integration import (
     connect_base44_app,
 )
 from .builtin_workers import builtin_runtime_enabled
+from .editor_assets import EDITOR_HTML
 from .explorer_ui import EXPLORER_HTML
 from .studio_ui import STUDIO_HTML
 from .github_discovery import list_discovery_presets, search_github_repositories
@@ -344,6 +345,13 @@ def root(accept: str | None = Header(default=None)):
 @app.get("/explorer", response_class=HTMLResponse)
 def explorer():
     return HTMLResponse(content=EXPLORER_HTML)
+
+
+@app.get("/editor", response_class=HTMLResponse)
+def editor():
+    """A full code editor served by the backend — no npm, no CDN, no build step."""
+
+    return HTMLResponse(content=EDITOR_HTML)
 
 
 @app.get("/app", response_class=HTMLResponse)

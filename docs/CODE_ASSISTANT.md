@@ -6,11 +6,33 @@ koi quota nahi. Isliye ye kabhi "API key missing" se fail nahi hoti.
 
 Verified on this repo: **252 files, 1,203 symbols, index build 246 ms.**
 
+## Built-in editor (browser me, koi install nahi)
+
+`GET /editor` — backend khud ek poora code editor serve karta hai: file tree, editor,
+outline, review, tests, plan, diff aur chat panel. **Ek hi HTML response (21 KB), koi CDN,
+koi npm, koi build step nahi** — offline/air-gapped bhi chalta hai.
+
+Kholein: `http://<host>:8000/editor?key=<BACKEND_API_KEY>`
+
+| Panel | Kaam |
+|---|---|
+| File tree | search filter, folder grouping, click = open |
+| Editor | line numbers, tab = 4 spaces, Ctrl+S save, dirty marker |
+| Outline | symbols par click → line par jump |
+| Review | severity ke saath findings, click → jump |
+| Tests | pytest skeleton, copy ya save |
+| Plan | goal → steps + related files |
+| Diff | save ke baad +/− colored diff |
+| Chat | local Ollama ya free key ho to kaam karta hai, warna saaf error |
+
 ## Endpoints (sab `/v1/code/*`, sab API key chahiye)
 
 | Endpoint | Kya karta hai | Cursor equivalent |
 |---|---|---|
 | `POST /index` | repo walk + AST symbol extraction, disk par index | Codebase indexing |
+| `GET /tree` | editor ka file tree | file explorer |
+| `GET /read` | file content | open file |
+| `POST /write` | editor buffer save (default dry-run, `.bak`) | save file |
 | `GET /search?q=` | symbol + filename + text search, ranked, snippets ke saath | `@codebase` search |
 | `POST /outline` | file ke classes/functions/imports line numbers ke saath | file structure view |
 | `POST /diff` | find/replace ka unified diff — **kuch likhta nahi** | inline edit preview |

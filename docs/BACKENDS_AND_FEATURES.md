@@ -79,7 +79,13 @@ Real HTTP upload (`multipart`) → asset → task:
 - **Fixed:** `gemini-2.0-flash` default dead tha (Google ne June 2026 me band kiya) → ab
   `gemini-3.8-flash`.
 
-## 3.6 Naya: code assistant (Cursor-style, zero keys)
+## 3.6 Naya: AI editor + code assistant (zero keys)
+
+**`GET /editor`** — backend-served poora code editor (21 KB single HTML, zero CDN/npm):
+file tree, line numbers, Ctrl+S save with `.bak`, outline jump, static review, test
+scaffold, plan, coloured diff, aur optional local-model chat.
+
+## 3.7 Code assistant (Cursor-style, zero keys)
 
 `/v1/code/*` — index (252 files / 1,203 symbols in 246 ms), search, outline, diff,
 safe apply (dry-run + `.bak`), static review, test scaffolding, commit-message draft,

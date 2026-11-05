@@ -11,7 +11,7 @@ from typing import Any, Literal
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from .code_assistant import CodeAssistantError, apply_edit, build_index, commit_message
+from .code_assistant import CodeAssistantError, apply_edit, build_index, commit_message, read_file, tree, write_file
 from .code_assistant import outline as file_outline
 from .code_assistant import plan as build_plan
 from .code_assistant import propose_edit, review as run_review
@@ -45,6 +45,12 @@ class ReviewRequest(BaseModel):
     paths: list[str] | None = Field(default=None, max_length=200)
 
 
+class WriteRequest(BaseModel):
+    path: str = Field(min_length=1, max_length=400)
+    content: str = Field(default="", max_length=400_000)
+    dry_run: bool = Field(default=True, description="False actually saves the file")
+
+
 class PlanRequest(BaseModel):
     goal: str = Field(min_length=3, max_length=500)
 
@@ -74,6 +80,39 @@ def code_search(
 
     try:
         return search_code(q, kind=kind, limit=limit, path_prefix=path_prefix)
+    except CodeAssistantError as exc:
+        raise _guard(exc)
+
+
+@router.get("/tree")
+def code_tree(
+    prefix: str | None = Query(default=None, max_length=200),
+    max_entries: int = Query(default=3000, ge=1, le=10_000),
+) -> dict[str, Any]:
+    """File tree for the editor, derived from the index."""
+
+    try:
+        return tree(prefix=prefix, max_entries=max_entries)
+    except CodeAssistantError as exc:
+        raise _guard(exc)
+
+
+@router.get("/read")
+def code_read(path: str = Query(min_length=1, max_length=400)) -> dict[str, Any]:
+    """Full file content for the editor pane."""
+
+    try:
+        return read_file(path)
+    except CodeAssistantError as exc:
+        raise _guard(exc)
+
+
+@router.post("/write")
+def code_write(request: WriteRequest) -> dict[str, Any]:
+    """Save an editor buffer. Dry-run by default; keeps a .bak when writing."""
+
+    try:
+        return write_file(request.path, request.content, dry_run=request.dry_run)
     except CodeAssistantError as exc:
         raise _guard(exc)
 

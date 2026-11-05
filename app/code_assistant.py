@@ -593,3 +593,109 @@ def plan(goal: str, max_steps: int = 6) -> dict[str, Any]:
             "search, diff, apply, tests and review."
         ),
     }
+
+
+# --------------------------------------------------------------------------- #
+# Tree / read / write — what an editor needs beyond the read-only helpers
+# --------------------------------------------------------------------------- #
+def _safe_target(relative: str, must_exist: bool = True) -> Path:
+    """Like safe_path(), but can also address a file that does not exist yet."""
+
+    cleaned = relative.strip().lstrip("/")
+    if not cleaned:
+        raise CodeAssistantError("path is required")
+    candidate = (REPO_ROOT / cleaned).resolve()
+    if REPO_ROOT not in candidate.parents:
+        raise CodeAssistantError("path escapes the repository")
+    if any(part in SKIP_DIRS for part in candidate.relative_to(REPO_ROOT).parts):
+        raise CodeAssistantError("path is inside an ignored directory")
+    if must_exist and not candidate.is_file():
+        raise CodeAssistantError(f"not a file: {relative}")
+    if candidate.exists() and not _is_text(candidate):
+        raise CodeAssistantError("file is not text")
+    return candidate
+
+
+def tree(prefix: str | None = None, max_entries: int = 3000) -> dict[str, Any]:
+    """Flat directory listing derived from the index — enough for a file tree."""
+
+    index = ensure_index()
+    dirs: dict[str, int] = {}
+    files: list[dict[str, Any]] = []
+    wanted = (prefix or "").strip("/")
+
+    for entry in index["files"]:
+        path = entry["path"]
+        if wanted and not path.startswith(wanted):
+            continue
+        parent = str(Path(path).parent).replace(os.sep, "/")
+        if parent == ".":
+            parent = ""
+        dirs[parent] = dirs.get(parent, 0) + 1
+        files.append({"path": path, "language": entry["language"], "lines": entry["lines"]})
+        if len(files) >= max_entries:
+            break
+
+    return {
+        "prefix": wanted or ".",
+        "total_files": len(files),
+        "directories": dict(sorted(dirs.items())),
+        "files": sorted(files, key=lambda item: item["path"]),
+        "indexed_at": index.get("built_at"),
+    }
+
+
+def read_file(relative: str) -> dict[str, Any]:
+    path = _safe_target(relative)
+    source = _read_text(path)
+    return {
+        "path": _rel(path),
+        "language": path.suffix.lstrip(".") or "text",
+        "lines": source.count("\n") + 1,
+        "content": source,
+        "editable": path.stat().st_size <= MAX_FILE_BYTES,
+    }
+
+
+def write_file(relative: str, content: str, dry_run: bool = True) -> dict[str, Any]:
+    """Save an editor buffer. Dry-run by default; always keeps a .bak of the old file."""
+
+    if len(content.encode("utf-8")) > MAX_FILE_BYTES:
+        raise CodeAssistantError("content is too large to save safely")
+
+    path = _safe_target(relative, must_exist=False)
+    existed = path.is_file()
+    previous = path.read_text(encoding="utf-8") if existed else ""
+
+    import difflib
+
+    diff = "".join(difflib.unified_diff(
+        previous.splitlines(keepends=True),
+        content.splitlines(keepends=True),
+        fromfile=f"a/{_rel(path)}", tofile=f"b/{_rel(path)}",
+    ))
+    result = {
+        "path": _rel(path),
+        "created": not existed,
+        "changed": previous != content,
+        "added_lines": sum(1 for line in diff.splitlines() if line.startswith("+") and not line.startswith("+++")),
+        "removed_lines": sum(1 for line in diff.splitlines() if line.startswith("-") and not line.startswith("---")),
+        "diff": diff,
+        "applied": False,
+    }
+    if dry_run or not result["changed"]:
+        result["reason"] = "dry_run" if dry_run else "no_change"
+        return result
+
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if existed:
+            backup = path.with_suffix(path.suffix + ".bak")
+            backup.write_text(previous, encoding="utf-8")
+            result["backup"] = _rel(backup)
+        path.write_text(content, encoding="utf-8")
+    except OSError as exc:
+        raise CodeAssistantError(f"could not write file: {exc}") from exc
+
+    result["applied"] = True
+    return result
