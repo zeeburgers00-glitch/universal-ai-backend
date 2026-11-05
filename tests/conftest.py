@@ -21,8 +21,12 @@ def isolated_data_root():
     previous = os.environ.get("UAI_DATA_ROOT")
     path = Path(tempfile.mkdtemp(prefix="uai-tests-"))
     os.environ["UAI_DATA_ROOT"] = str(path)
+    # Tests fire thousands of requests from one client id; the limiter is tested
+    # explicitly in tests/test_observability.py instead of tripping here.
+    os.environ["UAI_RATE_LIMIT"] = "0"
     yield path
     if previous is None:
         os.environ.pop("UAI_DATA_ROOT", None)
     else:
         os.environ["UAI_DATA_ROOT"] = previous
+    os.environ.pop("UAI_RATE_LIMIT", None)

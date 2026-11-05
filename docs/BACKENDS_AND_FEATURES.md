@@ -79,6 +79,11 @@ Real HTTP upload (`multipart`) → asset → task:
 - **Fixed:** `gemini-2.0-flash` default dead tha (Google ne June 2026 me band kiya) → ab
   `gemini-3.8-flash`.
 
+## 3.4b Naya: metrics + rate limiting
+
+`/metrics` (Prometheus text) + per-key sliding-window rate limit (default 600/min, `/health`
+aur `/metrics` exempt). Koi external service nahi. Detail: `docs/OBSERVABILITY.md`.
+
 ## 3.5a Naya: job queue (SQLite, Redis ke bina)
 
 `/v1/jobs/*` — durable async jobs (video ops built-in). Redis ki zarurat khatam, restart ke

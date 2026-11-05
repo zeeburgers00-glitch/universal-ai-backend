@@ -1,5 +1,6 @@
 import json
 import os
+import time
 import httpx
 import re
 from functools import lru_cache
@@ -7,7 +8,7 @@ from pathlib import Path
 from typing import Any, Literal
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from pydantic import BaseModel, Field
@@ -25,7 +26,7 @@ from .editor_assets import EDITOR_HTML
 from .explorer_ui import EXPLORER_HTML
 from .studio_ui import STUDIO_HTML
 from .github_discovery import list_discovery_presets, search_github_repositories
-from . import ai_router, github_registry, model_catalog, quota
+from . import ai_router, github_registry, model_catalog, obs, quota
 from .providers import chat_with_provider, provider_status
 from .pexels import search_pexels_videos
 from .metricool import metricool_request, metricool_status, schedule_youtube_video
@@ -78,6 +79,44 @@ app.include_router(finance_ledger_router)
 app.include_router(business_hub_router)
 app.include_router(client_campaign_router)
 app.include_router(command_center_router)
+# --- observability & rate limiting (no external services) ---------------------
+@app.middleware("http")
+async def observe_requests(request: Request, call_next):
+    client_id = request.headers.get("x-api-key") or (request.client.host if request.client else "anonymous")
+    if request.url.path not in {"/metrics", "/health"}:
+        allowed, remaining, retry_after = obs.check_rate_limit(client_id)
+        if not allowed:
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "rate limit exceeded", "retry_after": retry_after},
+                headers={"Retry-After": str(int(retry_after) + 1)},
+            )
+    obs.track_inflight(1)
+    started = time.perf_counter()
+    status = 500
+    try:
+        response = await call_next(request)
+        status = response.status_code
+        return response
+    finally:
+        obs.track_inflight(-1)
+        obs.observe(request.method, request.url.path, status, time.perf_counter() - started)
+
+
+@app.get("/metrics", response_class=Response)
+def metrics():
+    """Prometheus scrape endpoint (text format). No secrets in here."""
+
+    return Response(content=obs.prometheus(), media_type="text/plain; version=0.0.4")
+
+
+@app.get("/v1/observability/summary")
+def observability_summary(_key: str = Depends(require_api_key)):
+    """Human-readable version of the metrics, for the studio page."""
+
+    return obs.snapshot()
+
+
 app.include_router(ai_router_router)
 app.include_router(code_router)
 app.include_router(video_router)
