@@ -111,6 +111,9 @@ cd "$COMPOSE_DIR"
 say "Building images (first run takes a few minutes on a free-tier CPU)"
 docker compose build --pull
 
+# Prepare the SQLite runtime directory on the bind mount with the API image's non-root owner.
+docker compose run --rm --no-deps --user root api sh -c 'mkdir -p /data/agent-runtime && chown app:app /data/agent-runtime'
+
 say "Starting the stack"
 docker compose up -d
 
