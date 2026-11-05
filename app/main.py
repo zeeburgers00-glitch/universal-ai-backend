@@ -44,6 +44,7 @@ from .ai_router import router as ai_router_router
 from .code_routes import router as code_router
 from .video_routes import router as video_router
 from .job_routes import router as job_router
+from .data_routes import router as data_router
 from . import sdk as sdk_generator
 from .vault import (
     delete_runtime_secret,
@@ -121,6 +122,7 @@ app.include_router(ai_router_router)
 app.include_router(code_router)
 app.include_router(video_router)
 app.include_router(job_router)
+app.include_router(data_router)
 
 origins = [x.strip() for x in os.getenv("CORS_ORIGINS", "").split(",") if x.strip()]
 origin_regex = (os.getenv("CORS_ORIGIN_REGEX") or "").strip() or None

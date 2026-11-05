@@ -79,6 +79,11 @@ Real HTTP upload (`multipart`) → asset → task:
 - **Fixed:** `gemini-2.0-flash` default dead tha (Google ne June 2026 me band kiya) → ab
   `gemini-3.8-flash`.
 
+## 3.4a Naya: backup / restore
+
+`/v1/data/manifest|backup|backups|restore|verify|download` — poora data dir ek tar.gz me,
+restore se pehle auto-snapshot, path-traversal wale archives refuse. Detail: `docs/DATA_BACKUP.md`.
+
 ## 3.4b Naya: metrics + rate limiting
 
 `/metrics` (Prometheus text) + per-key sliding-window rate limit (default 600/min, `/health`
