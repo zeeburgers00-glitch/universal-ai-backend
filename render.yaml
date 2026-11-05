@@ -1,22 +1,42 @@
+# Render Blueprint — https://dashboard.render.com/blueprint/new
+#
+# Ek service, Docker se (ffmpeg + DejaVu fonts image ke andar aate hain, isliye video
+# renders Render par chalte hain — Vercel ke 60s lambda limit ke barkhilaf).
 services:
   - type: web
     name: universal-ai-backend
-    runtime: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /health
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health/deep
+    autoDeploy: true
+    # Free plan: no persistent disk. SQLite queue + quota state redeploy par reset ho jate
+    # hain. Persistent chahiye to plan: starter karo aur neeche wala disk block uncomment.
+    plan: free
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.9
       - key: BACKEND_API_KEY
-        generateValue: true
-      - key: CORS_ORIGINS
+        generateValue: true          # Render khud random secret banata hai
+      - key: UAI_DATA_ROOT
+        value: /data
+      - key: UAI_MEDIA_ROOTS
+        value: /data
+      - key: UAI_JOBS_CONCURRENCY
+        value: "2"
+      - key: UAI_JOBS_MAX_ATTEMPTS
+        value: "2"
+      - key: UAI_RATE_LIMIT
+        value: "600"
+      - key: UAI_REQUIRE_APPROVAL
+        value: "0"
+      # PORT is injected by Render; the Dockerfile's CMD honours it (${PORT:-8000}).
+      # Optional model keys — app inke bina bhi chalta hai (honest errors deta hai).
+      - key: GROQ_API_KEY
         sync: false
-      - key: SUPABASE_URL
+      - key: GEMINI_API_KEY
         sync: false
-      - key: SUPABASE_SERVICE_ROLE_KEY
+      - key: OLLAMA_BASE_URL
         sync: false
-      - key: AI_BASE_URL
-        sync: false
-      - key: AI_API_KEY
-        sync: false
+    # disk:
+    #   name: uai-data
+    #   mountPath: /data
+    #   sizeGB: 1

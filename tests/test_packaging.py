@@ -55,6 +55,23 @@ def test_makefile_sdk_hits_a_real_route():
     assert "/v1/sdk" in app.openapi()["paths"]
 
 
+def test_render_blueprint_is_deployable():
+    config = yaml.safe_load((REPO / "render.yaml").read_text(encoding="utf-8"))
+    service = config["services"][0]
+    assert service["runtime"] == "docker"
+    assert service["dockerfilePath"] == "./Dockerfile"
+    assert service["healthCheckPath"] == "/health/deep", "probe must catch a broken volume/queue"
+    assert service["autoDeploy"] is True
+    keys = {entry["key"] for entry in service["envVars"]}
+    assert {"BACKEND_API_KEY", "UAI_DATA_ROOT", "UAI_JOBS_CONCURRENCY"} <= keys
+    assert any(entry.get("generateValue") for entry in service["envVars"]), "no secret pasted by hand"
+    assert "PORT" not in keys, "Render injects PORT; overriding it breaks the health check"
+
+
+def test_render_health_path_exists_in_the_app():
+    assert "/health/deep" in PATHS
+
+
 def test_dockerfile_runs_as_non_root():
     dockerfile = (REPO / "Dockerfile").read_text(encoding="utf-8")
     assert "USER app" in dockerfile
