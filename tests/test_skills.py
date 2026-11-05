@@ -328,3 +328,29 @@ def test_http_catalogue_stats_list_and_search():
             os.environ.pop("BACKEND_API_KEY", None)
         else:
             os.environ["BACKEND_API_KEY"] = previous
+
+
+# --- from JARVIS ---------------------------------------------------------------
+
+def test_jarvis_runs_a_skill_by_id():
+    from app import jarvis
+
+    answer = jarvis.chat('skill text.stats.inline text="a b c"')
+    assert '"words": 3' in answer["reply"]
+    assert answer["intent"] == "skill:text.stats.inline"
+
+
+def test_jarvis_resolves_a_skill_sentence_to_an_id():
+    from app import jarvis
+
+    answer = jarvis.chat("skill convert video to webm path=/nonexistent.mp4")
+    reply = answer["reply"]
+    assert "media.video.convert.mp4-to-webm-vp9" in reply
+    assert "nahi chala" in reply  # honest refusal, not a fabricated file
+
+
+def test_jarvis_reports_the_skill_count_when_asked():
+    from app import jarvis
+
+    reply = jarvis.chat("kitne skills hain?")["reply"]
+    assert "registered" in reply and "native" in reply

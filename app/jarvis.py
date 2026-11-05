@@ -453,7 +453,9 @@ SKILL_CMD = re.compile(
 )
 CAPABILITY_RE = re.compile(
     r"\b(tools?\s*(list|batao|dikhao|kaunse|kitne)|kitne tools|capabilit|kya kya kar sakta|"
-    r"what can you do|toolbelt|tool belt|saare tools)\b",
+    r"what can you do|toolbelt|tool belt|saare tools|"
+    r"kitni skills|kitne skills|skills? (list|count|batao|dikhao|kaunsi|kitni)|"
+    r"how many skills)\b",
     re.IGNORECASE,
 )
 
@@ -507,6 +509,7 @@ def _skill_command(message: str) -> dict[str, Any] | None:
     import shlex
 
     skill_id, rest = match.group(1), match.group(2) or ""
+    phrase = " ".join(token for token in rest.split() if "=" not in token)
     args: dict[str, Any] = {}
     try:
         tokens = shlex.split(rest)
@@ -524,11 +527,21 @@ def _skill_command(message: str) -> dict[str, Any] | None:
         elif re.fullmatch(r"-?\d*\.\d+", raw):
             value = float(raw)
         args[key.strip()] = value
-    return {"skill": skill_id, "args": args}
+    return {"skill": skill_id, "args": args, "phrase": phrase}
 
 
-def _skill_chat(skill_id: str, args: dict[str, Any]) -> dict[str, Any]:
+def _skill_chat(skill_id: str, args: dict[str, Any], phrase: str = "") -> dict[str, Any]:
     from . import skill_runners, skills
+
+    note = ""
+    try:
+        skills.get(skill_id)
+    except KeyError:
+        # "skill mp4 to webm path=clip.mp4" is a sentence, not an id — resolve it.
+        hits = skills.search(f"{skill_id} {phrase}".strip(), limit=1)["results"]
+        if hits and float(hits[0].get("score") or 0) >= 5:
+            note = f"{skill_id} → {hits[0]['id']} — "
+            skill_id = hits[0]["id"]
 
     try:
         run = skills.run(skill_id, args)
@@ -545,7 +558,7 @@ def _skill_chat(skill_id: str, args: dict[str, Any]) -> dict[str, Any]:
     preview = json.dumps(body, ensure_ascii=False)
     if len(preview) > 500:
         preview = preview[:500] + "…"
-    return {"ok": True, "reply": f"{skill_id}: done — {preview}", "result": body,
+    return {"ok": True, "reply": f"{note}{skill_id}: done — {preview}", "result": body,
             "elapsed_ms": run.get("elapsed_ms")}
 
 
@@ -669,7 +682,8 @@ def chat(message: str, session: str = "default", dry_run: bool = False) -> dict[
 
     skill_request = _skill_command(message)
     if skill_request:
-        outcome = _skill_chat(skill_request["skill"], skill_request["args"])
+        outcome = _skill_chat(skill_request["skill"], skill_request["args"],
+                              skill_request.get("phrase", ""))
         action = {"agent": f"skill:{skill_request['skill']}", "input": skill_request["args"],
                   "ok": bool(outcome.get("ok")), "result": outcome.get("result") or {},
                   **({} if outcome.get("ok") else {"error": outcome.get("error")})}
