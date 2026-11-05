@@ -82,7 +82,13 @@ def resolve_input(path: str) -> Path:
         raise VideoToolError("path is required")
     candidate = Path(path).expanduser()
     if not candidate.is_absolute():
-        candidate = (REPO_ROOT / candidate)
+        # Relative paths are tried against the repo first, then every allowed root,
+        # so "renders/talk.mp4" works no matter which volume it lives on.
+        attempts = [REPO_ROOT / candidate] + [root / candidate for root in _roots()]
+        candidate = next(
+            (attempt.resolve() for attempt in attempts if attempt.is_file()),
+            (REPO_ROOT / candidate).resolve(),
+        )
     candidate = candidate.resolve()
 
     allowed = any(candidate == root or root in candidate.parents for root in _roots())

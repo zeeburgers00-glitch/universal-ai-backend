@@ -46,6 +46,7 @@ def data_root(monkeypatch, tmp_path, media_dir):
     # Generated media lives in pytest's temp dir, so declare it as a media root —
     # the same mechanism a deployment uses for a mounted volume.
     monkeypatch.setenv("UAI_MEDIA_ROOTS", str(media_dir))
+    return tmp_path / "data"
 
 
 # --- probe --------------------------------------------------------------------
@@ -178,3 +179,13 @@ def test_video_route_reports_bad_paths_as_400(monkeypatch):
             json={"path": "/etc/hostname"},
         )
     assert response.status_code == 400
+
+
+def test_relative_paths_fall_back_to_the_data_root(data_root, media_dir):
+    """A render on the mounted volume should be addressable as just its filename."""
+
+    data_root.mkdir(parents=True, exist_ok=True)
+    target = data_root / "volume_clip.mp4"
+    shutil.copyfile(media_dir / "talking.mp4", target)
+    resolved = video_tools.resolve_input("volume_clip.mp4")
+    assert resolved == target.resolve()
