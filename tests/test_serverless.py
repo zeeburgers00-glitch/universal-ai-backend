@@ -53,18 +53,19 @@ def test_entry_point_disables_background_workers(monkeypatch, tmp_path):
     assert os.environ["UAI_JOBS_DISABLE"] == "1", "serverless has no long-lived worker"
 
 
-def test_vercel_json_builds_the_python_entry():
+def test_vercel_json_targets_the_python_entry():
     config = json.loads((REPO / "vercel.json").read_text(encoding="utf-8"))
-    assert config["builds"][0]["src"] == "api/index.py"
-    assert config["builds"][0]["use"] == "@vercel/python"
-    assert config["routes"][0]["dest"] == "api/index.py"
+    # Modern zero-config Python: Vercel detects api/index.py, we only set limits + routing.
+    assert "api/index.py" in config["functions"]
     assert config["functions"]["api/index.py"]["maxDuration"] >= 30
+    assert "builds" not in config, "builds and functions are mutually exclusive on Vercel"
 
 
 def test_every_route_goes_to_the_function():
     config = json.loads((REPO / "vercel.json").read_text(encoding="utf-8"))
-    sources = [route["src"] for route in config["routes"]]
-    assert "/(.*)" in sources, "the catch-all must come after static builds are considered"
+    rewrites = config["rewrites"]
+    assert any(rule["destination"] == "/api/index.py" for rule in rewrites)
+    assert any(rule["source"] == "/(.*)" for rule in rewrites), "catch-all keeps every route on the app"
 
 
 def test_runtime_requirements_are_complete_and_bounded():
