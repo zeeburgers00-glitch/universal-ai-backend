@@ -11,6 +11,10 @@ Files:
 | `deploy/kaggle/JARVIS_kaggle.ipynb` | the same thing as a notebook you can open and run |
 | `deploy/kaggle/README.md` | trade-offs table, Ollama-on-GPU variant, cost notes |
 
+**API key se kya hota hai:** `docs/KAGGLE_API_LIMITS.md` — short version: key batch kernels
+chala sakti hai (`/v1/kaggle/*`), live endpoint nahi khol sakti. Wo notebook yahan se
+manually start hota hai, tabhi tunnel URL milta hai.
+
 ## Five minutes, start to finish
 
 1. Kaggle → **Create → Notebook** → File → Import → `JARVIS_kaggle.ipynb` (or paste the
