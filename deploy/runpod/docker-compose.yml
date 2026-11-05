@@ -45,6 +45,11 @@ services:
 
   voice_worker:
     <<: *common
+    # Pull a prebuilt CUDA image instead of compiling PyTorch on a paid pod:
+    #   VOICE_WORKER_IMAGE=ghcr.io/<owner>/universal-ai-voice-worker:latest
+    # then: docker compose up -d --no-build
+    # The image is published by .github/workflows/voice-worker-image.yml.
+    image: ${VOICE_WORKER_IMAGE:-universal-ai-voice-worker:local}
     build:
       context: ../../workers/voice_worker
       dockerfile: Dockerfile
