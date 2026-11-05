@@ -29,6 +29,19 @@ Vercel is serverless. It cannot run this half of the product, at any price:
 **Conclusion: the control plane belongs on Vercel. The workers need a GPU host.**
 Trying to force workers onto Vercel is a dead end, not a config problem.
 
+## 2b. Three ways to host the control plane
+
+| Option | Cost | Where | Config |
+|---|---|---|---|
+| Vercel (current) | free tier | serverless | live today |
+| **Free CPU VM** | **$0 forever** | Oracle Cloud Always Free ARM | `deploy/cpu-free/` |
+| GPU pod, everything | ~$0.35-0.70/hr | RunPod | `deploy/runpod/` |
+
+Only `workers/voice_worker` needs a GPU; every other worker is plain
+`python:3.x-slim` and builds on ARM64 unchanged. So the free CPU VM serves the
+API, the Studio UI and 6 of 7 workers, and `/v1/voice/*` honestly reports
+`not configured` until a GPU host is wired in.
+
 ## 3. Correct topology
 
 ```

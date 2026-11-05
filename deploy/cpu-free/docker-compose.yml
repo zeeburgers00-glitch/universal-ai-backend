@@ -1,0 +1,134 @@
+name: universal-ai-backend-cpu
+
+# Free-tier CPU stack: API + Redis + 6 worker services.
+#
+# Runs on the Oracle Cloud Always Free ARM Ampere instance (or any 2-4 vCPU /
+# 12-24 GB box) for $0/month, 24/7.
+#
+# WHY voice_worker IS ABSENT
+#   workers/voice_worker is the only image built on
+#   pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime. It needs a real NVIDIA GPU and
+#   cannot run here. GET /v1/voice/* will answer 503 "voice worker is not
+#   configured" -- honest, not broken. To enable voice later, point
+#   VOICE_WORKER_URL at a remote GPU host; see README.md.
+#
+# WHY network_mode: host
+#   app/task_gateway.py (_worker_config) only accepts plain-HTTP worker URLs
+#   when the host is 127.0.0.1 or localhost. On a single VM, host networking
+#   gives every worker a real loopback port and satisfies that check.
+#
+# Only port 8000 should be reachable from the internet. Worker ports stay on
+# loopback and still require their Bearer keys.
+
+x-common: &common
+  restart: unless-stopped
+  network_mode: host
+  env_file:
+    - .env
+
+services:
+  redis:
+    <<: *common
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}"]
+    volumes:
+      - ${DATA_DIR:-/opt/universal-ai-backend/data}/redis:/data
+    mem_limit: 256m
+
+  api:
+    <<: *common
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    environment:
+      PORT: "8000"
+      WORKER_ALLOW_INSECURE_HTTP: "true"
+    volumes:
+      - ${DATA_DIR:-/opt/universal-ai-backend/data}:/data
+    depends_on:
+      - redis
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4)"]
+      interval: 30s
+      timeout: 6s
+      retries: 5
+      start_period: 45s
+
+  youtube_worker:
+    <<: *common
+    build:
+      context: ../../workers/youtube_worker
+      dockerfile: Dockerfile
+    environment:
+      YOUTUBE_WORKER_API_KEY: ${YOUTUBE_WORKER_API_KEY:?set in .env}
+    volumes:
+      - ${DATA_DIR:-/opt/universal-ai-backend/data}:/data
+    depends_on:
+      - redis
+    mem_limit: 512m
+
+  channel_worker:
+    <<: *common
+    build:
+      context: ../../workers/channel_worker
+      dockerfile: Dockerfile
+    environment:
+      CHANNEL_WORKER_API_KEY: ${CHANNEL_WORKER_API_KEY:?set in .env}
+    volumes:
+      - ${DATA_DIR:-/opt/universal-ai-backend/data}:/data
+    depends_on:
+      - redis
+    mem_limit: 384m
+
+  media_worker:
+    <<: *common
+    build:
+      context: ../../workers/media_worker
+      dockerfile: Dockerfile
+    environment:
+      MEDIA_WORKER_API_KEY: ${MEDIA_WORKER_API_KEY:?set in .env}
+    volumes:
+      - ${DATA_DIR:-/opt/universal-ai-backend/data}:/data
+    depends_on:
+      - redis
+    mem_limit: 768m
+
+  agent_worker:
+    <<: *common
+    build:
+      context: ../../workers/agent_worker
+      dockerfile: Dockerfile
+    environment:
+      AGENT_WORKER_API_KEY: ${AGENT_WORKER_API_KEY:?set in .env}
+    volumes:
+      - ${DATA_DIR:-/opt/universal-ai-backend/data}:/data
+    depends_on:
+      - redis
+    mem_limit: 512m
+
+  automation_worker:
+    <<: *common
+    build:
+      context: ../../workers/automation_worker
+      dockerfile: Dockerfile
+    environment:
+      AUTOMATION_WORKER_API_KEY: ${AUTOMATION_WORKER_API_KEY:?set in .env}
+    volumes:
+      - ${DATA_DIR:-/opt/universal-ai-backend/data}:/data
+    depends_on:
+      - redis
+    mem_limit: 512m
+
+  rea_worker:
+    <<: *common
+    build:
+      context: ../../workers/rea_worker
+      dockerfile: Dockerfile
+    environment:
+      REA_WORKER_API_KEY: ${REA_WORKER_API_KEY:?set in .env}
+    volumes:
+      - ${DATA_DIR:-/opt/universal-ai-backend/data}:/data
+    depends_on:
+      - redis
+    mem_limit: 512m
