@@ -21,6 +21,7 @@ from typing import Any
 import httpx
 from fastapi import APIRouter, Depends
 
+from . import quota
 from .security import require_api_key
 from .vault import get_secret, get_secret_source
 
@@ -42,6 +43,9 @@ class Provider:
     base: str | None = None
     base_env: str | None = None
     note: str = ""
+    local: bool = False          # runs on this machine: no key, no quota
+    free_tier: bool = True       # provider serves some models without billing
+    keys_env: str | None = None  # comma-separated keyring, rotated in order
 
 
 PROVIDERS: dict[str, Provider] = {
@@ -68,6 +72,16 @@ PROVIDERS: dict[str, Provider] = {
                          note="Base URL unknown — set HACKERAI_BASE_URL."),
     "custom": Provider("custom", "Custom OpenAI-compatible", "AI_API_KEY", "AI_DEFAULT_MODEL",
                        "", base_env="AI_BASE_URL"),
+    # --- free + unlimited: your own machine ---------------------------------
+    "ollama": Provider("ollama", "Ollama (local)", "OLLAMA_API_KEY", "OLLAMA_DEFAULT_MODEL",
+                       "llama3.1", "http://127.0.0.1:11434/v1", base_env="OLLAMA_BASE_URL", local=True, free_tier=True,
+                       note="Local model server: no key, no daily limit, no data leaves the box."),
+    "lmstudio": Provider("lmstudio", "LM Studio (local)", "LMSTUDIO_API_KEY", "LMSTUDIO_DEFAULT_MODEL",
+                         "local-model", "http://127.0.0.1:1234/v1", base_env="LMSTUDIO_BASE_URL", local=True, free_tier=True,
+                         note="Local OpenAI-compatible server."),
+    "llamacpp": Provider("llamacpp", "llama.cpp server (local)", "LLAMACPP_API_KEY", "LLAMACPP_DEFAULT_MODEL",
+                         "local-model", "http://127.0.0.1:8080/v1", base_env="LLAMACPP_BASE_URL", local=True, free_tier=True,
+                         note="llama-server default port."),
 }
 
 
@@ -96,21 +110,61 @@ def _base_url(spec: Provider) -> str:
     return (from_env or spec.base or "").strip().rstrip("/")
 
 
+def _loopback_allowed(spec: Provider) -> bool:
+    """http:// is only acceptable for a model server on this machine."""
+
+    return spec.local or (os.getenv("AI_ALLOW_LOCAL_BASE") or "").strip().lower() in {"1", "true", "yes"}
+
+
+def _keys(spec: Provider) -> list[str]:
+    """Keyring: ``GROQ_API_KEYS=a,b,c`` rotates; ``GROQ_API_KEY`` is the single-key form."""
+
+    raw = ""
+    ring_env = spec.keys_env or (
+        f"{spec.key_env[:-4]}_KEYS" if spec.key_env.endswith("_KEY") else None
+    )
+    if ring_env:
+        raw = (os.getenv(ring_env) or "").strip()
+    if not raw:
+        raw = (get_secret(spec.key_env) or "").strip()
+    keys = [part.strip() for part in raw.replace("\n", ",").split(",") if part.strip()]
+    if not keys and spec.local:
+        keys = ["local"]  # local servers ignore the bearer token
+    return keys
+
+
 def resolve(provider_id: str) -> Route | None:
-    """A provider is usable only with a key, a model and an HTTPS base URL."""
+    """First usable route for a provider (kept for backwards compatibility)."""
+
+    routes = resolve_all(provider_id)
+    return routes[0] if routes else None
+
+
+def resolve_all(provider_id: str) -> list[Route]:
+    """Every usable route for a provider — one per key in the keyring."""
+
     spec = PROVIDERS.get(provider_id)
     if spec is None:
-        return None
-    key = (get_secret(spec.key_env) or "").strip()
-    if not key:
-        return None
+        return []
+    keys = _keys(spec)
+    if not keys:
+        return []
     base = _base_url(spec)
-    if not base.startswith("https://"):
-        return None
+    secure = base.startswith("https://")
+    if not secure and not (_loopback_allowed(spec) and _is_loopback(base)):
+        return []
     model = ((os.getenv(spec.model_env) or "").strip() or spec.default_model).strip()
     if not model:
-        return None
-    return Route(spec.id, spec.label, base, key, model, spec.key_env, get_secret_source(spec.key_env))
+        return []
+    source = get_secret_source(spec.key_env) if not spec.local else "local"
+    return [
+        Route(spec.id, spec.label, base, key, model, spec.key_env, source)
+        for key in keys
+    ]
+
+
+def _is_loopback(base: str) -> bool:
+    return any(host in base for host in ("127.0.0.1", "localhost", "[::1]"))
 
 
 def order() -> list[str]:
@@ -122,7 +176,73 @@ def order() -> list[str]:
 
 
 def chain() -> list[Route]:
-    return [route for route in (resolve(pid) for pid in order()) if route is not None]
+    """Routes in preference order, skipping providers whose free quota is spent.
+
+    If every configured provider looks exhausted (local counters are estimates),
+    the chain falls back to including them rather than refusing to work.
+    """
+
+    usable: list[Route] = []
+    exhausted: list[Route] = []
+    for pid in order():
+        routes = resolve_all(pid)
+        if not routes:
+            continue
+        if quota.available(pid):
+            usable.extend(routes)
+        else:
+            exhausted.extend(routes)
+    return usable or exhausted
+
+
+def _probe(base: str, timeout: float = 0.8) -> bool:
+    """Cheap TCP check: is a local model server actually listening?"""
+
+    import socket
+    from urllib.parse import urlparse
+
+    parsed = urlparse(base)
+    host = parsed.hostname or "127.0.0.1"
+    port = parsed.port or (443 if parsed.scheme == "https" else 80)
+    try:
+        with socket.create_connection((host, port), timeout=timeout):
+            return True
+    except OSError:
+        return False
+
+
+def free_status(probe: bool = False) -> dict[str, Any]:
+    """Which providers are configured, how many keys, and how much free room is left."""
+
+    rows = []
+    for pid, spec in PROVIDERS.items():
+        routes = resolve_all(pid)
+        rows.append({
+            "provider": pid,
+            "label": spec.label,
+            "configured": bool(routes),
+            "keys": len(routes),
+            "local": spec.local,
+            "unlimited": quota.cap_for(pid) <= 0 and bool(routes),
+            "daily_cap": quota.cap_for(pid),
+            "remaining_today": quota.remaining(pid),
+            "exhausted": not quota.available(pid),
+            "model": routes[0].model if routes else None,
+            "note": spec.note,
+        })
+        if probe and spec.local:
+            rows[-1]["running"] = bool(routes) and _probe(routes[0].base)
+    rows.sort(key=lambda row: (not row["configured"], row["daily_cap"] == 0, row["provider"]))
+    return {
+        "quota": quota.status(),
+        "providers": rows,
+        "unlimited_options": [row["provider"] for row in rows if row["unlimited"]],
+        "local_running": [r["provider"] for r in rows if r.get("running")] if probe else None,
+        "advice": (
+            "For genuinely unlimited free usage run a local server (Ollama/LM Studio) and set "
+            "AI_PROVIDER_ORDER=ollama,groq,gemini. Managed free tiers always have daily caps."
+        ),
+    }
 
 
 def _endpoint(route: Route) -> str:
@@ -141,7 +261,8 @@ def complete(
     routes = chain()
     if not routes:
         raise RuntimeError(
-            "No model provider is configured. Add a key (Groq, Gemini, Mistral, Z.AI, "
+            "No model provider is configured. Either run a local model server "
+            "(ollama serve → AI_PROVIDER_ORDER=ollama) or add a key (Groq, Gemini, Mistral, Z.AI, "
             "OpenRouter, Hugging Face…) in .env or via POST /v1/vault/secrets."
         )
 
@@ -164,14 +285,18 @@ def complete(
                     },
                 )
             if response.status_code >= 400:
-                attempts.append({"provider": route.id, "error": f"HTTP {response.status_code}"})
+                status = "429" if response.status_code == 429 else f"HTTP {response.status_code}"
+                quota.record(route.id, status)
+                attempts.append({"provider": route.id, "error": status})
                 continue
             payload = response.json()
             choices = payload.get("choices") or []
             text = str((choices[0].get("message") or {}).get("content") or "").strip() if choices else ""
             if not text:
+                quota.record(route.id, "empty")
                 attempts.append({"provider": route.id, "error": "empty response"})
                 continue
+            quota.record(route.id, "ok")
             return {
                 "text": text,
                 "provider": route.id,
@@ -180,6 +305,7 @@ def complete(
                 "elapsed_ms": int((time.time() - started) * 1000),
             }
         except Exception as exc:  # network, DNS, timeout, bad JSON
+            quota.record(route.id, "error")
             attempts.append({"provider": route.id, "error": type(exc).__name__})
             continue
 

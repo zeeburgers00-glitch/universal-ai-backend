@@ -24,7 +24,7 @@ from .builtin_workers import builtin_runtime_enabled
 from .explorer_ui import EXPLORER_HTML
 from .studio_ui import STUDIO_HTML
 from .github_discovery import list_discovery_presets, search_github_repositories
-from . import github_registry, model_catalog
+from . import ai_router, github_registry, model_catalog, quota
 from .providers import chat_with_provider, provider_status
 from .pexels import search_pexels_videos
 from .metricool import metricool_request, metricool_status, schedule_youtube_video
@@ -971,6 +971,21 @@ def discover_github_registry(
         )
     except github_registry.RegistryUnavailable as exc:
         raise HTTPException(status_code=503, detail=str(exc))
+
+
+@app.get("/v1/ai/free/status")
+def ai_free_status(probe: bool = Query(default=False, description="TCP-check local model servers")):
+    """Which free providers are configured, how many keys, and what is left today."""
+
+    return ai_router.free_status(probe=probe)
+
+
+@app.post("/v1/ai/free/reset")
+def ai_free_reset(provider: str | None = Query(default=None, max_length=40), _key: str = Depends(require_api_key)):
+    """Clear today's local quota counters (they are estimates, not provider state)."""
+
+    quota.reset(provider)
+    return {"reset": provider or "all", **quota.status()}
 
 
 @app.get("/v1/ai/models")
