@@ -205,6 +205,7 @@ STUDIO_HTML = r"""<!DOCTYPE html>
     <nav id="nav">
       <a href="#/overview" data-r="overview"><i>◎</i>Overview</a>
       <a href="#/catalog" data-r="catalog"><i>⌕</i>Catalog</a>
+      <a href="#/producer" data-r="producer"><i>▶</i>Producer</a>
       <a href="#/chat" data-r="chat"><i>✦</i>Chat</a>
       <a href="#/providers" data-r="providers"><i>◈</i>Providers</a>
       <a href="#/agents" data-r="agents"><i>⚙</i>Agents</a>
@@ -282,10 +283,11 @@ async function checkHealth() {
 }
 
 /* ---------------- router ---------------- */
-const ROUTES = ["overview", "catalog", "chat", "providers", "agents", "workflows", "discovery", "finance"];
+const ROUTES = ["overview", "producer", "catalog", "chat", "providers", "agents", "workflows", "discovery", "finance"];
 const TITLES = {
   overview: ["Overview", "Live control plane for the AI catalog, providers and workers"],
   catalog: ["Catalog", "6,000+ AI tools, MCP servers and agent projects — metadata only, nothing is executed"],
+  producer: ["Producer", "One command in, a finished video out — long form, any length"],
   chat: ["Chat", "Multi-provider chat proxy — 48 adapters, key stays server-side"],
   providers: ["Providers", "LLM & multimodal adapters and whether each one is configured"],
   agents: ["Agents", "Bounded agent blueprints with risk levels and approval rules"],
@@ -305,13 +307,107 @@ function render() {
   $("#title").textContent = TITLES[r][0];
   $("#subtitle").textContent = TITLES[r][1];
   view.innerHTML = '<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>';
-  const fn = { overview: renderOverview, catalog: renderCatalog, chat: renderChat, providers: renderProviders,
+  const fn = { overview: renderOverview, producer: renderProducer, catalog: renderCatalog, chat: renderChat, providers: renderProviders,
                agents: renderAgents, workflows: renderWorkflows, discovery: renderDiscovery, finance: renderFinance }[r];
   Promise.resolve().then(fn).catch(err => {
     view.innerHTML = '<div class="banner err"><div><b>Could not load this view.</b><br>' + esc(err.message) + '</div></div>';
   });
 }
 window.addEventListener("hashchange", render);
+
+/* ---------------- producer ---------------- */
+async function renderProducer() {
+  const caps = await api("/v1/command/capabilities").catch(() => null);
+  const upgrades = caps && Array.isArray(caps.upgrades) ? caps.upgrades : [];
+  view.innerHTML =
+    '<div class="card">' +
+      '<b style="font-size:13px">One command \u2192 finished video</b>' +
+      '<div class="dim" style="font-size:11.5px;margin:6px 0 10px;line-height:1.6">Length, aspect ratio and language are read from your own words. Long form works \u2014 a three hour video is just a longer scene list.</div>' +
+      '<textarea id="pInput" class="input" style="min-height:96px;width:100%;resize:vertical" placeholder="e.g. make a 10 minute video about tea farming in Punjab \u00b7 45 second vertical reel about ..."></textarea>' +
+      '<div style="display:flex;gap:14px;align-items:center;margin-top:10px;flex-wrap:wrap">' +
+        '<button class="btn primary" id="pGo">Produce</button>' +
+        '<label class="dim" style="font-size:11.5px"><input type="checkbox" id="pRenderNow" checked> render immediately</label>' +
+        '<label class="dim" style="font-size:11.5px"><input type="checkbox" id="pCaps" checked> captions</label>' +
+      '</div>' +
+      (upgrades.length ? '<div class="dim" style="font-size:11px;margin-top:12px;line-height:1.7"><b>Optional upgrades</b><br>\u00b7 ' + upgrades.map(esc).join('<br>\u00b7 ') + '</div>' : '') +
+    '</div>' +
+    '<div id="pOut" style="margin-top:14px"></div>';
+
+  const out = $("#pOut");
+
+  function paint(job) {
+    const plan = job.plan || {};
+    const tl = job.timeline || {};
+    const pct = Math.max(0, Math.min(100, Number(job.progress || 0)));
+    const head =
+      '<div class="card">' +
+        '<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">' +
+          '<b style="font-size:13px">' + esc(plan.title || job.job_id) + '</b>' +
+          '<span class="dim" style="font-size:11.5px">' + esc(job.status) + (job.stage ? ' \u00b7 ' + esc(job.stage) : '') + '</span>' +
+        '</div>' +
+        '<div class="dim" style="font-size:11.5px;margin-top:8px">' +
+          esc(String(tl.duration || plan.duration_seconds || 0)) + 's \u00b7 ' +
+          esc(String(tl.scene_count || 0)) + ' scenes \u00b7 ' +
+          esc(String((tl.width || 0) + 'x' + (tl.height || 0))) + ' \u00b7 ' +
+          esc(plan.source || 'planner') +
+        '</div>' +
+        '<div style="height:6px;background:#20262e;border-radius:99px;overflow:hidden;margin-top:10px">' +
+          '<div style="height:100%;width:' + pct + '%;background:#4ade80;transition:width .4s"></div>' +
+        '</div>' +
+        (job.error ? '<div class="banner err" style="margin-top:10px"><div>' + esc(job.error) + '</div></div>' : '') +
+      '</div>';
+
+    let media = '';
+    if (job.status === "completed" && job.output) {
+      const src = "/v1/command/" + job.job_id + "/video?key=" + encodeURIComponent(getKey());
+      const sizeKb = Math.round(Number(job.output.size_bytes || 0) / 1024);
+      media =
+        '<div class="card" style="margin-top:12px">' +
+          '<video controls playsinline style="width:100%;border-radius:10px;background:#000" src="' + src + '"></video>' +
+          '<div class="dim" style="font-size:11.5px;margin-top:8px">' + esc(String(job.output.duration)) + 's \u00b7 ' + esc(String(sizeKb)) + ' KB \u00b7 ' + esc(String(job.output.resolution || '')) + '</div>' +
+        '</div>';
+    }
+    out.innerHTML = head + media;
+  }
+
+  $("#pGo").addEventListener("click", async function () {
+    const command = ($("#pInput").value || "").trim();
+    if (command.length < 3) {
+      out.innerHTML = '<div class="banner err"><div>Type a command first.</div></div>';
+      return;
+    }
+    const button = $("#pGo");
+    button.disabled = true;
+    out.innerHTML = '<div class="skel"></div>';
+    let job;
+    try {
+      job = await api("/v1/command", {
+        method: "POST",
+        body: JSON.stringify({
+          command: command,
+          render: $("#pRenderNow").checked,
+          captions: $("#pCaps").checked
+        })
+      });
+    } catch (err) {
+      out.innerHTML = '<div class="banner err"><div>' + esc(err.message) + '</div></div>';
+      button.disabled = false;
+      return;
+    }
+    paint(job);
+    if (job.status === "completed" || job.status === "failed") { button.disabled = false; return; }
+    const timer = setInterval(async function () {
+      let now;
+      try { now = await api("/v1/command/" + job.job_id); }
+      catch (err) { clearInterval(timer); button.disabled = false; return; }
+      paint(now);
+      if (now.status === "completed" || now.status === "failed") {
+        clearInterval(timer);
+        button.disabled = false;
+      }
+    }, 2000);
+  });
+}
 
 /* ---------------- overview ---------------- */
 async function renderOverview() {
