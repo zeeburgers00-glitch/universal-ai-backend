@@ -27,7 +27,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from . import agents, governance
+from . import agents, governance, toolbelt
 
 _lock = threading.Lock()
 
@@ -35,7 +35,21 @@ PERSONA = (
     "You are JARVIS, a terse, competent assistant for a solo builder. "
     "You answer in the user's language (Hinglish or English). "
     "You never invent facts about the user; you use the MEMORY block. "
-    "You never claim an action happened unless the TOOLS block shows it did."
+    "You never claim an action happened unless the TOOLS block shows it did. "
+    "When a tool is available and the request fits it, call the tool instead of guessing. "
+    "If a tool returns 'unavailable: ...', tell the user exactly what to install — never "
+    "describe output you did not receive."
+)
+
+PERSONA_TOOLS = (
+    "\n\nYou have a tool belt of free, locally installed tools. Call them with the provided "
+    "functions. Rules that are not negotiable:\n"
+    "1. Never claim a file was produced unless a tool result shows its path.\n"
+    "2. Never invent numbers (durations, counts, test results) — they come from tool output.\n"
+    "3. If a tool returns an error beginning 'unavailable:', report that error and the install "
+    "hint. Do not substitute an imagined result.\n"
+    "4. Prefer one precise tool call over many; the user pays for latency, not for effort.\n"
+    "5. Answer in the user's language, at most 4 sentences, and end with what was actually done."
 )
 
 
@@ -388,6 +402,140 @@ def summarise(outcomes: list[dict[str, Any]]) -> str:
 
 
 # --------------------------------------------------------------------------- #
+# 7. Tool belt: the honest capability layer
+# --------------------------------------------------------------------------- #
+
+TOOL_CMD = re.compile(
+    r"^\s*(?:run\s+|chalao\s+|use\s+|chala\s+|try\s+)?tool\s+([A-Za-z0-9][\w.\-]*)\s*(.*)$",
+    re.IGNORECASE | re.DOTALL,
+)
+CAPABILITY_RE = re.compile(
+    r"\b(tools?\s*(list|batao|dikhao|kaunse|kitne)|kitne tools|capabilit|kya kya kar sakta|"
+    r"what can you do|toolbelt|tool belt|saare tools)\b",
+    re.IGNORECASE,
+)
+
+
+def _parse_args(text: str) -> dict[str, Any]:
+    """`path=a.mp4 op=probe count=3` → typed kwargs. Quoted values are respected."""
+
+    import shlex
+
+    try:
+        tokens = shlex.split(text or "")
+    except ValueError:
+        tokens = (text or "").split()
+    args: dict[str, Any] = {}
+    for token in tokens:
+        if "=" not in token:
+            continue
+        key, _, raw = token.partition("=")
+        key = key.strip()
+        if not key:
+            continue
+        value: Any = raw.strip()
+        if isinstance(value, str):
+            lowered = value.lower()
+            if lowered in {"true", "false"}:
+                value = lowered == "true"
+            elif re.fullmatch(r"-?\d+", value):
+                value = int(value)
+            elif re.fullmatch(r"-?\d*\.\d+", value):
+                value = float(value)
+        args[key] = value
+    return args
+
+
+def _tool_command(message: str) -> dict[str, Any] | None:
+    """`tool git op=log limit=3` — direct, explicit, no model involved."""
+
+    match = TOOL_CMD.match(message or "")
+    if not match:
+        return None
+    tool_id, rest = match.group(1), match.group(2) or ""
+    return {"tool": tool_id, "args": _parse_args(rest)}
+
+
+def tool_chat(tool_id: str, args: dict[str, Any]) -> dict[str, Any]:
+    try:
+        run = toolbelt.run(tool_id, args)
+    except toolbelt.ToolUnavailable as exc:
+        suggestions = [item["id"] for item in toolbelt.search(tool_id, limit=3)["results"]]
+        hint = f" Shayad ye chahiye: {', '.join(suggestions)}." if suggestions else ""
+        return {"ok": False, "reply": f"{exc}.{hint}", "error": str(exc)}
+    except toolbelt.ToolError as exc:
+        return {"ok": False, "reply": f"{tool_id} nahi chala — {exc}",
+                "error": str(exc)}
+    body = run.get("result") or {}
+    preview = json.dumps(body, ensure_ascii=False)
+    if len(preview) > 600:
+        preview = preview[:600] + "…"
+    return {"ok": True, "reply": f"{tool_id}: done — {preview}", "result": body,
+            "elapsed_ms": run.get("elapsed_ms")}
+
+
+def capability_reply() -> str:
+    belt = toolbelt.summary()
+    ready = belt["ready_ids"]
+    lines = [f"Tool belt: {belt['total']} tools, {belt['ready']} abhi is machine par chal sakte hain "
+             f"({belt['available']} dependencies ke hisaab se present, {belt['runnable']} ke runner wired)."]
+    lines.append("Ready: " + ", ".join(ready[:14]) + ("…" if len(ready) > 14 else ""))
+    missing = belt["missing"][:4]
+    if missing:
+        lines.append("Missing: " + "; ".join(f"{row['id']} ({row['detail']})" for row in missing))
+    lines.append("Chalane ke liye: `tool ffmpeg op=probe path=video.mp4`. Poori list: GET /v1/belt")
+    return "\n".join(lines)
+
+
+def claude_available() -> bool:
+    from . import anthropic
+
+    return anthropic.available()
+
+
+def _claude_turn(message: str) -> dict[str, Any] | None:
+    """Claude decides which free tool to call, we run it, Claude reads the result."""
+
+    from . import anthropic
+
+    if not anthropic.available():
+        return None
+
+    definitions = toolbelt.claude_tools(only_available=True)
+    belt = toolbelt.summary()
+    system = (
+        PERSONA + PERSONA_TOOLS
+        + "\n\nMEMORY (facts about the user):\n" + _memory_block()
+        + f"\n\nTOOL BELT: {belt['ready']} of {belt['total']} tools ready — "
+        + ", ".join(belt["ready_ids"])
+    )
+    try:
+        answer = anthropic.tool_turn(
+            system, message, definitions, toolbelt.run_from_claude,
+            max_rounds=3, max_tokens=1200, temperature=0.3,
+        )
+    except anthropic.AnthropicError as exc:
+        return {"error": str(exc), "unavailable": exc.unavailable}
+
+    runs = answer.get("tool_runs") or []
+    outcomes = [
+        {"agent": f"tool:{run['tool']}", "input": run.get("args") or {},
+         "ok": bool(run.get("ok")), "result": run.get("output") or {},
+         **({} if run.get("ok") else {"error": str((run.get("output") or {}).get("error"))})}
+        for run in runs
+    ]
+    return {
+        "text": answer.get("text") or "",
+        "tool_runs": runs,
+        "outcomes": outcomes,
+        "model": answer.get("model"),
+        "rounds": answer.get("rounds"),
+        "usage": answer.get("usage"),
+        "stopped": answer.get("stopped"),
+    }
+
+
+# --------------------------------------------------------------------------- #
 # Public entry point
 # --------------------------------------------------------------------------- #
 
@@ -416,15 +564,56 @@ def chat(message: str, session: str = "default", dry_run: bool = False) -> dict[
         return {"reply": reply, "intent": "memory", "actions": [], "learned": learned,
                 "used_model": False, "session": session}
 
+    if CAPABILITY_RE.search(message) and not TOOL_CMD.match(message):
+        reply = capability_reply()
+        add_episode("user", message, session)
+        add_episode("jarvis", reply, session, {"intent": "tools"})
+        governance.record("jarvis.chat", target=session, detail={"intent": "tools"})
+        return {"reply": reply, "intent": "tools", "actions": [], "learned": learned,
+                "used_model": False, "model": None, "session": session,
+                "available_agents": len(agents.AGENTS)}
+
+    tool_request = _tool_command(message)
+    if tool_request:
+        outcome = tool_chat(tool_request["tool"], tool_request["args"])
+        action = {"agent": f"tool:{tool_request['tool']}", "input": tool_request["args"],
+                  "ok": bool(outcome.get("ok")), "result": outcome.get("result") or {},
+                  **({} if outcome.get("ok") else {"error": outcome.get("error")})}
+        add_episode("user", message, session)
+        add_episode("jarvis", outcome["reply"], session,
+                    {"intent": "tool", "tool": tool_request["tool"]})
+        governance.record("jarvis.chat", target=session,
+                          detail={"intent": "tool", "tool": tool_request["tool"],
+                                  "ok": bool(outcome.get("ok"))})
+        return {"reply": outcome["reply"], "intent": f"tool:{tool_request['tool']}",
+                "actions": [action], "learned": learned, "used_model": False,
+                "model": None, "session": session, "available_agents": len(agents.AGENTS)}
+
     steps = detect_intents(message)
     outcomes = execute(steps) if (steps and not dry_run) else []
     used_model = False
     reply: str | None = None
+    model_note = ""
 
     memories = recall(message, limit=4)
     memory_text = _memory_block()
 
-    if model_available():
+    learned_meta: dict[str, Any] = {}
+
+    # Claude first: it can read the tool belt and decide what to run. A key is required;
+    # without one this is skipped silently and the rule-based path answers.
+    if claude_available() and not dry_run:
+        turn = _claude_turn(message)
+        if turn and turn.get("text"):
+            reply = turn["text"]
+            outcomes = outcomes + list(turn.get("outcomes") or [])
+            used_model = True
+            learned_meta = {"provider": "anthropic", "model": turn.get("model"),
+                            "rounds": turn.get("rounds"), "stopped": turn.get("stopped")}
+        elif turn and turn.get("error"):
+            model_note = f"Claude: {turn['error']}"
+
+    if reply is None and model_available():
         tool_report = summarise(outcomes) or "(no tool was run yet)"
         catalogue = ", ".join(sorted(agents.AGENTS))[:1500]
         answer = _ask_model(
@@ -438,10 +627,6 @@ def chat(message: str, session: str = "default", dry_run: bool = False) -> dict[
             reply = answer["text"]
             used_model = True
             learned_meta = {"provider": answer.get("provider"), "model": answer.get("model")}
-        else:
-            learned_meta = {}
-    else:
-        learned_meta = {}
 
     if reply is None:
         # Rule-based answer: truthful, never inventing capability.
@@ -459,8 +644,9 @@ def chat(message: str, session: str = "default", dry_run: bool = False) -> dict[
                 "; ".join(f"{item.get('key', 'episode')}={item.get('value', item.get('text', ''))[:60]}" for item in memories[:2])
         else:
             reply = (
-                "Ye mujhe samajh nahi aaya. Jo pakka kar sakta hoon: " + ", ".join(sorted(agents.AGENTS)[:12]) +
-                " … (poori list /v1/agents/runtime par). Model lagana ho to free me `ollama serve` chala do."
+                "Ye mujhe samajh nahi aaya. Jo pakka kar sakta hoon: " + ", ".join(sorted(agents.AGENTS)[:10]) +
+                f" … plus {toolbelt.summary()['available']} free tools (`tool ffmpeg op=probe path=video.mp4`). "
+                "Poori list /v1/belt par. Claude brain lagana ho to ANTHROPIC_API_KEY daal do."
             )
 
     add_episode("user", message, session)
@@ -479,6 +665,7 @@ def chat(message: str, session: str = "default", dry_run: bool = False) -> dict[
         "learned": learned,
         "used_model": used_model,
         "model": learned_meta if used_model else None,
+        "model_note": model_note,
         "session": session,
         "available_agents": len(agents.AGENTS),
     }
@@ -505,10 +692,21 @@ def plan(goal: str) -> dict[str, Any]:
 
 
 def status() -> dict[str, Any]:
+    from . import anthropic
+
+    belt = toolbelt.summary()
     return {
         "memory": {"facts": len(facts(500)), "db": str(db_path())},
-        "model": {"configured": model_available()},
+        "model": {
+            "configured": model_available(),
+            "claude": anthropic.available(),
+            "claude_model": anthropic.model() if anthropic.available() else None,
+            "fallback": "ollama / openai-compatible chain" if model_available() else "rules only",
+        },
         "agents": len(agents.AGENTS),
+        "tools": {"total": belt["total"], "ready": belt["ready"],
+                  "available": belt["available"], "runnable": belt["runnable"],
+                  "ready_ids": belt["ready_ids"]},
         "sessions": _sessions(),
     }
 

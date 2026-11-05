@@ -132,3 +132,34 @@ call.
 Move to `deploy/modal/` for a managed HTTPS endpoint that scales to zero, or
 `deploy/runpod/` (~$0.35-0.70/hour) for a persistent pod, as soon as anything
 real depends on voice. Kaggle is a testing bench, not a host.
+
+---
+
+# JARVIS + the free tool belt on the same box
+
+The section above hosts the **voice worker**. This one hosts the **whole API** — JARVIS,
+the 65-tool free belt, and Claude — if you want a chat-able assistant instead of a worker.
+
+Files: `jarvis_kaggle.py` (bootstrap) and `JARVIS_kaggle.ipynb` (same thing as a notebook).
+
+```bash
+git clone --depth 1 https://github.com/zeeburgers00-glitch/universal-ai-backend.git
+cd universal-ai-backend
+pip install -q -r requirements.txt
+python deploy/kaggle/jarvis_kaggle.py --port 8000 --provider anthropic
+```
+
+Add two Kaggle secrets (Add-ons → Secrets): `ANTHROPIC_API_KEY` and `BACKEND_API_KEY`.
+The script starts uvicorn, waits for `/health`, opens a `cloudflared` quick tunnel, and
+prints the public URL plus ready-to-paste `curl` commands. Without a Claude key it still
+runs: JARVIS answers in rules mode and says so, and the belt tools work unchanged.
+
+| Constraint | Consequence for an assistant |
+|---|---|
+| 12-hour session, ~20 min idle timeout | Not an always-on assistant; a session per day |
+| `/kaggle/working` wiped | JARVIS memory (SQLite) is temporary unless synced |
+| Public tunnel URL | Protect it with `BACKEND_API_KEY`; the URL alone is not a secret |
+| No inbound port | The tunnel is mandatory — nothing else can reach the box |
+
+Full detail: `docs/KAGGLE_HOSTING.md`. For a local brain instead of Claude:
+`ollama serve` + `--provider ollama` (see `docs/JARVIS_UPGRADE.md`).

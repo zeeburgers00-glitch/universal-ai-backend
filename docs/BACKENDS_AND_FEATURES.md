@@ -85,6 +85,15 @@ Real HTTP upload (`multipart`) → asset → task:
 goal ko agents me todti hai, asli tools chalati hai aur jo nahi kar sakti wo saaf bolti hai.
 Ollama free me lagane par wahi layer model se jawab deti hai. Guide: `docs/JARVIS_UPGRADE.md`.
 
+## 3.2c Naya: free tool belt (65 tools) + Claude brain
+
+`/v1/belt/*` — `prompts/free_toolbelt.json` ke 65 free tools ab registry me hain. Har tool
+par install command, proof command, aur **runtime par naapa gaya** `available` flag. Jo
+chala sakta hai wahi `ready` kehlata hai; baqi `unavailable: pip install X` bolta hai —
+jhooth nahi. JARVIS ab `tool ffmpeg op=probe path=video.mp4` bhi samajhta hai, aur
+`ANTHROPIC_API_KEY` milne par Claude khud tool chun kar chalata hai (max 3 rounds).
+Guides: `docs/TOOLBELT.md`, `docs/KAGGLE_HOSTING.md`.
+
 ## 3.3a Naya: agent runtime (40 runnable agents)
 
 `/v1/agents/runtime/*` — 37 agents jo is process me chalte hain (ffmpeg, code index, rules,
@@ -156,7 +165,7 @@ OpenAI-compatible, fallback chain, key masking. Groq/Gemini/OpenRouter free tier
 
 ### Catalog / Explorer / Studio
 **6,122 tools**, **89 categories** (llm-runtime 80, llm-gateways 37, agents 35, mcp-integrations 16).
-`/v1/catalog/stats`, `/v1/discover/*`, `/v1/tools*`, `/v1/skills`, `/studio`, `/explorer`.
+`/v1/catalog/stats`, `/v1/discover/*`, `/v1/belt*`, `/v1/skills`, `/studio`, `/explorer`.
 
 ### Agents — 42 agents, 17 fleet roles, 120 slots
 `/v1/agents`, `/v1/agent-fleet`, `agent_worker` → `POST /v1/agents/run`

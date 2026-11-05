@@ -28,7 +28,7 @@ from .vault import get_secret, get_secret_source
 router = APIRouter(prefix="/v1/ai", tags=["ai-router"])
 
 DEFAULT_ORDER = (
-    "groq", "gemini", "mistral", "zai", "openrouter",
+    "anthropic", "groq", "gemini", "mistral", "zai", "openrouter",
     "huggingface", "opencode_zen", "hackerai", "custom",
 )
 
@@ -46,9 +46,16 @@ class Provider:
     local: bool = False          # runs on this machine: no key, no quota
     free_tier: bool = True       # provider serves some models without billing
     keys_env: str | None = None  # comma-separated keyring, rotated in order
+    mode: str = "openai"         # wire protocol: "openai" chat/completions or "anthropic" messages
 
 
 PROVIDERS: dict[str, Provider] = {
+    # Claude speaks the Messages API, not chat/completions, so it has its own branch in
+    # complete(). Bring a key and it wins; without a key it resolves to nothing.
+    "anthropic": Provider("anthropic", "Anthropic Claude", "ANTHROPIC_API_KEY",
+                          "ANTHROPIC_DEFAULT_MODEL", "claude-sonnet-4-5",
+                          "https://api.anthropic.com", mode="anthropic", free_tier=False,
+                          note="Paid API. Native tool use — see app/anthropic.py and /v1/jarvis."),
     "groq": Provider("groq", "Groq", "GROQ_API_KEY", "GROQ_DEFAULT_MODEL",
                      "llama-3.3-70b-versatile", "https://api.groq.com/openai/v1"),
     "gemini": Provider("gemini", "Google Gemini", "GEMINI_API_KEY", "GEMINI_DEFAULT_MODEL",
@@ -94,6 +101,7 @@ class Route:
     model: str
     key_env: str
     key_source: str
+    mode: str = "openai"
 
 
 def mask(value: str) -> str:
@@ -158,7 +166,7 @@ def resolve_all(provider_id: str) -> list[Route]:
         return []
     source = get_secret_source(spec.key_env) if not spec.local else "local"
     return [
-        Route(spec.id, spec.label, base, key, model, spec.key_env, source)
+        Route(spec.id, spec.label, base, key, model, spec.key_env, source, spec.mode)
         for key in keys
     ]
 
@@ -246,7 +254,54 @@ def free_status(probe: bool = False) -> dict[str, Any]:
 
 
 def _endpoint(route: Route) -> str:
+    if route.mode == "anthropic":
+        return route.base if route.base.endswith("/messages") else (
+            f"{route.base}/messages" if route.base.endswith("/v1") else f"{route.base}/v1/messages"
+        )
     return route.base if route.base.endswith("/chat/completions") else f"{route.base}/chat/completions"
+
+
+def _headers(route: Route) -> dict[str, str]:
+    if route.mode == "anthropic":
+        return {
+            "x-api-key": route.key,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        }
+    return {"Authorization": f"Bearer {route.key}", "Content-Type": "application/json"}
+
+
+def _payload(route: Route, system: str, user: str, max_tokens: int, temperature: float) -> dict[str, Any]:
+    if route.mode == "anthropic":
+        return {
+            "model": route.model,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "system": system,
+            "messages": [{"role": "user", "content": user}],
+        }
+    return {
+        "model": route.model,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+    }
+
+
+def _text_of(route: Route, payload: dict[str, Any]) -> str:
+    if route.mode == "anthropic":
+        blocks = payload.get("content") or []
+        return "\n".join(
+            str(block.get("text") or "") for block in blocks
+            if isinstance(block, dict) and block.get("type") == "text"
+        ).strip()
+    choices = payload.get("choices") or []
+    if not choices:
+        return ""
+    return str((choices[0].get("message") or {}).get("content") or "").strip()
 
 
 def complete(
@@ -273,16 +328,8 @@ def complete(
             with httpx.Client(timeout=httpx.Timeout(timeout, connect=10), follow_redirects=False) as client:
                 response = client.post(
                     _endpoint(route),
-                    headers={"Authorization": f"Bearer {route.key}", "Content-Type": "application/json"},
-                    json={
-                        "model": route.model,
-                        "temperature": temperature,
-                        "max_tokens": max_tokens,
-                        "messages": [
-                            {"role": "system", "content": system},
-                            {"role": "user", "content": user},
-                        ],
-                    },
+                    headers=_headers(route),
+                    json=_payload(route, system, user, max_tokens, temperature),
                 )
             if response.status_code >= 400:
                 status = "429" if response.status_code == 429 else f"HTTP {response.status_code}"
@@ -290,8 +337,7 @@ def complete(
                 attempts.append({"provider": route.id, "error": status})
                 continue
             payload = response.json()
-            choices = payload.get("choices") or []
-            text = str((choices[0].get("message") or {}).get("content") or "").strip() if choices else ""
+            text = _text_of(route, payload)
             if not text:
                 quota.record(route.id, "empty")
                 attempts.append({"provider": route.id, "error": "empty response"})
