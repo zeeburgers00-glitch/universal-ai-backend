@@ -6,6 +6,18 @@ koi quota nahi. Isliye ye kabhi "API key missing" se fail nahi hoti.
 
 Verified on this repo: **252 files, 1,203 symbols, index build 246 ms.**
 
+## Git aur Tools tabs (naya)
+
+Editor me do naye tabs:
+
+- **Git** — branch, kitne files changed, kisi file par click → uska diff, aur neeche
+  commit message box + "Commit all". Ye `/v1/git/status|diff|commit` par chalta hai.
+  **Push kabhi nahi hota** — sirf local commit (history rewrite wale commands expose hi nahi).
+- **Tools** — 205-repo catalog me BM25 search (`/v1/tools/search`). "voice cloning"
+  likho to `coqui-ai/TTS` aata hai, "video editing" to `FunClip` waghera.
+
+Editor ka size: 21.1 KB → 24.9 KB, ab bhi zero CDN/npm, sab inline.
+
 ## Built-in editor (browser me, koi install nahi)
 
 `GET /editor` — backend khud ek poora code editor serve karta hai: file tree, editor,
