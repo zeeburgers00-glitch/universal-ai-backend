@@ -24,6 +24,7 @@ from .builtin_workers import builtin_runtime_enabled
 from .explorer_ui import EXPLORER_HTML
 from .studio_ui import STUDIO_HTML
 from .github_discovery import list_discovery_presets, search_github_repositories
+from . import github_registry
 from .providers import chat_with_provider, provider_status
 from .pexels import search_pexels_videos
 from .metricool import metricool_request, metricool_status, schedule_youtube_video
@@ -950,6 +951,42 @@ async def discover_github(
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"GitHub discovery failed: {type(exc).__name__}")
+
+
+@app.get("/v1/discover/github/registry")
+def discover_github_registry(
+    category: str | None = Query(default=None, max_length=40, description="Snapshot category, e.g. agents, mcp, voice"),
+    q: str | None = Query(default=None, max_length=120, description="Match name, description or topics"),
+    min_stars: int = Query(default=0, ge=0, le=100000000),
+    license_filter: str | None = Query(default=None, pattern=r"^[A-Za-z0-9.+-]{1,40}$"),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+):
+    """Vetted repository snapshot (offline, deterministic) — no GitHub token needed."""
+
+    try:
+        return github_registry.search(
+            category=category, query=q, min_stars=min_stars,
+            license_id=license_filter, limit=limit, offset=offset,
+        )
+    except github_registry.RegistryUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@app.get("/v1/discover/github/registry/stats")
+def discover_github_registry_stats():
+    try:
+        return github_registry.stats()
+    except github_registry.RegistryUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@app.get("/v1/discover/github/registry/{owner}/{repo}")
+def discover_github_registry_repo(owner: str, repo: str):
+    found = github_registry.get(f"{owner}/{repo}")
+    if not found:
+        raise HTTPException(status_code=404, detail="Repository is not in the snapshot")
+    return found
 
 
 
