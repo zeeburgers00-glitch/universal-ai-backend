@@ -925,7 +925,7 @@ def claim_task(body: WorkerClaim):
                (worker_id,status,capabilities_json,created_at,updated_at,last_seen,current_task_id)
                VALUES(?,?,?,?,?,?,NULL)
                ON CONFLICT(worker_id) DO UPDATE SET
-                 status=CASE WHEN agent_runtime_workers.current_task_id IS NULL THEN 'idle' ELSE agent_runtime_workers.status END,
+                 status=CASE WHEN agent_runtime_workers.status='draining' THEN 'draining' WHEN agent_runtime_workers.current_task_id IS NULL THEN 'idle' ELSE agent_runtime_workers.status END,
                  updated_at=excluded.updated_at,last_seen=excluded.last_seen""",
             (body.worker_id, "idle", "{}", now_s, now_s, now_s),
         )
