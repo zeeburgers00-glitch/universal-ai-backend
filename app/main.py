@@ -484,7 +484,20 @@ def studio_alias():
 
 @app.get("/health")
 def health():
+    """Liveness only — cheap enough for a load balancer to poll."""
+
     return {"status": "ok", "service": "universal-ai-backend", "version": "0.6.0"}
+
+
+@app.get("/health/deep")
+def health_deep():
+    """Readiness/diagnostic: data volume, database, disk, ffmpeg, queue worker, key."""
+
+    from . import health_deep as deep
+
+    report = deep.probe()
+    status_code = 503 if report["status"] == "fail" else 200
+    return JSONResponse(status_code=status_code, content=report)
 
 
 

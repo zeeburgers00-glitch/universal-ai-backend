@@ -85,6 +85,12 @@ Scoped API keys (reads free, writes scope-bound), append-only `audit.jsonl` with
 fingerprints, single-use approval tokens for dangerous writes, aur 205-repo catalog +
 131 routes par BM25 search. Detail: `docs/GOVERNANCE.md`.
 
+## 3.3c Naya: retries, live progress, deep health
+
+Jobs me attempt budget + exponential backoff + dead-letter (traceback ke saath), SSE par
+live progress (`/v1/jobs/{id}/events`), aur `/health/deep` jo volume/DB/disk/ffmpeg/queue/key
+har cheez check karke 503 ya degraded deta hai.
+
 ## 3.4 Naya: dependency audit
 
 `GET /v1/audit/dependencies` — requirements.txt vs actual AST imports. Aaj: 10 declared,

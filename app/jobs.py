@@ -75,13 +75,30 @@ def _connect() -> sqlite3.Connection:
             result TEXT,
             error TEXT,
             attempts INTEGER NOT NULL DEFAULT 0,
+            max_attempts INTEGER NOT NULL DEFAULT 2,
+            run_after REAL NOT NULL DEFAULT 0,
+            last_error TEXT,
             created_at REAL NOT NULL,
             started_at REAL,
             finished_at REAL
         )
         """
     )
+    _migrate(connection)
     return connection
+
+
+def _migrate(connection: sqlite3.Connection) -> None:
+    """Add retry columns to databases created before they existed."""
+
+    existing = {row["name"] for row in connection.execute("PRAGMA table_info(jobs)")}
+    for column, definition in (
+        ("max_attempts", "INTEGER NOT NULL DEFAULT 2"),
+        ("run_after", "REAL NOT NULL DEFAULT 0"),
+        ("last_error", "TEXT"),
+    ):
+        if column not in existing:
+            connection.execute(f"ALTER TABLE jobs ADD COLUMN {column} {definition}")
 
 
 def init_db() -> None:
@@ -89,15 +106,39 @@ def init_db() -> None:
         pass
 
 
-def submit(kind: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+def max_attempts_default() -> int:
+    raw = (os.getenv("UAI_JOBS_MAX_ATTEMPTS") or "2").strip()
+    try:
+        return max(1, min(10, int(raw)))
+    except ValueError:
+        return 2
+
+
+def backoff_seconds(attempts: int) -> float:
+    """1s, 2s, 4s… capped. Override the base with UAI_JOBS_BACKOFF."""
+
+    try:
+        base = max(0.1, float(os.getenv("UAI_JOBS_BACKOFF") or "1"))
+    except ValueError:
+        base = 1.0
+    return min(60.0, base * (2 ** max(0, attempts - 1)))
+
+
+def submit(
+    kind: str,
+    payload: dict[str, Any] | None = None,
+    max_attempts: int | None = None,
+) -> dict[str, Any]:
     if kind not in HANDLERS:
         raise JobError(f"unknown job kind: {kind}. Available: {', '.join(sorted(HANDLERS))}")
     job_id = uuid.uuid4().hex
     now = time.time()
+    attempts = max(1, min(10, max_attempts or max_attempts_default()))
     with _lock, _connect() as connection:
         connection.execute(
-            "INSERT INTO jobs (id, kind, payload, status, created_at) VALUES (?, ?, ?, 'queued', ?)",
-            (job_id, kind, json.dumps(payload or {}), now),
+            "INSERT INTO jobs (id, kind, payload, status, max_attempts, created_at)"
+            " VALUES (?, ?, ?, 'queued', ?, ?)",
+            (job_id, kind, json.dumps(payload or {}), attempts, now),
         )
     ensure_started()
     return get(job_id)
@@ -147,6 +188,9 @@ def _row(row: sqlite3.Row) -> dict[str, Any]:
         "result": json.loads(row["result"]) if row["result"] else None,
         "error": row["error"],
         "attempts": row["attempts"],
+        "max_attempts": row["max_attempts"],
+        "last_error": row["last_error"],
+        "run_after": row["run_after"],
         "created_at": row["created_at"],
         "started_at": row["started_at"],
         "finished_at": row["finished_at"],
@@ -163,7 +207,8 @@ def _claim() -> dict[str, Any] | None:
     with _lock, _connect() as connection:
         connection.execute("BEGIN IMMEDIATE")
         row = connection.execute(
-            "SELECT * FROM jobs WHERE status='queued' ORDER BY created_at LIMIT 1"
+            "SELECT * FROM jobs WHERE status='queued' AND run_after <= ? ORDER BY created_at LIMIT 1",
+            (time.time(),),
         ).fetchone()
         if row is None:
             connection.execute("COMMIT")
@@ -212,8 +257,23 @@ def run_once() -> bool:
         result = handler(claimed["payload"], progress) or {}
         _finish(claimed["id"], "done", result=result)
     except Exception as exc:  # handler crashed: record it, don't kill the worker
-        _finish(claimed["id"], "failed", error=f"{type(exc).__name__}: {exc}"[:2000],
-                result={"traceback": traceback.format_exc()[-2000:]})
+        message = f"{type(exc).__name__}: {exc}"[:2000]
+        # `claimed` is the row as it was *before* _claim incremented the counter.
+        attempts = int(claimed.get("attempts") or 0) + 1
+        allowed = int(claimed.get("max_attempts") or 1)
+        if attempts < allowed:
+            # Transient failures (network blip, locked file) get another run.
+            delay = backoff_seconds(attempts)
+            with _lock, _connect() as connection:
+                connection.execute(
+                    "UPDATE jobs SET status='queued', run_after=?, stage=?, last_error=? WHERE id=?",
+                    (time.time() + delay, f"retry {attempts}/{allowed} in {delay:.1f}s", message, claimed["id"]),
+                )
+        else:
+            _finish(claimed["id"], "failed", error=message,
+                    result={"traceback": traceback.format_exc()[-2000:], "attempts": attempts})
+            with _lock, _connect() as connection:
+                connection.execute("UPDATE jobs SET last_error=? WHERE id=?", (message, claimed["id"]))
     return True
 
 

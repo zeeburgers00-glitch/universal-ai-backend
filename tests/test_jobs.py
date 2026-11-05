@@ -53,7 +53,7 @@ def test_submit_runs_and_completes():
 
 
 def test_failures_are_recorded_not_raised():
-    queued = jobs.submit("test.boom", {})
+    queued = jobs.submit("test.boom", {}, max_attempts=1)  # one shot: no retry
     jobs.run_once()
     failed = jobs.get(queued["id"])
     assert failed["status"] == "failed"

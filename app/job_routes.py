@@ -16,6 +16,7 @@ router = APIRouter(prefix="/v1/jobs", tags=["jobs"], dependencies=[Depends(requi
 class SubmitRequest(BaseModel):
     kind: str = Field(min_length=2, max_length=80, description="Handler name, e.g. video.cut_silence")
     payload: dict[str, Any] = Field(default_factory=dict)
+    max_attempts: int | None = Field(default=None, ge=1, le=10, description="Retries before giving up")
 
 
 @router.get("/kinds")
@@ -30,7 +31,7 @@ def job_submit(request: SubmitRequest) -> dict[str, Any]:
     """Queue a job. Returns immediately; poll `GET /v1/jobs/{id}` for progress."""
 
     try:
-        return jobs.submit(request.kind, request.payload)
+        return jobs.submit(request.kind, request.payload, max_attempts=request.max_attempts)
     except jobs.JobError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
@@ -58,6 +59,41 @@ def job_cancel(job_id: str) -> dict[str, Any]:
     except jobs.JobError as exc:
         message = str(exc)
         raise HTTPException(status_code=404 if "not found" in message else 409, detail=message)
+
+
+@router.get("/{job_id}/events")
+def job_events(job_id: str, timeout: float = Query(default=60, ge=1, le=300)):
+    """Server-sent events: progress pushed until the job reaches a terminal state.
+
+    Polling `GET /v1/jobs/{id}` works too, but a long render is nicer to watch live.
+    """
+
+    import json as _json
+    import time as _time
+
+    from fastapi.responses import StreamingResponse
+
+    def frames():
+        deadline = _time.time() + timeout
+        last = None
+        while _time.time() < deadline:
+            try:
+                job = jobs.get(job_id)
+            except jobs.JobError:
+                yield 'data: {"error":"job not found"}\n\n'
+                return
+            snapshot = _json.dumps(job)
+            if snapshot != last:
+                yield f"data: {snapshot}\n\n"
+                last = snapshot
+            if job["status"] in {"done", "failed", "cancelled"}:
+                yield "event: done\ndata: {}\n\n"
+                return
+            _time.sleep(0.4)
+        yield 'event: timeout\ndata: {}\n\n'
+
+    return StreamingResponse(frames(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 @router.post("/run-once")

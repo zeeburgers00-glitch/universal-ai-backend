@@ -22,6 +22,26 @@ Route **groups** use karte hain (`/v1/jobs/:id`) taake cardinality na phat jaye.
 
 Aur ek insaan ke padhne wala version: `GET /v1/observability/summary` (API key chahiye).
 
+## `/health/deep` — asli readiness
+
+`/health` sasta liveness hai (load balancer ke liye). `/health/deep` batata hai ke process
+**kaam kar sakta hai ya nahi**:
+
+```json
+{"status":"ok","checks":[
+  {"name":"api_key","ok":true,"detail":"configured"},
+  {"name":"data_root","ok":true,"detail":"/data"},
+  {"name":"job_db","ok":true,"detail":"/data/jobs.db"},
+  {"name":"disk","ok":true,"detail":"18.8 GB free of 20.3 GB"},
+  {"name":"ffmpeg","ok":true,"detail":".../imageio_ffmpeg/binaries/ffmpeg-..."},
+  {"name":"queue","ok":true,"detail":"queued=0 running=0 done=42 failed=1 workers=2"}
+]}
+```
+
+- **critical** fail (data dir likhne layak nahi / DB nahi khulti) → HTTP **503**
+- warning (key nahi, disk < 1 GB, ffmpeg nahi, queued jobs par worker 0) → **200 + degraded**
+- Har check apna detail deta hai — "unhealthy" jaisa bekaar boolean nahi.
+
 ## Rate limiting
 
 - Per client: `X-API-Key` (ya IP agar key nahi)
