@@ -6,7 +6,6 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 
-os.environ.setdefault("BACKEND_API_KEY", "test-agent-runtime-key")
 client = TestClient(app)
 HEADERS = {"X-API-Key": "test-agent-runtime-key"}
 
