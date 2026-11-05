@@ -13,9 +13,16 @@ API-only backend for an existing app. It is designed as an extensible integratio
 - Live GitHub discovery with `30` built-in AI category presets (`GET /v1/discover/categories`) and filters: `GET /v1/discover/github?category_preset=mcp-servers&license_filter=mit&min_stars=100&sort=stars`.
 - API-key protection for chat, worker dispatches, and catalog writes.
 - Vercel-compatible FastAPI entrypoint and unified Docker Compose stack (`workers/docker-compose.yml`) for GPU/async workers.
-- Safe-by-default integration model: listing a repo never installs or executes its code.
+- Universal Agent Runtime (`/v1/agent-runtime`): searchable merged directory of 282 current agent blueprints, SQLite-backed queue, worker registry/leases/heartbeats, retries, DAG workflows, approval gates, scoped memory and task event history; Dockerized polling bridge at `workers/agent_runtime`.
+- Runtime operations: worker drain/undrain for safe maintenance, manual retry of failed standalone tasks with renewed approval for high/critical work, and authenticated Prometheus metrics.
+- Capability-aware dispatch: route task types, agent IDs, risk levels and explicit required capabilities to eligible workers without removing legacy generic-worker support.
+- Safe-by-default integration model: listing a repo never installs or executes its code. Agent runtime execution is disabled until the worker is explicitly attested as free/no-card; high/critical tasks require approval.
 
 
+
+## Universal Agent Runtime
+
+See [`docs/AGENT_RUNTIME.md`](docs/AGENT_RUNTIME.md) for API examples, worker setup, no-card attestation and storage durability notes. The runtime uses SQLite; on serverless hosts the default `/tmp` filesystem is ephemeral, so use a persistent mounted disk for durable queues and memory.
 
 ## Quick start (Windows PowerShell)
 
@@ -176,3 +183,45 @@ The default budget target is USD 100/month. This is a planning target, **not an 
 
 Ad revenue workflows focus on eligibility, original content, real audiences, policy review, and provider reporting. Automated clicks, refreshes, incentivized ad interactions, fake traffic, and impression manipulation are prohibited. Provider account approval and monetization eligibility are not guaranteed by this software.
 
+
+## OpenAvatar Studio (no-card-first video/avatar pipeline)
+
+OpenAvatar Studio adds a separate worker-based avatar/video job control plane. It is
+designed for free-tier/no-card infrastructure and has no paid GPU provider or paid
+fallback. It includes authenticated uploads, job queue/leases, quota tracking, worker
+heartbeats, artifacts, and conservative model-license metadata.
+
+- GET /v1/openavatar/status, /providers, /models, and authenticated /quota
+- POST /v1/openavatar/assets and /jobs; job status and artifact downloads
+- Worker endpoints under /internal/openavatar/*, protected by a dedicated worker token
+- Hugging Face ZeroGPU Gradio worker: workers/openavatar/huggingface/
+- Optional manual Kaggle and Lightning workers: workers/openavatar/kaggle/ and
+  workers/openavatar/lightning/
+- Local CPU worker for OpenVoice adapter, whisper.cpp and FFmpeg: workers/openavatar/local_cpu/
+- Implementation and setup: docs/OPENAVATAR_STUDIO.md
+- Model license review: catalog/openavatar_models.json and
+  docs/OPENAVATAR_MODEL_LICENSES.md
+
+The default Hugging Face local quota guard is 270 seconds/day and 60 seconds/job; the
+provider's actual quota remains authoritative. Kaggle is enforced as
+personal/non-commercial only. Lightning is disabled until the user explicitly confirms
+no-card/free-credit-only eligibility. The default SQLite data directory is ephemeral;
+configure persistent storage before relying on jobs in production. Commercial rendering
+is blocked until all selected code, checkpoints, dependencies, datasets and assets have
+been reviewed.
+
+
+### OpenAvatar Studio AI agent fleet
+
+OpenAvatar includes 120 task-scoped specialist agents across 12 departments and 12
+prebuilt production workflows. Browse with GET /v1/openavatar/agents and
+GET /v1/openavatar/workflows; plan a production job with POST /v1/openavatar/plan;
+dispatch an individual role with POST /v1/openavatar/agents/{agent_id}/run, or selected
+teams of up to 120 with POST /v1/openavatar/teams/run.
+
+The fleet reuses the existing authenticated AGENT_WORKER_URL. Agent execution stays
+disabled until OPENAVATAR_AGENT_WORKER_NO_CARD_CONFIRMED=true is explicitly set after
+checking that the configured worker is genuinely no-card/free-only. Team concurrency
+defaults to 5 and is capped at 20. Role definitions are blueprints, not continuously
+running agents; worker acceptance is not completion. High-risk/critical tasks require
+approval, and the model/license/consent restrictions from docs/OPENAVATAR_STUDIO.md apply.

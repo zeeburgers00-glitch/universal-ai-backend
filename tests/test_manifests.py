@@ -122,7 +122,7 @@ def test_channel_manifest_does_not_claim_every_connector_is_live():
 def test_control_plane_imports_and_exposes_worker_and_base44_routes():
     from app.main import app
 
-    paths = {route.path for route in app.routes}
+    paths = set(app.openapi()["paths"])
     required = {
         "/health",
         "/explorer",

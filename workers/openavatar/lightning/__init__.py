@@ -1,0 +1,1 @@
+"""Manual Lightning AI worker."""

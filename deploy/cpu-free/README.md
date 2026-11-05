@@ -134,7 +134,7 @@ exists only for the loopback workers.
 - **Celery**: only the HTTP worker APIs are started. The API reaches workers over
   HTTP, so `POST /v1/voice/tts`-style routes work; background Celery queues are
   optional and skipped to save memory.
-- **Data**: `DATA_DIR` on the boot volume, so renders survive restarts.
+- **Data**: `DATA_DIR` on the boot volume, so renders survive restarts. Bootstrap prepares `/data/agent-runtime` with the API container's non-root ownership for the SQLite task queue.
 - **Logs**: `docker compose logs -f api`. Compose rotates nothing by default —
   if disk fills, `docker system prune -f`.
 - **Updates**: `cd /opt/universal-ai-backend && git pull && cd deploy/cpu-free &&

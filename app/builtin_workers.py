@@ -1,6 +1,6 @@
 """Built-in serverless worker runtime for Universal AI Backend (`ENABLE_BUILTIN_CLOUD_RUNTIME=1`).
 
-Provides zero-setup cloud execution for all 9 worker services (`voice`, `openvoice`,
+Provides zero-setup cloud execution for all 12 worker services (`voice`, `openvoice`,
 `media`, `automation`, `agents`, `desktop`, `youtube`, `channels`, `rea`) whenever
 external dedicated GPU/desktop worker URLs are not configured.
 """
