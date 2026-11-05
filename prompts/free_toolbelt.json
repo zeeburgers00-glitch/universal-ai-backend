@@ -1,0 +1,837 @@
+{
+  "generated_for": "JARVIS free tool belt",
+  "count": 65,
+  "rules": [
+    "Every tool listed here is free to run: open source, stdlib, or a no-key service.",
+    "needs=[bot_token|webhook_url|app_password|cloud_account] means sign-up is free but required.",
+    "tos_caveat entries are unofficial or platform-restricted: implement with caching and a fallback.",
+    "offline=false means the tool is useless without network; keep a local fallback for it.",
+    "A tool is only 'installed' when its test command prints success."
+  ],
+  "tools": [
+    {
+      "id": "ffmpeg",
+      "name": "FFmpeg",
+      "category": "media",
+      "kind": "binary",
+      "install": "apt install ffmpeg | pip install imageio-ffmpeg",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "probe, trim, cut silence, chapters, thumbnails, concat, overlay, subtitles, loudnorm, 9:16 crop, gif",
+      "test": "ffmpeg -version | head -1",
+      "notes": "The single highest-value free tool in this whole list."
+    },
+    {
+      "id": "imagemagick",
+      "name": "ImageMagick",
+      "category": "media",
+      "kind": "binary",
+      "install": "apt install imagemagick",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "resize, crop, watermark, montage, format convert",
+      "test": "convert -version"
+    },
+    {
+      "id": "pillow",
+      "name": "Pillow",
+      "category": "media",
+      "kind": "python",
+      "install": "pip install pillow",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "thumbnail text overlay, rounded corners, grids",
+      "test": "python -c 'import PIL;print(PIL.__version__)'"
+    },
+    {
+      "id": "yt-dlp",
+      "name": "yt-dlp",
+      "category": "media",
+      "kind": "binary",
+      "install": "pip install yt-dlp",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "download public video/audio for local editing",
+      "tos_caveat": "Only for content you own or have rights to; respects no paid API but platform ToS still apply",
+      "test": "yt-dlp --version"
+    },
+    {
+      "id": "faster-whisper",
+      "name": "faster-whisper",
+      "category": "media",
+      "kind": "python",
+      "install": "pip install faster-whisper",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "local speech-to-text, word timestamps, subtitles in 90+ languages",
+      "test": "python -c 'import faster_whisper;print(\"ok\")'",
+      "notes": "CPU works; tiny/base model ≈ 1 GB RAM."
+    },
+    {
+      "id": "whisper-cpp",
+      "name": "whisper.cpp",
+      "category": "media",
+      "kind": "binary",
+      "install": "build from source / brew install whisper-cpp",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "STT with no Python, runs on very small hardware",
+      "test": "whisper-cli --help"
+    },
+    {
+      "id": "piper",
+      "name": "Piper TTS",
+      "category": "media",
+      "kind": "python",
+      "install": "pip install piper-tts",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "offline neural text-to-speech, fast on CPU",
+      "test": "python -c 'import piper;print(\"ok\")'"
+    },
+    {
+      "id": "edge-tts",
+      "name": "edge-tts",
+      "category": "media",
+      "kind": "python",
+      "install": "pip install edge-tts",
+      "free": true,
+      "needs": [
+        "network"
+      ],
+      "offline": false,
+      "does": "high-quality TTS voices without a key",
+      "tos_caveat": "Unofficial endpoint; may break or rate-limit. Not a guaranteed service.",
+      "test": "edge-tts --list-voices | head -3"
+    },
+    {
+      "id": "espeak-ng",
+      "name": "espeak-ng",
+      "category": "media",
+      "kind": "binary",
+      "install": "apt install espeak-ng",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "robotic but instant TTS fallback, 100+ languages",
+      "test": "espeak-ng --version"
+    },
+    {
+      "id": "sox",
+      "name": "SoX",
+      "category": "media",
+      "kind": "binary",
+      "install": "apt install sox",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "audio trim, fade, normalize, format convert",
+      "test": "sox --version"
+    },
+    {
+      "id": "pydub",
+      "name": "pydub",
+      "category": "media",
+      "kind": "python",
+      "install": "pip install pydub",
+      "free": true,
+      "needs": [
+        "ffmpeg"
+      ],
+      "offline": true,
+      "does": "audio slicing and simple mixing in Python",
+      "test": "python -c 'import pydub;print(\"ok\")'"
+    },
+    {
+      "id": "pandoc",
+      "name": "Pandoc",
+      "category": "docs",
+      "kind": "binary",
+      "install": "apt install pandoc",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "markdown -> pdf/docx/html/slides, docx -> md",
+      "test": "pandoc --version | head -1"
+    },
+    {
+      "id": "libreoffice",
+      "name": "LibreOffice headless",
+      "category": "docs",
+      "kind": "binary",
+      "install": "apt install libreoffice-writer",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "docx/xlsx/pptx -> pdf conversion with no cloud",
+      "test": "soffice --version"
+    },
+    {
+      "id": "pymupdf",
+      "name": "PyMuPDF",
+      "category": "docs",
+      "kind": "python",
+      "install": "pip install pymupdf",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "PDF text/images extraction, page render, merge",
+      "test": "python -c 'import fitz;print(fitz.__doc__)'"
+    },
+    {
+      "id": "pdfplumber",
+      "name": "pdfplumber",
+      "category": "docs",
+      "kind": "python",
+      "install": "pip install pdfplumber",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "table extraction from PDFs",
+      "test": "python -c 'import pdfplumber;print(\"ok\")'"
+    },
+    {
+      "id": "reportlab",
+      "name": "ReportLab",
+      "category": "docs",
+      "kind": "python",
+      "install": "pip install reportlab",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "generate PDFs (invoices, reports) from scratch",
+      "test": "python -c 'import reportlab;print(\"ok\")'"
+    },
+    {
+      "id": "weasyprint",
+      "name": "WeasyPrint",
+      "category": "docs",
+      "kind": "python",
+      "install": "pip install weasyprint",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "HTML+CSS -> PDF, good typography",
+      "test": "python -c 'import weasyprint;print(\"ok\")'"
+    },
+    {
+      "id": "python-docx",
+      "name": "python-docx",
+      "category": "docs",
+      "kind": "python",
+      "install": "pip install python-docx",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "read/write Word files",
+      "test": "python -c 'import docx;print(\"ok\")'"
+    },
+    {
+      "id": "openpyxl",
+      "name": "openpyxl",
+      "category": "docs",
+      "kind": "python",
+      "install": "pip install openpyxl",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "read/write Excel files",
+      "test": "python -c 'import openpyxl;print(\"ok\")'"
+    },
+    {
+      "id": "python-pptx",
+      "name": "python-pptx",
+      "category": "docs",
+      "kind": "python",
+      "install": "pip install python-pptx",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "build slide decks programmatically",
+      "test": "python -c 'import pptx;print(\"ok\")'"
+    },
+    {
+      "id": "jinja2",
+      "name": "Jinja2",
+      "category": "docs",
+      "kind": "python",
+      "install": "pip install jinja2",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "templates for docs, prompts, emails, pages",
+      "test": "python -c 'import jinja2;print(\"ok\")'"
+    },
+    {
+      "id": "git",
+      "name": "git",
+      "category": "code",
+      "kind": "binary",
+      "install": "apt install git",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "status, diff, log, commit (never push without approval)",
+      "test": "git --version"
+    },
+    {
+      "id": "ripgrep",
+      "name": "ripgrep",
+      "category": "code",
+      "kind": "binary",
+      "install": "apt install ripgrep",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "fast code search across a repo",
+      "test": "rg --version"
+    },
+    {
+      "id": "ruff",
+      "name": "Ruff",
+      "category": "code",
+      "kind": "binary",
+      "install": "pip install ruff",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "lint + format Python, extremely fast",
+      "test": "ruff --version"
+    },
+    {
+      "id": "mypy",
+      "name": "mypy",
+      "category": "code",
+      "kind": "python",
+      "install": "pip install mypy",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "static type checking",
+      "test": "mypy --version"
+    },
+    {
+      "id": "pytest",
+      "name": "pytest",
+      "category": "code",
+      "kind": "python",
+      "install": "pip install pytest",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "the test runner; every claim must come from here",
+      "test": "pytest --version"
+    },
+    {
+      "id": "semgrep",
+      "name": "Semgrep (OSS)",
+      "category": "code",
+      "kind": "binary",
+      "install": "pip install semgrep",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "bug/security pattern scanning with rules you can read",
+      "test": "semgrep --version"
+    },
+    {
+      "id": "radon",
+      "name": "Radon",
+      "category": "code",
+      "kind": "python",
+      "install": "pip install radon",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "complexity and maintainability metrics",
+      "test": "radon --version"
+    },
+    {
+      "id": "pip-audit",
+      "name": "pip-audit",
+      "category": "code",
+      "kind": "python",
+      "install": "pip install pip-audit",
+      "free": true,
+      "needs": [
+        "network"
+      ],
+      "offline": false,
+      "does": "known-vulnerability scan of dependencies",
+      "test": "pip-audit --version"
+    },
+    {
+      "id": "ast",
+      "name": "Python ast",
+      "category": "code",
+      "kind": "stdlib",
+      "install": "stdlib",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "parse code for symbols, imports, drift checks",
+      "test": "python -c 'import ast;print(\"ok\")'"
+    },
+    {
+      "id": "duckdb",
+      "name": "DuckDB",
+      "category": "data",
+      "kind": "python",
+      "install": "pip install duckdb",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "SQL over CSV/Parquet/JSON locally; replaces a warehouse",
+      "test": "python -c 'import duckdb;print(duckdb.__version__)'"
+    },
+    {
+      "id": "polars",
+      "name": "Polars",
+      "category": "data",
+      "kind": "python",
+      "install": "pip install polars",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "fast dataframe ops without pandas' memory bill",
+      "test": "python -c 'import polars;print(polars.__version__)'"
+    },
+    {
+      "id": "pandas",
+      "name": "pandas",
+      "category": "data",
+      "kind": "python",
+      "install": "pip install pandas",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "general tabular work",
+      "test": "python -c 'import pandas;print(pandas.__version__)'"
+    },
+    {
+      "id": "matplotlib",
+      "name": "Matplotlib",
+      "category": "data",
+      "kind": "python",
+      "install": "pip install matplotlib",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "charts and plots as PNG/SVG",
+      "test": "python -c 'import matplotlib;print(\"ok\")'"
+    },
+    {
+      "id": "jsonschema",
+      "name": "jsonschema",
+      "category": "data",
+      "kind": "python",
+      "install": "pip install jsonschema",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "validate agent/tool payloads before running them",
+      "test": "python -c 'import jsonschema;print(\"ok\")'"
+    },
+    {
+      "id": "csvkit",
+      "name": "csvkit",
+      "category": "data",
+      "kind": "binary",
+      "install": "pip install csvkit",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "CSV inspect/query/slice from the shell",
+      "test": "csvstat --version"
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama",
+      "category": "ai",
+      "kind": "service",
+      "install": "curl -fsSL https://ollama.com/install.sh | sh",
+      "free": true,
+      "needs": [
+        "local_gpu_or_cpu"
+      ],
+      "offline": true,
+      "does": "local LLM inference (3B-8B models on CPU, bigger on GPU)",
+      "test": "ollama list",
+      "notes": "The brain. qwen2.5:3b ≈ 2 GB RAM, llama3.1:8b-q4 ≈ 5 GB."
+    },
+    {
+      "id": "llama-cpp-python",
+      "name": "llama-cpp-python",
+      "category": "ai",
+      "kind": "python",
+      "install": "pip install llama-cpp-python",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "embed a GGUF model directly in the process",
+      "test": "python -c 'import llama_cpp;print(\"ok\")'"
+    },
+    {
+      "id": "sentence-transformers",
+      "name": "sentence-transformers",
+      "category": "ai",
+      "kind": "python",
+      "install": "pip install sentence-transformers",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "local embeddings for semantic search",
+      "test": "python -c 'import sentence_transformers;print(\"ok\")'",
+      "notes": "CPU-friendly models (all-MiniLM-L6 ≈ 90 MB) beat BM25 when you need meaning."
+    },
+    {
+      "id": "sqlite-vec",
+      "name": "sqlite-vec",
+      "category": "ai",
+      "kind": "python",
+      "install": "pip install sqlite-vec",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "vector search inside the SQLite file you already have",
+      "test": "python -c 'import sqlite_vec;print(\"ok\")'"
+    },
+    {
+      "id": "spacy",
+      "name": "spaCy",
+      "category": "ai",
+      "kind": "python",
+      "install": "pip install spacy && python -m spacy download en_core_web_sm",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "entity extraction, sentence splitting, no model key",
+      "test": "python -c 'import spacy;print(\"ok\")'"
+    },
+    {
+      "id": "langdetect",
+      "name": "langdetect",
+      "category": "ai",
+      "kind": "python",
+      "install": "pip install langdetect",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "detect language before choosing a reply language",
+      "test": "python -c 'import langdetect;print(\"ok\")'"
+    },
+    {
+      "id": "tiktoken",
+      "name": "tiktoken",
+      "category": "ai",
+      "kind": "python",
+      "install": "pip install tiktoken",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "count tokens to fit the context window",
+      "test": "python -c 'import tiktoken;print(\"ok\")'"
+    },
+    {
+      "id": "httpx",
+      "name": "httpx",
+      "category": "web",
+      "kind": "python",
+      "install": "pip install httpx",
+      "free": true,
+      "needs": [
+        "network"
+      ],
+      "offline": false,
+      "does": "all HTTP calls: APIs, downloads, webhooks",
+      "test": "python -c 'import httpx;print(httpx.__version__)'"
+    },
+    {
+      "id": "playwright",
+      "name": "Playwright",
+      "category": "web",
+      "kind": "python",
+      "install": "pip install playwright && playwright install chromium",
+      "free": true,
+      "needs": [
+        "~400MB disk"
+      ],
+      "offline": true,
+      "does": "browser automation, screenshots, scraping JS pages",
+      "test": "python -c 'import playwright;print(\"ok\")'"
+    },
+    {
+      "id": "beautifulsoup4",
+      "name": "BeautifulSoup",
+      "category": "web",
+      "kind": "python",
+      "install": "pip install beautifulsoup4 lxml",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "parse HTML for scraping",
+      "test": "python -c 'import bs4;print(\"ok\")'"
+    },
+    {
+      "id": "trafilatura",
+      "name": "trafilatura",
+      "category": "web",
+      "kind": "python",
+      "install": "pip install trafilatura",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "extract clean article text from a page",
+      "test": "python -c 'import trafilatura;print(\"ok\")'"
+    },
+    {
+      "id": "feedparser",
+      "name": "feedparser",
+      "category": "web",
+      "kind": "python",
+      "install": "pip install feedparser",
+      "free": true,
+      "needs": [
+        "network"
+      ],
+      "offline": false,
+      "does": "read RSS/Atom feeds — free news without an API key",
+      "test": "python -c 'import feedparser;print(\"ok\")'"
+    },
+    {
+      "id": "duckduckgo-search",
+      "name": "duckduckgo-search",
+      "category": "web",
+      "kind": "python",
+      "install": "pip install duckduckgo-search",
+      "free": true,
+      "needs": [
+        "network"
+      ],
+      "offline": false,
+      "does": "web search without an API key",
+      "tos_caveat": "Unofficial and rate-limited; treat results as best-effort, cache them, expect breakage",
+      "test": "python -c 'import duckduckgo_search;print(\"ok\")'"
+    },
+    {
+      "id": "wikipedia-api",
+      "name": "Wikipedia API",
+      "category": "web",
+      "kind": "service",
+      "install": "pip install wikipedia-api",
+      "free": true,
+      "needs": [
+        "network"
+      ],
+      "offline": false,
+      "does": "encyclopedic facts with a free API",
+      "test": "python -c 'import wikipediaapi;print(\"ok\")'"
+    },
+    {
+      "id": "arxiv",
+      "name": "arXiv API",
+      "category": "web",
+      "kind": "python",
+      "install": "pip install arxiv",
+      "free": true,
+      "needs": [
+        "network"
+      ],
+      "offline": false,
+      "does": "fetch papers for research tasks",
+      "test": "python -c 'import arxiv;print(\"ok\")'"
+    },
+    {
+      "id": "open-meteo",
+      "name": "Open-Meteo",
+      "category": "web",
+      "kind": "service",
+      "install": "httpx",
+      "free": true,
+      "needs": [
+        "network"
+      ],
+      "offline": false,
+      "does": "weather forecasts, no key",
+      "test": "curl -s 'https://api.open-meteo.com/v1/forecast?latitude=31&longitude=74&current=temperature_2m'"
+    },
+    {
+      "id": "nominatim",
+      "name": "Nominatim (OSM)",
+      "category": "web",
+      "kind": "service",
+      "install": "httpx",
+      "free": true,
+      "needs": [
+        "network"
+      ],
+      "offline": false,
+      "does": "geocoding with a User-Agent header, no key",
+      "tos_caveat": "1 request/second limit; cache aggressively",
+      "test": "curl -s 'https://nominatim.openstreetmap.org/search?q=Lahore&format=json' -H 'User-Agent: my-app'"
+    },
+    {
+      "id": "psutil",
+      "name": "psutil",
+      "category": "ops",
+      "kind": "python",
+      "install": "pip install psutil",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "CPU/RAM/disk metrics for the health endpoint",
+      "test": "python -c 'import psutil;print(\"ok\")'"
+    },
+    {
+      "id": "watchfiles",
+      "name": "watchfiles",
+      "category": "ops",
+      "kind": "python",
+      "install": "pip install watchfiles",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "react to file changes (drop a video, auto-process)",
+      "test": "python -c 'import watchfiles;print(\"ok\")'"
+    },
+    {
+      "id": "sqlite3",
+      "name": "SQLite",
+      "category": "ops",
+      "kind": "stdlib",
+      "install": "stdlib",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "jobs queue, memory, state — no server to pay for",
+      "test": "python -c 'import sqlite3;print(sqlite3.sqlite_version)'"
+    },
+    {
+      "id": "ntfy",
+      "name": "ntfy.sh",
+      "category": "ops",
+      "kind": "service",
+      "install": "httpx",
+      "free": true,
+      "needs": [
+        "network"
+      ],
+      "offline": false,
+      "does": "push notification to your phone with one POST, no account",
+      "test": "curl -s -d 'test' https://ntfy.sh/your-topic"
+    },
+    {
+      "id": "rclone",
+      "name": "rclone",
+      "category": "ops",
+      "kind": "binary",
+      "install": "apt install rclone",
+      "free": true,
+      "needs": [
+        "cloud_account"
+      ],
+      "offline": true,
+      "does": "sync backups to any free storage tier",
+      "test": "rclone version | head -1",
+      "notes": "Free software, but the storage account is yours to create."
+    },
+    {
+      "id": "systemd-timer",
+      "name": "cron / systemd timer",
+      "category": "ops",
+      "kind": "binary",
+      "install": "built-in",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "run the queue drainer and backups on a schedule",
+      "test": "systemctl --version | head -1"
+    },
+    {
+      "id": "telegram",
+      "name": "Telegram Bot API",
+      "category": "comms",
+      "kind": "service",
+      "install": "httpx",
+      "free": true,
+      "needs": [
+        "bot_token"
+      ],
+      "offline": false,
+      "does": "the cheapest way to talk to your assistant from a phone",
+      "test": "curl -s 'https://api.telegram.org/bot$TOKEN/getMe'",
+      "notes": "Token is free from @BotFather, 2 minutes."
+    },
+    {
+      "id": "discord-webhook",
+      "name": "Discord webhook",
+      "category": "comms",
+      "kind": "service",
+      "install": "httpx",
+      "free": true,
+      "needs": [
+        "webhook_url"
+      ],
+      "offline": false,
+      "does": "post results to a channel",
+      "test": "curl -s -X POST $URL -d '{\"content\":\"hi\"}' -H 'content-type: application/json'"
+    },
+    {
+      "id": "smtp",
+      "name": "SMTP (stdlib)",
+      "category": "comms",
+      "kind": "stdlib",
+      "install": "stdlib",
+      "free": true,
+      "needs": [
+        "app_password"
+      ],
+      "offline": false,
+      "does": "send email reports",
+      "test": "python -c 'import smtplib;print(\"ok\")'"
+    },
+    {
+      "id": "pyjwt",
+      "name": "PyJWT",
+      "category": "security",
+      "kind": "python",
+      "install": "pip install pyjwt",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "signed session tokens for the API",
+      "test": "python -c 'import jwt;print(\"ok\")'"
+    },
+    {
+      "id": "cryptography",
+      "name": "cryptography",
+      "category": "security",
+      "kind": "python",
+      "install": "pip install cryptography",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "encrypt secrets at rest, hash API keys",
+      "test": "python -c 'import cryptography;print(\"ok\")'"
+    },
+    {
+      "id": "argon2",
+      "name": "argon2-cffi",
+      "category": "security",
+      "kind": "python",
+      "install": "pip install argon2-cffi",
+      "free": true,
+      "needs": [],
+      "offline": true,
+      "does": "password hashing done right",
+      "test": "python -c 'import argon2;print(\"ok\")'"
+    }
+  ]
+}

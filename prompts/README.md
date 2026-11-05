@@ -5,18 +5,27 @@ Copy-paste prompts that make a coding AI actually finish the work.
 | File | Kab use karo |
 |---|---|
 | `JARVIS_BUILD_PROMPT.md` | assistant/JARVIS backend banwana ho — 7 layers + honesty contract |
+| `JARVIS_FULL_TOOLBELT_PROMPT.md` | us assistant ko **saare free tools** dena ho — 5 waves, 65 tools |
+| `free_toolbelt.json` | machine-readable list: 65 free tools, install + test command + caveats |
 
-## Sabse chhota version (jab context kam ho)
+## Order ye rakho
 
-Agar us AI ka context window chhota hai, poora prompt na bhejo — sirf ye 8 lines:
+1. `JARVIS_BUILD_PROMPT.md` — pehle skeleton (memory, planner, chat, tests).
+2. `free_toolbelt.json` + `JARVIS_FULL_TOOLBELT_PROMPT.md` — phir tools bharo, wave by wave.
+
+Dono ek saath dene se AI 7 layers aur 65 tools ek hi turn me karne ki koshish karega aur
+adhoora chhod dega.
+
+## Sabse chhota version (chhote context window ke liye)
 
 ```
-You are a senior engineer. Rules: (1) never claim what you did not run; paste outputs.
-(2) No mocks, TODOs or fake success in real paths — if it needs a key, raise a clear error.
-(3) Zero paid deps; SQLite + ffmpeg + local Ollama only. (4) One small commit per intent.
-(5) Tests first for failure paths. (6) End every turn with: what changed, real numbers
-(pytest count, route count), what is missing, next step. Reply in Hinglish.
-Task: build app/memory.py (SQLite facts+episodes), app/planner.py (keyword intents),
-app/agent.py (chat: memory→plan→tools→verify→answer), routes for chat/plan/memory,
-and tests. Definition of done: pytest green + one real tool run + restart persists memory.
+Give this assistant every tool in free_toolbelt.json, wave by wave: media -> docs ->
+code/data -> ai -> web/ops.
+Rules: (1) a tool exists only after its test passed AND it processed a real file;
+(2) missing binary => {"error":"unavailable: <install>"} at call time, never fake data;
+(3) registry with runtime availability checks + BM25 search; (4) decorator registration,
+one file per category; (5) approval token for destructive/messaging tools;
+(6) after each wave: pytest count, tool count, one real-run output, commit.
+Report tools you could not install - acceptable. A fake tool is not.
+Do wave 1 (media) now, then stop and report.
 ```
