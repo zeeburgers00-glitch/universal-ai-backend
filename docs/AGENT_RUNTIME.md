@@ -6,13 +6,15 @@ and scoped text memory. It is API-only and does not create 120 continuously runn
 
 ## Capabilities
 
-- **Task queue:** submit work, list/filter tasks, inspect task details and event history, cancel queued/running tasks.
+- **Task queue:** submit work, list/filter tasks, inspect task details and event history, cancel queued or approval-pending tasks. Running work cannot be hard-cancelled by the API; stop it through the executor first.
 - **Worker leases:** workers claim one task at a time, heartbeat leases, and complete or fail tasks.
 - **Retries:** failed work returns to the queue while attempts remain; expired leases are recovered on the next claim.
 - **Workflow DAGs:** up to 100 steps per workflow, with dependency validation and cycle detection. A step is claimable only after every dependency succeeds.
 - **Approvals:** high and critical tasks are held in pending_approval; an operator must approve or reject them through the API before claim.
 - **Memory:** simple scoped key/content memory with substring search and metadata. This is not an embeddings/vector database.
 - **Audit history:** task creation, claims, heartbeats, approvals, completion, retries and dependency blocking are recorded.
+- **Unified agent catalog:** searchable, paginated directory merges the 42 general agents, 120 OpenAvatar roles and 120 YouTube roles (282 unique IDs in the current checked-in catalogs). Catalog IDs also supply minimum risk classifications; callers cannot downgrade a critical role to low risk.
+- **Worker registry:** workers register capabilities and are tracked as idle/busy/offline based on last-seen heartbeats; the same worker cannot claim a second active task.
 
 All routes require X-API-Key using the server's BACKEND_API_KEY. This deployment is a single trusted workspace behind one API key. Memory scope is a logical namespace, **not** a per-user security boundary. Do not expose this API directly to untrusted clients or treat a shared API key as end-user authentication.
 
@@ -25,7 +27,7 @@ AGENT_RUNTIME_DB_PATH=/var/lib/universal-ai-backend/agent_runtime.sqlite3
 AGENT_RUNTIME_MAX_PENDING_TASKS=1000
 ~~~
 
-The default local path is data/agent_runtime.sqlite3. On Vercel, the fallback is /tmp/universal-ai-agent-runtime.sqlite3, which is ephemeral and must not be treated as durable storage. Use a persistent-volume host for the SQLite queue. This SQLite implementation is intended for a single API instance and a shared local persistent disk; do not put a SQLite WAL database on an arbitrary network filesystem or horizontally scale multiple API replicas over it. A PostgreSQL/managed-queue adapter is a future scale-out step.
+If `AGENT_RUNTIME_DB_PATH` is blank, the default local path is data/agent_runtime.sqlite3. On Vercel, the fallback is /tmp/universal-ai-agent-runtime.sqlite3, which is ephemeral and must not be treated as durable storage. Use a persistent-volume host for the SQLite queue. This SQLite implementation is intended for a single API instance and a shared local persistent disk; do not put a SQLite WAL database on an arbitrary network filesystem or horizontally scale multiple API replicas over it. A PostgreSQL/managed-queue adapter is a future scale-out step.
 
 ## No-card execution gate
 
@@ -59,7 +61,9 @@ Start the reference worker from the repository root:
 python -m workers.agent_runtime.worker
 ~~~
 
-The worker polls one task, forwards it to the configured agent executor, renews its lease while the executor runs, and reports output/failure. The executor itself must enforce the supplied tool_allowlist, respect consent/licensing, and honor the no-paid-fallback policy. The runtime cannot prove that an external executor behaves correctly.
+The worker polls one task, forwards it to the configured generic agent executor, renews its lease while that executor runs, and reports output/failure. The bundled `workers/agent_worker` returns HTTP 202 and a Celery task ID; the reference worker then polls the status route until it receives the final result. Defaults are `AGENT_RUNTIME_EXECUTOR_STATUS_PATH_TEMPLATE=/v1/tasks/{task_id}`, `AGENT_RUNTIME_EXECUTOR_MAX_WAIT_SECONDS=3600`, and `AGENT_RUNTIME_EXECUTOR_POLL_SECONDS=5`. Use the placeholder exactly once in the status-path template. The executor itself must enforce the supplied tool_allowlist, respect consent/licensing, and honor the no-paid-fallback policy. The runtime cannot prove that an external executor behaves correctly.
+
+**Important execution boundary:** the bundled `workers/agent_worker` is a *plan-only* worker. It produces a structured action plan and does not execute the plan's actions (it does not upload videos, send messages, invoke shell commands, or create media). A runtime task marked `succeeded` means the executor returned its completed output/plan—not that every proposed side effect was performed. Reviewed actions must be routed to the existing dedicated backend/worker endpoints, which apply their own credentials, permissions, consent and approval rules. The current reference polling worker is for this plan-only executor contract; an executor that really performs tasks must be separately audited and must return a trustworthy final status/result.
 
 ## API examples
 
@@ -70,6 +74,12 @@ curl -X POST "$BACKEND_URL/v1/agent-runtime/tasks" \
   -H "X-API-Key: $BACKEND_API_KEY" -H "Content-Type: application/json" \
   -d '{"objective":"Summarize these project notes","agent_id":"research-agent","inputs":{"notes":"..."},"risk_level":"low"}'
 ~~~
+
+Explore agents:
+
+- `GET /v1/agent-runtime/catalog?limit=100`
+- `GET /v1/agent-runtime/catalog?source=youtube&risk_level=critical`
+- `GET /v1/agent-runtime/catalog/{agent_id}`
 
 Inspect tasks:
 
@@ -111,3 +121,21 @@ Approvals and memory:
 - DELETE /v1/agent-runtime/memory/{memory_id}
 
 Task result JSON is capped at 256 KiB. Store large media/artifacts using the existing artifact/storage services and return their IDs/URIs in the task result.
+
+
+## Docker Compose worker service
+
+The polling worker has its own lightweight container and is guarded by the opt-in Compose
+profile. To start the agent planner and its polling bridge after configuring
+`workers/.env.workers`, use:
+
+~~~bash
+docker compose --env-file workers/.env.workers -f workers/docker-compose.yml --profile agent-runtime up --build -d agent-api agent-runtime-worker
+~~~
+
+For the isolated Compose network, the example uses `AGENT_WORKER_URL=http://agent-api:8500`.
+That private-network HTTP exception requires both
+`AGENT_RUNTIME_ALLOW_PRIVATE_NETWORK_HTTP=true` and
+`AGENT_RUNTIME_PRIVATE_HTTP_HOSTS=agent-api`; keep the host allowlist narrow. Public API
+URLs still require HTTPS. The worker container exits unless
+`AGENT_RUNTIME_WORKER_NO_CARD_CONFIRMED=true` is explicitly set.

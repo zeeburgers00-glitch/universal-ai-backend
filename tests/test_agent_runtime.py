@@ -4,6 +4,7 @@ import os
 from fastapi.testclient import TestClient
 
 from app.main import app
+from workers.agent_runtime.worker import _secure_service_url, execute_one
 
 
 client = TestClient(app)
@@ -152,3 +153,167 @@ def test_retry_exhaustion_and_memory_scope(monkeypatch, tmp_path):
     assert saved.status_code == 201
     assert client.get("/v1/agent-runtime/memory?scope=project-a", headers=HEADERS).json()["items"][0]["content"] == "Clear and friendly"
     assert client.get("/v1/agent-runtime/memory?scope=project-b", headers=HEADERS).json()["items"] == []
+
+
+def test_agent_blueprint_risk_cannot_be_downgraded_and_approval_is_recorded(monkeypatch, tmp_path):
+    _configure(monkeypatch, tmp_path)
+    response = client.post(
+        "/v1/agent-runtime/tasks", headers=HEADERS,
+        json={"objective": "Prepare a public YouTube upload", "agent_id": "youtube-publisher", "risk_level": "low"},
+    )
+    assert response.status_code == 202, response.text
+    task = response.json()
+    assert task["risk_level"] == "critical"
+    assert task["status"] == "pending_approval"
+    decision = client.post(
+        f"/v1/agent-runtime/approvals/{task['approval_id']}/decision",
+        headers=HEADERS, json={"decision": "approved", "note": "Reviewed"},
+    )
+    assert decision.status_code == 200
+    refreshed = client.get(f"/v1/agent-runtime/tasks/{task['task_id']}", headers=HEADERS).json()
+    assert refreshed["payload"]["user_approved"] is True
+    assert refreshed["payload"]["agent"]["id"] == "youtube-publisher"
+
+
+def test_unknown_agent_blueprint_is_rejected(monkeypatch, tmp_path):
+    _configure(monkeypatch, tmp_path)
+    response = client.post(
+        "/v1/agent-runtime/tasks", headers=HEADERS,
+        json={"objective": "Use an unknown agent", "agent_id": "agent-does-not-exist"},
+    )
+    assert response.status_code == 404
+
+
+def test_unified_agent_catalog_merges_all_282_blueprints(monkeypatch, tmp_path):
+    _configure(monkeypatch, tmp_path)
+    response = client.get("/v1/agent-runtime/catalog?limit=200", headers=HEADERS)
+    assert response.status_code == 200
+    first = response.json()
+    second = client.get(
+        "/v1/agent-runtime/catalog?limit=200&offset=200", headers=HEADERS
+    ).json()
+    assert first["total"] == 282
+    all_items = first["items"] + second["items"]
+    assert len({item["id"] for item in all_items}) == 282
+    assert {item["source"] for item in all_items} == {"general", "openavatar", "youtube"}
+
+
+def test_unified_catalog_filter_and_detail(monkeypatch, tmp_path):
+    _configure(monkeypatch, tmp_path)
+    response = client.get(
+        "/v1/agent-runtime/catalog?source=youtube&risk_level=critical&limit=200",
+        headers=HEADERS,
+    )
+    assert response.status_code == 200
+    assert response.json()["total"] > 0
+    assert all(item["risk_level"] == "critical" for item in response.json()["items"])
+    detail = client.get("/v1/agent-runtime/catalog/youtube-publisher", headers=HEADERS)
+    assert detail.status_code == 200
+    assert detail.json()["risk_level"] == "critical"
+
+
+def test_private_http_worker_url_requires_explicit_host_allowlist(monkeypatch):
+    monkeypatch.setenv("AGENT_WORKER_URL", "http://agent-api:8500")
+    monkeypatch.setenv("AGENT_RUNTIME_ALLOW_PRIVATE_NETWORK_HTTP", "false")
+    monkeypatch.setenv("AGENT_RUNTIME_PRIVATE_HTTP_HOSTS", "agent-api")
+    try:
+        _secure_service_url("AGENT_WORKER_URL")
+        assert False, "private HTTP must be disabled by default"
+    except RuntimeError:
+        pass
+    monkeypatch.setenv("AGENT_RUNTIME_ALLOW_PRIVATE_NETWORK_HTTP", "true")
+    assert _secure_service_url("AGENT_WORKER_URL") == "http://agent-api:8500"
+    monkeypatch.setenv("AGENT_WORKER_URL", "http://attacker.example")
+    try:
+        _secure_service_url("AGENT_WORKER_URL")
+        assert False, "unlisted private host must be rejected"
+    except RuntimeError:
+        pass
+
+
+def test_reference_worker_polls_accepted_plan_before_completing(monkeypatch):
+    from datetime import datetime, timedelta, timezone
+
+    task_id = "runtime-task-123456"
+    executor_id = "celery-task-123456"
+    seen = {"dispatch": None, "completed": None, "polls": 0}
+
+    class FakeResponse:
+        def __init__(self, status_code, payload):
+            self.status_code = status_code
+            self._payload = payload
+            self.text = ""
+
+        def json(self):
+            return self._payload
+
+        def raise_for_status(self):
+            if self.status_code >= 400:
+                raise RuntimeError("unexpected HTTP error")
+
+    class FakeApi:
+        def post(self, url, **kwargs):
+            if url.endswith("/workers/claim"):
+                return FakeResponse(200, {"task": {
+                    "task_id": task_id, "agent_id": "youtube-publisher",
+                    "objective": "Prepare upload plan", "risk_level": "critical",
+                    "lease_until": (datetime.now(timezone.utc) + timedelta(seconds=90)).isoformat(),
+                    "payload": {"agent": {"id": "youtube-publisher", "risk_level": "critical"},
+                                "user_approved": True, "dry_run": True, "inputs": {}, "tool_allowlist": []},
+                }})
+            if url == "https://agent.example/v1/agents/run":
+                seen["dispatch"] = kwargs["json"]
+                return FakeResponse(202, {"task_id": executor_id, "status": "queued"})
+            if url.endswith("/complete"):
+                seen["completed"] = kwargs["json"]["result"]["output"]
+                return FakeResponse(200, {"status": "succeeded"})
+            if url.endswith("/fail"):
+                raise AssertionError("unexpected task failure")
+            raise AssertionError(f"unexpected POST {url}")
+
+        def get(self, url, **kwargs):
+            assert url == f"https://agent.example/v1/tasks/{executor_id}"
+            seen["polls"] += 1
+            return FakeResponse(200, {
+                "status": "plan_created",
+                "result": {"summary": "A reviewed plan", "steps": []},
+            })
+
+    monkeypatch.setenv("AGENT_RUNTIME_EXECUTOR_POLL_SECONDS", "1")
+    assert execute_one(
+        FakeApi(), "https://backend.example", "api-key", "worker-1",
+        "https://agent.example", "agent-key", "/v1/agents/run", 90,
+    ) is True
+    assert seen["dispatch"]["task_id"] == task_id
+    assert seen["dispatch"]["agent_id"] == "youtube-publisher"
+    assert seen["polls"] == 1
+    assert seen["completed"]["summary"] == "A reviewed plan"
+
+
+def test_worker_registry_blocks_parallel_claims_for_same_worker_and_cannot_hard_cancel(monkeypatch, tmp_path):
+    _configure(monkeypatch, tmp_path)
+    first = client.post("/v1/agent-runtime/tasks", headers=HEADERS, json={"objective": "First task"}).json()
+    client.post("/v1/agent-runtime/tasks", headers=HEADERS, json={"objective": "Second task"})
+    registered = client.post(
+        "/v1/agent-runtime/workers/register", headers=HEADERS,
+        json={"worker_id": "worker-registry-1", "capabilities": {"executor": "plan-only"}},
+    )
+    assert registered.status_code == 200
+    claim = client.post(
+        "/v1/agent-runtime/workers/claim", headers=HEADERS,
+        json={"worker_id": "worker-registry-1"},
+    ).json()
+    assert claim["task"]["task_id"] == first["task_id"]
+    busy = client.post(
+        "/v1/agent-runtime/workers/claim", headers=HEADERS,
+        json={"worker_id": "worker-registry-1"},
+    ).json()
+    assert busy["worker_busy"] is True
+    assert busy["task"] is None
+    worker = client.get("/v1/agent-runtime/workers", headers=HEADERS).json()["items"][0]
+    assert worker["status"] == "busy"
+    assert worker["current_task_id"] == first["task_id"]
+    cannot_cancel = client.post(
+        f"/v1/agent-runtime/tasks/{first['task_id']}/cancel", headers=HEADERS,
+    )
+    assert cannot_cancel.status_code == 409

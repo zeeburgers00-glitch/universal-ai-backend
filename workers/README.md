@@ -45,3 +45,19 @@ Vercel sends JSON requests to these configured HTTPS base URLs:
 
 Worker scaffolds are provided under `workers/` (`voice_worker`, `media_worker`, `youtube_worker`, `channel_worker`, `agent_worker`, `automation_worker`, `rea_worker`, and `windows_agent`) and orchestrated via `workers/docker-compose.yml`. Keep all secrets in each hosting provider's secret/environment settings, never commit them to GitHub.
 
+
+## Universal Agent Runtime worker
+
+A polling worker is available at `workers/agent_runtime` and is included as the
+`agent-runtime-worker` service in `workers/docker-compose.yml`. It submits claimed tasks
+to the existing agent planner and polls its Celery task status. The bundled planner is
+plan-only: it returns typed steps for review and does not itself publish, send messages,
+run arbitrary code, or execute media jobs.
+
+Set `AGENT_RUNTIME_API_URL`, `BACKEND_API_KEY`, `AGENT_WORKER_URL`, and
+`AGENT_WORKER_API_KEY` in `workers/.env.workers`. Start it with
+`docker compose --env-file workers/.env.workers -f workers/docker-compose.yml --profile agent-runtime up --build -d agent-api agent-runtime-worker`. Keep the no-card attestation false
+until the actual model provider/account has been checked. For the compose-private
+`agent-api` hostname only, HTTP can be opted into with
+`AGENT_RUNTIME_ALLOW_PRIVATE_NETWORK_HTTP=true` and
+`AGENT_RUNTIME_PRIVATE_HTTP_HOSTS=agent-api`. All remote URLs must use HTTPS.

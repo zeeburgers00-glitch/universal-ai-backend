@@ -145,6 +145,28 @@ services:
     networks: [workers-private]
 
 
+  agent-runtime-worker:
+    profiles: ["agent-runtime"]
+    build: { context: ./agent_runtime, dockerfile: Dockerfile }
+    environment:
+      AGENT_RUNTIME_API_URL: ${AGENT_RUNTIME_API_URL:?set AGENT_RUNTIME_API_URL}
+      BACKEND_API_KEY: ${BACKEND_API_KEY:?set BACKEND_API_KEY}
+      AGENT_WORKER_URL: ${AGENT_WORKER_URL:?set AGENT_WORKER_URL}
+      AGENT_WORKER_API_KEY: ${AGENT_WORKER_API_KEY:?set AGENT_WORKER_API_KEY}
+      AGENT_RUNTIME_WORKER_NO_CARD_CONFIRMED: ${AGENT_RUNTIME_WORKER_NO_CARD_CONFIRMED:-false}
+      AGENT_RUNTIME_WORKER_ID: ${AGENT_RUNTIME_WORKER_ID:-agent-runtime-01}
+      AGENT_RUNTIME_POLL_SECONDS: ${AGENT_RUNTIME_POLL_SECONDS:-5}
+      AGENT_RUNTIME_LEASE_SECONDS: ${AGENT_RUNTIME_LEASE_SECONDS:-300}
+      AGENT_RUNTIME_EXECUTOR_PATH: ${AGENT_RUNTIME_EXECUTOR_PATH:-/v1/agents/run}
+      AGENT_RUNTIME_EXECUTOR_STATUS_PATH_TEMPLATE: ${AGENT_RUNTIME_EXECUTOR_STATUS_PATH_TEMPLATE:?set AGENT_RUNTIME_EXECUTOR_STATUS_PATH_TEMPLATE}
+      AGENT_RUNTIME_EXECUTOR_MAX_WAIT_SECONDS: ${AGENT_RUNTIME_EXECUTOR_MAX_WAIT_SECONDS:-3600}
+      AGENT_RUNTIME_EXECUTOR_POLL_SECONDS: ${AGENT_RUNTIME_EXECUTOR_POLL_SECONDS:-5}
+      AGENT_RUNTIME_ALLOW_PRIVATE_NETWORK_HTTP: ${AGENT_RUNTIME_ALLOW_PRIVATE_NETWORK_HTTP:-false}
+      AGENT_RUNTIME_PRIVATE_HTTP_HOSTS: ${AGENT_RUNTIME_PRIVATE_HTTP_HOSTS:-agent-api}
+    depends_on: { agent-api: { condition: service_started } }
+    restart: unless-stopped
+    networks: [workers-private]
+
   agent-api:
     build: { context: ./agent_worker, dockerfile: Dockerfile }
     command: ["uvicorn", "agent_worker.app:app", "--host", "0.0.0.0", "--port", "8500"]

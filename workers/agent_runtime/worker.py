@@ -10,8 +10,10 @@ import os
 import re
 import socket
 import time
+from datetime import datetime, timezone
 from threading import Event, Thread
 from typing import Any
+from urllib.parse import urlsplit
 
 import httpx
 
@@ -23,13 +25,29 @@ def _required(name: str) -> str:
     return value
 
 
+def _secure_service_url(name: str) -> str:
+    base = _required(name).rstrip("/")
+    parsed = urlsplit(base)
+    if parsed.scheme == "https" and parsed.hostname:
+        return base
+    local_ok = os.getenv("AGENT_RUNTIME_ALLOW_INSECURE_LOCAL_HTTP", "").lower() == "true"
+    if parsed.scheme == "http" and parsed.hostname in {"127.0.0.1", "localhost", "::1"} and local_ok:
+        return base
+    private_ok = os.getenv("AGENT_RUNTIME_ALLOW_PRIVATE_NETWORK_HTTP", "").lower() == "true"
+    private_hosts = {
+        host.strip().lower()
+        for host in os.getenv("AGENT_RUNTIME_PRIVATE_HTTP_HOSTS", "").split(",")
+        if host.strip()
+    }
+    if parsed.scheme == "http" and parsed.hostname and parsed.hostname.lower() in private_hosts and private_ok:
+        return base
+    raise RuntimeError(
+        f"{name} must use HTTPS; HTTP is allowed only for explicitly allowlisted private hosts or local development."
+    )
+
+
 def _executor_url() -> str:
-    base = _required("AGENT_WORKER_URL").rstrip("/")
-    if not base.startswith("https://"):
-        local_ok = os.getenv("AGENT_RUNTIME_ALLOW_INSECURE_LOCAL_HTTP", "").lower() == "true"
-        if not (local_ok and base.startswith(("http://127.0.0.1", "http://localhost"))):
-            raise RuntimeError("AGENT_WORKER_URL must use HTTPS (local HTTP requires explicit opt-in)")
-    return base
+    return _secure_service_url("AGENT_WORKER_URL")
 
 
 def _heartbeat_loop(api: httpx.Client, api_base: str, api_key: str,
@@ -65,20 +83,33 @@ def execute_one(api: httpx.Client, api_base: str, api_key: str,
         return False
 
     task_id = task["task_id"]
+    try:
+        lease_until = datetime.fromisoformat(task["lease_until"])
+        initial_lease = max(15, int((lease_until - datetime.now(timezone.utc)).total_seconds()))
+    except (KeyError, TypeError, ValueError):
+        initial_lease = 180
+    heartbeat_lease = max(15, min(lease_seconds, initial_lease))
     stop = Event()
     heartbeat = Thread(
         target=_heartbeat_loop,
-        args=(api, api_base, api_key, worker_id, task_id, stop, lease_seconds),
+        args=(api, api_base, api_key, worker_id, task_id, stop, heartbeat_lease),
         daemon=True,
     )
     heartbeat.start()
     try:
         payload = task.get("payload") or {}
+        agent = payload.get("agent") or {
+            "id": task.get("agent_id") or "general-agent",
+            "name": "General Agent",
+            "mission": "Produce a bounded, reviewable action plan.",
+            "risk_level": task.get("risk_level", "medium"),
+        }
+        agent_id = task.get("agent_id") or agent.get("id") or "general-agent"
         dispatch = {
-            "agent": {"id": task.get("agent_id") or "general-agent"},
-            "agent_id": task.get("agent_id"),
+            "task_id": task_id,
+            "agent": agent,
+            "agent_id": agent_id,
             "objective": task["objective"],
-            "task_type": task.get("task_type", "agent"),
             "inputs": {
                 **(payload.get("inputs") or {}),
                 "runtime_task_id": task_id,
@@ -87,12 +118,9 @@ def execute_one(api: httpx.Client, api_base: str, api_key: str,
                 "no_paid_provider_fallback": True,
                 "no_secrets_in_prompt": True,
             },
-            "dry_run": bool(payload.get("dry_run", False)),
-            "studio_policy": {
-                "no_card_only": True,
-                "no_paid_provider_fallback": True,
-                "no_secrets_in_prompt": True,
-            },
+            "user_approved": bool(payload.get("user_approved", False)),
+            "dry_run": bool(payload.get("dry_run", True)),
+            "execution_mode": "plan_only",
         }
         response = api.post(
             executor_url + executor_path,
@@ -102,10 +130,44 @@ def execute_one(api: httpx.Client, api_base: str, api_key: str,
             timeout=httpx.Timeout(240, connect=10),
         )
         response.raise_for_status()
-        try:
-            result: Any = response.json()
-        except ValueError:
-            result = {"text": response.text[:20000]}
+        if response.status_code == 202:
+            accepted = response.json()
+            executor_task_id = str(accepted.get("task_id") or "")
+            if not re.fullmatch(r"[A-Za-z0-9_-]{8,120}", executor_task_id):
+                raise RuntimeError("Executor returned HTTP 202 without a valid task_id; cannot confirm completion.")
+            status_template = os.getenv(
+                "AGENT_RUNTIME_EXECUTOR_STATUS_PATH_TEMPLATE", "/v1/tasks/{task_id}"
+            )
+            status_path = status_template.replace("{task_id}", executor_task_id)
+            if not re.fullmatch(r"/v1/[A-Za-z0-9/._-]{1,150}", status_path) or ".." in status_path:
+                raise RuntimeError("AGENT_RUNTIME_EXECUTOR_STATUS_PATH_TEMPLATE is invalid.")
+            max_wait = max(30, min(21600, int(os.getenv("AGENT_RUNTIME_EXECUTOR_MAX_WAIT_SECONDS", "3600"))))
+            poll_seconds = max(1, min(60, int(os.getenv("AGENT_RUNTIME_EXECUTOR_POLL_SECONDS", "5"))))
+            deadline = time.monotonic() + max_wait
+            result_data: dict[str, Any] | None = None
+            while time.monotonic() < deadline:
+                poll = api.get(
+                    executor_url + status_path,
+                    headers={"Authorization": f"Bearer {executor_key}", "X-Worker-Service": "agents"},
+                    timeout=20,
+                )
+                poll.raise_for_status()
+                status_data = poll.json()
+                state = str(status_data.get("status") or "").lower()
+                if state in {"failed", "revoked", "cancelled"}:
+                    raise RuntimeError(f"Agent executor task ended with status={state}.")
+                if state in {"plan_created", "succeeded", "success", "completed"}:
+                    result_data = status_data.get("result") if isinstance(status_data.get("result"), dict) else status_data
+                    break
+                time.sleep(poll_seconds)
+            if result_data is None:
+                raise TimeoutError("Agent executor did not finish before AGENT_RUNTIME_EXECUTOR_MAX_WAIT_SECONDS.")
+            result = result_data
+        else:
+            try:
+                result = response.json()
+            except ValueError:
+                result = {"text": response.text[:20000]}
         complete = api.post(
             f"{api_base}/v1/agent-runtime/workers/{worker_id}/tasks/{task_id}/complete",
             headers={"X-API-Key": api_key},
@@ -132,11 +194,7 @@ def execute_one(api: httpx.Client, api_base: str, api_key: str,
 def main() -> None:
     if os.getenv("AGENT_RUNTIME_WORKER_NO_CARD_CONFIRMED", "false").lower() != "true":
         raise RuntimeError("Set AGENT_RUNTIME_WORKER_NO_CARD_CONFIRMED=true only after verifying a free/no-card executor.")
-    api_base = _required("AGENT_RUNTIME_API_URL").rstrip("/")
-    if not api_base.startswith("https://"):
-        local_ok = os.getenv("AGENT_RUNTIME_ALLOW_INSECURE_LOCAL_HTTP", "").lower() == "true"
-        if not (local_ok and api_base.startswith(("http://127.0.0.1", "http://localhost"))):
-            raise RuntimeError("AGENT_RUNTIME_API_URL must use HTTPS outside explicitly enabled local development")
+    api_base = _secure_service_url("AGENT_RUNTIME_API_URL")
     api_key = _required("BACKEND_API_KEY")
     executor_url = _executor_url()
     executor_key = _required("AGENT_WORKER_API_KEY")

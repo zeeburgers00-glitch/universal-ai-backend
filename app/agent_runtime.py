@@ -12,6 +12,7 @@ import sqlite3
 import threading
 import uuid
 from contextlib import contextmanager
+from functools import lru_cache
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Literal
@@ -124,6 +125,17 @@ def _connect() -> sqlite3.Connection:
                     created_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS agent_runtime_workers (
+                    worker_id TEXT PRIMARY KEY,
+                    status TEXT NOT NULL,
+                    capabilities_json TEXT NOT NULL DEFAULT '{}',
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    last_seen TEXT NOT NULL,
+                    current_task_id TEXT
+                );
+                CREATE INDEX IF NOT EXISTS idx_agent_runtime_workers_seen
+                    ON agent_runtime_workers(last_seen);
                 CREATE TABLE IF NOT EXISTS agent_memory (
                     memory_id TEXT PRIMARY KEY,
                     scope TEXT NOT NULL,
@@ -182,6 +194,56 @@ def _check_secrets(value: Any, path: str = "inputs") -> None:
     elif isinstance(value, list):
         for index, child in enumerate(value):
             _check_secrets(child, f"{path}[{index}]")
+
+
+@lru_cache(maxsize=3)
+def _load_agent_catalog(filename: str) -> list[dict[str, Any]]:
+    root = Path(__file__).resolve().parent.parent / "catalog"
+    path = (root / filename).resolve()
+    if root.resolve() not in path.parents or not path.exists():
+        return []
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    if isinstance(data, list):
+        return [item for item in data if isinstance(item, dict)]
+    if isinstance(data, dict):
+        items = data.get("agents") or data.get("roles") or []
+        return [item for item in items if isinstance(item, dict)]
+    return []
+
+
+def _agent_blueprint(agent_id: str | None) -> dict[str, Any] | None:
+    if not agent_id:
+        return None
+    for filename in ("agents.json", "openavatar_agent_fleet.json", "youtube_agent_fleet.json"):
+        for item in _load_agent_catalog(filename):
+            if item.get("id") == agent_id:
+                blueprint = dict(item)
+                label = f"{blueprint.get('id', '')} {blueprint.get('name', '')}".lower()
+                if not blueprint.get("risk_level"):
+                    if any(word in label for word in ("publish", "publisher", "upload", "delete", "payment", "purchase")):
+                        blueprint["risk_level"] = "critical"
+                    elif any(word in label for word in ("channel", "voice", "clone", "account", "message")):
+                        blueprint["risk_level"] = "high"
+                    else:
+                        blueprint["risk_level"] = "medium"
+                blueprint.setdefault("operating_instructions", blueprint.get("instructions", ""))
+                blueprint.setdefault(
+                    "human_approval_rules",
+                    "Planning only; all external side effects require a separate human approval.",
+                )
+                return blueprint
+    raise HTTPException(status_code=404, detail="Agent blueprint not found in the installed catalogs")
+
+
+def _effective_risk(requested: str, blueprint: dict[str, Any] | None) -> str:
+    levels = {"low": 0, "medium": 1, "high": 2, "critical": 3}
+    catalog_level = str((blueprint or {}).get("risk_level", "low")).lower()
+    if catalog_level not in levels:
+        catalog_level = "medium"
+    return max((requested, catalog_level), key=lambda value: levels[value])
 
 
 def _event(conn: sqlite3.Connection, task_id: str, event_type: str, status: str,
@@ -248,6 +310,7 @@ def _insert_task(
     step_key: str | None = None,
     task_id: str | None = None,
     validate_dependencies: bool = True,
+    agent_blueprint: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if idempotency_key:
         existing = conn.execute(
@@ -269,6 +332,15 @@ def _insert_task(
     status = "pending_approval" if risk_level in {"high", "critical"} else "queued"
     payload = {
         "inputs": inputs,
+        "agent": agent_blueprint or {
+            "id": agent_id or "general-agent",
+            "name": "General Agent",
+            "mission": "Produce a bounded, reviewable action plan for the supplied objective.",
+            "capabilities": ["planning", "summarization"],
+            "risk_level": risk_level,
+            "human_approval_rules": "Planning only; external side effects require human approval.",
+        },
+        "user_approved": False,
         "dry_run": dry_run,
         "tool_allowlist": tool_allowlist,
         "no_paid_provider_fallback": True,
@@ -322,7 +394,7 @@ def _refresh_workflow(conn: sqlite3.Connection, workflow_id: str | None) -> None
 
 class TaskCreate(BaseModel):
     objective: str = Field(min_length=3, max_length=12000)
-    agent_id: str | None = Field(default=None, max_length=128, pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+    agent_id: str | None = Field(default=None, max_length=100, pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$")
     task_type: str = Field(default="agent", min_length=2, max_length=80, pattern=r"^[A-Za-z0-9._-]+$")
     inputs: dict[str, Any] = Field(default_factory=dict)
     risk_level: Literal["low", "medium", "high", "critical"] = "low"
@@ -337,7 +409,7 @@ class TaskCreate(BaseModel):
 class WorkflowStep(BaseModel):
     id: str = Field(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
     objective: str = Field(min_length=3, max_length=12000)
-    agent_id: str | None = Field(default=None, max_length=128, pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+    agent_id: str | None = Field(default=None, max_length=100, pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$")
     task_type: str = Field(default="agent", min_length=2, max_length=80, pattern=r"^[A-Za-z0-9._-]+$")
     inputs: dict[str, Any] = Field(default_factory=dict)
     risk_level: Literal["low", "medium", "high", "critical"] = "low"
@@ -351,6 +423,11 @@ class WorkflowCreate(BaseModel):
     steps: list[WorkflowStep] = Field(min_length=1, max_length=100)
     max_attempts: int = Field(default=3, ge=1, le=10)
     lease_seconds: int = Field(default=180, ge=15, le=3600)
+
+
+class WorkerRegister(BaseModel):
+    worker_id: str = Field(min_length=2, max_length=128, pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+    capabilities: dict[str, Any] = Field(default_factory=dict)
 
 
 class WorkerClaim(BaseModel):
@@ -382,6 +459,71 @@ class MemoryWrite(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
+@router.get("/catalog")
+def unified_agent_catalog(
+    query: str | None = Query(default=None, max_length=200),
+    source: str | None = Query(default=None, pattern=r"^(general|openavatar|youtube)$"),
+    risk_level: str | None = Query(default=None, pattern=r"^(low|medium|high|critical)$"),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0, le=100000),
+):
+    catalogs = {
+        "general": "agents.json",
+        "openavatar": "openavatar_agent_fleet.json",
+        "youtube": "youtube_agent_fleet.json",
+    }
+    sources = [source] if source else list(catalogs)
+    items: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for source_id in sources:
+        for raw in _load_agent_catalog(catalogs[source_id]):
+            agent_id = str(raw.get("id") or raw.get("role_id") or "")
+            if not agent_id or agent_id in seen:
+                continue
+            seen.add(agent_id)
+            item = dict(raw)
+            item["id"] = agent_id
+            item["source"] = source_id
+            if source_id == "youtube":
+                label = f"{agent_id} {item.get('name', '')}".lower()
+                item["risk_level"] = (
+                    "critical" if any(word in label for word in ("publish", "publisher", "upload", "delete", "payment", "purchase"))
+                    else "high" if any(word in label for word in ("channel", "voice", "clone", "account", "message"))
+                    else "medium"
+                )
+            else:
+                item.setdefault("risk_level", "medium")
+            item.setdefault("capabilities", [])
+            item.setdefault("mission", item.get("description", item.get("role_id", "Specialist agent role")))
+            item.setdefault("allowed_tool_families", item.get("tool_families", []))
+            items.append(item)
+    if query:
+        needle = query.casefold()
+        items = [item for item in items if needle in " ".join([
+            str(item.get("id", "")), str(item.get("name", "")),
+            str(item.get("mission", "")), " ".join(map(str, item.get("capabilities", []))),
+        ]).casefold()]
+    if risk_level:
+        items = [item for item in items if item.get("risk_level") == risk_level]
+    items.sort(key=lambda item: (item.get("source", ""), item.get("id", "")))
+    return {
+        "total": len(items),
+        "items": items[offset:offset + limit],
+        "limit": limit,
+        "offset": offset,
+        "catalog_sources": list(sources),
+        "note": "Catalog entries are role blueprints, not running processes. Every write or external side effect must pass worker, permission, consent and approval controls.",
+    }
+
+
+@router.get("/catalog/{agent_id}")
+def unified_agent_detail(agent_id: str):
+    blueprint = _agent_blueprint(agent_id)
+    if not blueprint:
+        raise HTTPException(status_code=404, detail="Agent blueprint not found")
+    return blueprint
+
+
 @router.get("/status")
 def runtime_status():
     path = _db_path()
@@ -393,6 +535,11 @@ def runtime_status():
             ).fetchall()
         }
         memories = conn.execute("SELECT COUNT(*) FROM agent_memory").fetchone()[0]
+        workers = conn.execute("SELECT COUNT(*) FROM agent_runtime_workers").fetchone()[0]
+        online_cutoff = _iso(_now() - timedelta(seconds=90))
+        online_workers = conn.execute(
+            "SELECT COUNT(*) FROM agent_runtime_workers WHERE last_seen>=?", (online_cutoff,)
+        ).fetchone()[0]
     attested = os.getenv("AGENT_RUNTIME_WORKER_NO_CARD_CONFIRMED", "false").lower() == "true"
     return {
         "service": "universal-agent-runtime",
@@ -405,10 +552,12 @@ def runtime_status():
         ),
         "task_counts": counts,
         "memory_records": memories,
+        "workers_known": workers,
+        "workers_seen_within_90s": online_workers,
         "execution_attested_no_card": attested,
         "no_card_only": True,
         "paid_provider_fallback": False,
-        "features": ["task_queue", "leases", "retries", "workflow_dag", "human_approvals", "scoped_memory", "event_log"],
+        "features": ["task_queue", "leases", "retries", "workflow_dag", "human_approvals", "scoped_memory", "event_log", "unified_agent_catalog", "worker_registry"],
     }
 
 
@@ -416,14 +565,16 @@ def runtime_status():
 def create_task(body: TaskCreate):
     _check_secrets(body.inputs)
     _check_secrets(body.tool_allowlist, "tool_allowlist")
+    blueprint = _agent_blueprint(body.agent_id)
+    effective_risk = _effective_risk(body.risk_level, blueprint)
     with _db() as conn:
         conn.execute("BEGIN IMMEDIATE")
         task = _insert_task(
             conn, task_type=body.task_type, objective=body.objective, agent_id=body.agent_id,
-            inputs=body.inputs, risk_level=body.risk_level, max_attempts=body.max_attempts,
+            inputs=body.inputs, risk_level=effective_risk, max_attempts=body.max_attempts,
             lease_seconds=body.lease_seconds, idempotency_key=body.idempotency_key,
             depends_on=body.depends_on, dry_run=body.dry_run,
-            tool_allowlist=body.tool_allowlist,
+            tool_allowlist=body.tool_allowlist, agent_blueprint=blueprint,
         )
         return task
 
@@ -487,6 +638,8 @@ def cancel_task(task_id: str):
             raise HTTPException(status_code=404, detail="Task not found")
         if row["status"] in _TERMINAL:
             raise HTTPException(status_code=409, detail=f"Task is already {row['status']}")
+        if row["status"] == "running":
+            raise HTTPException(status_code=409, detail="A running task cannot be hard-cancelled. Stop it through the executor, then report its final state.")
         conn.execute(
             "UPDATE agent_tasks SET status='cancelled',worker_id=NULL,lease_until=NULL,updated_at=? WHERE task_id=?",
             (_iso(), task_id),
@@ -494,6 +647,45 @@ def cancel_task(task_id: str):
         _event(conn, task_id, "cancelled", "cancelled", "Task cancelled by API request.")
         _refresh_workflow(conn, row["workflow_id"])
         return {"task_id": task_id, "status": "cancelled"}
+
+
+@router.post("/workers/register")
+def register_worker(body: WorkerRegister):
+    _check_secrets(body.capabilities, "capabilities")
+    now = _iso()
+    with _db() as conn:
+        conn.execute(
+            """INSERT INTO agent_runtime_workers
+               (worker_id,status,capabilities_json,created_at,updated_at,last_seen,current_task_id)
+               VALUES(?,?,?,?,?,?,NULL)
+               ON CONFLICT(worker_id) DO UPDATE SET
+                 status=CASE WHEN agent_runtime_workers.current_task_id IS NULL THEN 'idle' ELSE agent_runtime_workers.status END,
+                 capabilities_json=excluded.capabilities_json,
+                 updated_at=excluded.updated_at,last_seen=excluded.last_seen""",
+            (body.worker_id, "idle", _json(body.capabilities), now, now, now),
+        )
+    return {"worker_id": body.worker_id, "status": "idle", "last_seen": now}
+
+
+@router.get("/workers")
+def list_runtime_workers(
+    stale_after_seconds: int = Query(default=90, ge=15, le=3600),
+    limit: int = Query(default=100, ge=1, le=500),
+):
+    cutoff = _iso(_now() - timedelta(seconds=stale_after_seconds))
+    with _db() as conn:
+        rows = conn.execute(
+            "SELECT * FROM agent_runtime_workers ORDER BY last_seen DESC LIMIT ?", (limit,)
+        ).fetchall()
+    return {"items": [{
+        "worker_id": row["worker_id"],
+        "status": "offline" if row["last_seen"] < cutoff else row["status"],
+        "last_seen": row["last_seen"],
+        "current_task_id": row["current_task_id"],
+        "capabilities": _decode(row["capabilities_json"], {}),
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+    } for row in rows], "stale_after_seconds": stale_after_seconds}
 
 
 @router.post("/workers/claim")
@@ -504,6 +696,15 @@ def claim_task(body: WorkerClaim):
     now_s = _iso(now)
     with _db() as conn:
         conn.execute("BEGIN IMMEDIATE")
+        conn.execute(
+            """INSERT INTO agent_runtime_workers
+               (worker_id,status,capabilities_json,created_at,updated_at,last_seen,current_task_id)
+               VALUES(?,?,?,?,?,?,NULL)
+               ON CONFLICT(worker_id) DO UPDATE SET
+                 status=CASE WHEN agent_runtime_workers.current_task_id IS NULL THEN 'idle' ELSE agent_runtime_workers.status END,
+                 updated_at=excluded.updated_at,last_seen=excluded.last_seen""",
+            (body.worker_id, "idle", "{}", now_s, now_s, now_s),
+        )
         expired = conn.execute(
             "SELECT * FROM agent_tasks WHERE status='running' AND lease_until IS NOT NULL AND lease_until<?",
             (now_s,),
@@ -516,8 +717,23 @@ def claim_task(body: WorkerClaim):
                    error=? WHERE task_id=?""",
                 (status, now_s, "Worker lease expired.", row["task_id"]),
             )
+            if row["worker_id"]:
+                conn.execute(
+                    "UPDATE agent_runtime_workers SET status='offline',current_task_id=NULL,updated_at=?,last_seen=? WHERE worker_id=?",
+                    (now_s, now_s, row["worker_id"]),
+                )
             _event(conn, row["task_id"], "lease_expired", status, "Worker lease expired; task returned to queue." if retry else "Worker lease expired; retry limit reached.")
             _refresh_workflow(conn, row["workflow_id"])
+        owned_task = conn.execute(
+            "SELECT * FROM agent_tasks WHERE status='running' AND worker_id=? AND lease_until>=? LIMIT 1",
+            (body.worker_id, now_s),
+        ).fetchone()
+        if owned_task:
+            conn.execute(
+                "UPDATE agent_runtime_workers SET status='busy',current_task_id=?,updated_at=?,last_seen=? WHERE worker_id=?",
+                (owned_task["task_id"], now_s, now_s, body.worker_id),
+            )
+            return {"task": None, "queue_empty": True, "worker_busy": True}
         candidates = conn.execute(
             "SELECT * FROM agent_tasks WHERE status='queued' ORDER BY created_at ASC LIMIT 200"
         ).fetchall()
@@ -544,6 +760,10 @@ def claim_task(body: WorkerClaim):
             selected = row
             break
         if not selected:
+            conn.execute(
+                "UPDATE agent_runtime_workers SET status='idle',current_task_id=NULL,updated_at=?,last_seen=? WHERE worker_id=?",
+                (now_s, now_s, body.worker_id),
+            )
             return {"task": None, "queue_empty": True}
         lease_seconds = selected["lease_seconds"]
         lease_until = _iso(now + timedelta(seconds=lease_seconds))
@@ -552,6 +772,10 @@ def claim_task(body: WorkerClaim):
             """UPDATE agent_tasks SET status='running',worker_id=?,lease_until=?,attempts=?,updated_at=?
                WHERE task_id=? AND status='queued'""",
             (body.worker_id, lease_until, attempt, now_s, selected["task_id"]),
+        )
+        conn.execute(
+            "UPDATE agent_runtime_workers SET status='busy',current_task_id=?,updated_at=?,last_seen=? WHERE worker_id=?",
+            (selected["task_id"], now_s, now_s, body.worker_id),
         )
         _event(conn, selected["task_id"], "claimed", "running", "Task claimed by worker.",
                {"worker_id": body.worker_id, "attempt": attempt, "lease_until": lease_until})
@@ -574,6 +798,10 @@ def heartbeat_task(worker_id: str, task_id: str, body: WorkerHeartbeat):
         lease_until = _iso(now + timedelta(seconds=body.extend_seconds))
         conn.execute("UPDATE agent_tasks SET lease_until=?,updated_at=? WHERE task_id=?",
                      (lease_until, _iso(now), task_id))
+        conn.execute(
+            "UPDATE agent_runtime_workers SET status='busy',last_seen=?,updated_at=? WHERE worker_id=?",
+            (_iso(now), _iso(now), worker_id),
+        )
         _event(conn, task_id, "heartbeat", "running", "Worker lease extended.",
                {"worker_id": worker_id, "lease_until": lease_until})
     return {"task_id": task_id, "lease_until": lease_until}
@@ -600,6 +828,10 @@ def complete_task(worker_id: str, task_id: str, body: WorkerComplete):
                worker_id=NULL,lease_until=NULL,updated_at=? WHERE task_id=?""",
             (encoded, _iso(), task_id),
         )
+        conn.execute(
+            "UPDATE agent_runtime_workers SET status='idle',current_task_id=NULL,last_seen=?,updated_at=? WHERE worker_id=?",
+            (_iso(), _iso(), worker_id),
+        )
         _event(conn, task_id, "completed", "succeeded", "Task completed successfully.")
         _refresh_workflow(conn, row["workflow_id"])
     return {"task_id": task_id, "status": "succeeded"}
@@ -621,6 +853,10 @@ def fail_task(worker_id: str, task_id: str, body: WorkerFail):
             """UPDATE agent_tasks SET status=?,error=?,worker_id=NULL,lease_until=NULL,updated_at=?
                WHERE task_id=?""",
             (status, body.error[:4000], _iso(), task_id),
+        )
+        conn.execute(
+            "UPDATE agent_runtime_workers SET status='idle',current_task_id=NULL,last_seen=?,updated_at=? WHERE worker_id=?",
+            (_iso(), _iso(), worker_id),
         )
         _event(conn, task_id, "failed", status, body.error, {"retryable": body.retryable})
         _refresh_workflow(conn, row["workflow_id"])
@@ -654,8 +890,10 @@ def _validate_dag(steps: list[WorkflowStep]) -> None:
 
 @router.post("/workflows", status_code=202)
 def create_workflow(body: WorkflowCreate):
+    blueprints: dict[str, dict[str, Any] | None] = {}
     for step in body.steps:
         _check_secrets(step.inputs, f"steps.{step.id}.inputs")
+        blueprints[step.id] = _agent_blueprint(step.agent_id)
     _validate_dag(body.steps)
     workflow_id = str(uuid.uuid4())
     step_task_ids = {step.id: str(uuid.uuid4()) for step in body.steps}
@@ -670,11 +908,12 @@ def create_workflow(body: WorkflowCreate):
             deps = [step_task_ids[key] for key in step.depends_on]
             task = _insert_task(
                 conn, task_type=step.task_type, objective=step.objective, agent_id=step.agent_id,
-                inputs=step.inputs, risk_level=step.risk_level, max_attempts=body.max_attempts,
+                inputs=step.inputs, risk_level=_effective_risk(step.risk_level, blueprints[step.id]), max_attempts=body.max_attempts,
                 lease_seconds=body.lease_seconds, idempotency_key=f"workflow:{workflow_id}:{step.id}",
                 depends_on=deps, dry_run=step.dry_run, tool_allowlist=step.tool_allowlist,
                 workflow_id=workflow_id, step_key=step.id,
                 task_id=step_task_ids[step.id], validate_dependencies=False,
+                agent_blueprint=blueprints[step.id],
             )
             if task["task_id"] != step_task_ids[step.id]:
                 raise HTTPException(status_code=409, detail="Workflow idempotency collision.")
@@ -740,9 +979,13 @@ def decide_approval(approval_id: str, body: ApprovalDecision):
                WHERE approval_id=?""",
             (body.decision, now, now, body.note, approval_id),
         )
+        task_payload = _decode(task["payload_json"], {})
+        if body.decision == "approved":
+            task_payload["user_approved"] = True
         conn.execute(
-            "UPDATE agent_tasks SET status=?,updated_at=?,error=? WHERE task_id=?",
-            (task_status, now, None if body.decision == "approved" else "Rejected by human approval.", task["task_id"]),
+            "UPDATE agent_tasks SET status=?,updated_at=?,error=?,payload_json=? WHERE task_id=?",
+            (task_status, now, None if body.decision == "approved" else "Rejected by human approval.",
+             _json(task_payload), task["task_id"]),
         )
         _event(conn, task["task_id"], "approval", task_status,
                f"Human approval decision: {body.decision}.", {"note": body.note})
