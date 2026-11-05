@@ -6,8 +6,8 @@ Reviewed: 2026-11-04.
 
 - **Backend:** this FastAPI repository is deployed as one lightweight Railway service from the root Dockerfile.
 - **Database:** use the already connected Supabase Free PostgreSQL project for CRM records. Do not create a second database or provision Redis by default.
-- **Frontend:** a separate Next.js application lives in `frontend/`. It uses React Three Fiber and Three.js for a procedural 3D command centre. Its server-side proxy keeps `BACKEND_API_KEY` out of browser code.
-- **Frontend release gate:** the connected Vercel team currently uses Hobby. Vercel's official Hobby terms limit it to personal, non-commercial use, so this business control panel must not be deployed as a production business frontend on that plan. Keep the source ready; use an eligible commercial Vercel plan or a free host whose terms permit the use.
+- **Frontend:** removed on request — this repo is backend-only now. The control plane serves its own pages at `/app`, `/studio` and `/explorer`, so a separate Next.js app is not needed.
+- **Frontend release gate:** not applicable — there is no separate frontend to deploy.
 
 ## Railway Free guardrails
 
@@ -47,7 +47,7 @@ Required core variables copied from the existing backend configuration:
 - `ENABLE_BUILTIN_CLOUD_RUNTIME=0`
 - `DEPLOY_PLATFORM=railway`
 
-Set `CORS_ORIGINS` to the exact frontend origin after the frontend has an approved hosting target. The UI server-side proxy calls Railway and does not need a browser-side backend API key.
+Set `CORS_ORIGINS` only if you add a browser client later; the built-in pages are served by the backend on the same origin.
 
 ## Frontend environment variables
 
@@ -56,4 +56,4 @@ Set `CORS_ORIGINS` to the exact frontend origin after the frontend has an approv
 - `DASHBOARD_PASSWORD`: a strong dashboard login password, server-side only.
 - `DASHBOARD_SESSION_SECRET`: at least 32 random bytes, server-side only.
 
-See `frontend/README.md` for local build and release instructions.
+

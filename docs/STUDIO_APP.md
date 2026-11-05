@@ -11,7 +11,7 @@ no CDN, and no build step.
 
 ## Why a single page instead of a new frontend project
 
-The repo already ships two Next.js frontends (`frontend/`, `studio/`), which
+The repo used to ship a separate Next.js frontend (`frontend/`, now removed), which
 require `npm install`, a Node runtime and a separate deployment. The Studio is
 deliberately different:
 
