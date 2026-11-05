@@ -79,7 +79,13 @@ Real HTTP upload (`multipart`) → asset → task:
 - **Fixed:** `gemini-2.0-flash` default dead tha (Google ne June 2026 me band kiya) → ab
   `gemini-3.8-flash`.
 
-## 3.3a Naya: agent runtime (37 runnable agents)
+## 3.2b Naya: JARVIS layer (memory + planning + tools)
+
+`/v1/jarvis/*` — bat-cheet jo yaad rakhti hai (SQLite facts + episodes, BM25 recall),
+goal ko agents me todti hai, asli tools chalati hai aur jo nahi kar sakti wo saaf bolti hai.
+Ollama free me lagane par wahi layer model se jawab deti hai. Guide: `docs/JARVIS_UPGRADE.md`.
+
+## 3.3a Naya: agent runtime (40 runnable agents)
 
 `/v1/agents/runtime/*` — 37 agents jo is process me chalte hain (ffmpeg, code index, rules,
 model optional), crews, job-queue integration aur audit log. 42 catalog blueprints alag hain

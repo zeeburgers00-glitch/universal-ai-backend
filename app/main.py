@@ -49,6 +49,7 @@ from .data_routes import router as data_router
 from .governance_routes import router as governance_router
 from .git_routes import router as git_router
 from .agent_routes import router as agent_runtime_router
+from .jarvis_routes import router as jarvis_router
 from . import sdk as sdk_generator
 from .vault import (
     delete_runtime_secret,
@@ -164,6 +165,7 @@ app.include_router(data_router)
 app.include_router(governance_router)
 app.include_router(git_router)
 app.include_router(agent_runtime_router)
+app.include_router(jarvis_router)
 
 origins = [x.strip() for x in os.getenv("CORS_ORIGINS", "").split(",") if x.strip()]
 origin_regex = (os.getenv("CORS_ORIGIN_REGEX") or "").strip() or None

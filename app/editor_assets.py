@@ -173,7 +173,7 @@ EDITOR_HTML = r"""<!DOCTYPE html>
       </div>
     </div>
     <div class="panel" id="panel-agents">
-      <h3>Agents <span class="meta">(37 runnable, zero keys)</span></h3>
+      <h3>Agents <span class="meta">(40 runnable, zero keys)</span></h3>
       <select id="agentPicker" onchange="describeAgent()" style="width:100%;margin-bottom:8px"></select>
       <div id="agentHelp" class="meta" style="margin-bottom:8px">pick an agent</div>
       <textarea id="agentInput" rows="4" placeholder='{"path": "app/main.py"}' style="width:100%;font-family:ui-monospace,monospace"></textarea>

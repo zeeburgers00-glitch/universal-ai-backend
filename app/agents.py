@@ -891,6 +891,65 @@ def code_explainer(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 # --------------------------------------------------------------------------- #
+# JARVIS layer (memory + planning + chat), exposed here so the editor lists it
+# --------------------------------------------------------------------------- #
+
+@agent(
+    id="jarvis-chat",
+    name="JARVIS",
+    category="ops",
+    description="Chat with memory and tools: understands a goal, runs the right agents, remembers you.",
+    inputs={"message": "what you want", "session": "optional session id"},
+    required=["message"],
+    engine="rules",
+    async_safe=False,
+    tools=["/v1/jarvis/chat"],
+)
+def jarvis_chat(payload: dict[str, Any]) -> dict[str, Any]:
+    from . import jarvis
+
+    return jarvis.chat(_need(payload, "message"), session=str(payload.get("session") or "default"))
+
+
+@agent(
+    id="memory-keeper",
+    name="Memory Keeper",
+    category="ops",
+    description="Stores and recalls facts about you (SQLite, survives restarts).",
+    inputs={"action": "remember | recall | forget | list", "key": "fact name", "query": "search text"},
+    engine="rules",
+    tools=["/v1/jarvis/memory"],
+)
+def memory_keeper(payload: dict[str, Any]) -> dict[str, Any]:
+    from . import jarvis
+
+    action = str(payload.get("action") or "list").lower()
+    if action == "remember":
+        return jarvis.remember(_need(payload, "key"), _need(payload, "value"))
+    if action == "forget":
+        return jarvis.forget(_need(payload, "key"))
+    if action == "recall":
+        return {"results": jarvis.recall(_need(payload, "query"))}
+    return {"count": len(jarvis.facts()), "facts": jarvis.facts()}
+
+
+@agent(
+    id="goal-planner",
+    name="Goal Planner",
+    category="ops",
+    description="Shows which agents would run for a goal, without running them.",
+    inputs={"goal": "what you want to achieve"},
+    required=["goal"],
+    engine="rules",
+    tools=["/v1/jarvis/plan"],
+)
+def goal_planner(payload: dict[str, Any]) -> dict[str, Any]:
+    from . import jarvis
+
+    return jarvis.plan(_need(payload, "goal"))
+
+
+# --------------------------------------------------------------------------- #
 # Runtime
 # --------------------------------------------------------------------------- #
 
