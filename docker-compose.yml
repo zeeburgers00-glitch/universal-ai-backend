@@ -1,0 +1,43 @@
+# One command, no accounts: `docker compose up --build`
+#
+# Everything durable lives in the `uai-data` volume, so backups
+# (/v1/data/backup) and restarts keep the job queue, quota state and renders.
+services:
+  api:
+    build: .
+    image: universal-ai-backend:local
+    ports:
+      - "8000:8000"
+    environment:
+      BACKEND_API_KEY: ${BACKEND_API_KEY:-dev-key-change-me}
+      UAI_DATA_ROOT: /data
+      UAI_JOBS_CONCURRENCY: ${UAI_JOBS_CONCURRENCY:-2}
+      UAI_JOBS_MAX_ATTEMPTS: ${UAI_JOBS_MAX_ATTEMPTS:-2}
+      # Set to 1 to require an approval token for dangerous writes.
+      UAI_REQUIRE_APPROVAL: ${UAI_REQUIRE_APPROVAL:-0}
+      # Per-key sliding window; 0 disables. /health and /metrics stay exempt.
+      UAI_RATE_LIMIT: ${UAI_RATE_LIMIT:-600}
+      # Any GPU worker / model key you actually have; everything below is optional.
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+    volumes:
+      - uai-data:/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    healthcheck:
+      # Deep probe: data volume, sqlite, ffmpeg, queue worker.
+      test:
+        - CMD-SHELL
+        - >-
+          python -c "import json,urllib.request;
+          r = urllib.request.urlopen('http://127.0.0.1:8000/health/deep', timeout=5);
+          d = json.load(r);
+          raise SystemExit(0 if d['status'] in {'ok','degraded'} else 1)"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    stop_grace_period: 20s
+
+volumes:
+  uai-data:

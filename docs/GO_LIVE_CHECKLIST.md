@@ -103,3 +103,15 @@ python -m pytest -q
 Then run the deployed smoke test and manually verify at least one successful provider response, one queued worker job, task polling/result retrieval, one approved channel test and one approved YouTube upload before claiming end-to-end readiness.
 
 **Status semantics:** CI green = repository checks passed. Vercel READY = that deployment built. Smoke test green = listed read endpoints responded. Only successful real worker/provider integration tests establish those integrations are operational.
+
+## One-command run (naya)
+
+```bash
+cp .env.example .env 2>/dev/null || true   # optional
+make docker          # docker compose up --build
+curl -s localhost:8000/health/deep | python -m json.tool
+```
+
+- Data `uai-data` volume par rehta hai → restart ke baad jobs/quota/renders bache rehte hain
+- Healthcheck khud `/health/deep` hit karta hai (volume, sqlite, ffmpeg, queue worker)
+- `make audit`, `make sdk`, `make backup` bhi ready hain
