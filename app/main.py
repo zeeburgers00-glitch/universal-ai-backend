@@ -56,6 +56,7 @@ from .mind_routes import router as mind_router
 from .account_routes import router as account_router
 from .kaggle_routes import router as kaggle_router
 from .supabase_routes import router as supabase_router
+from .skill_routes import router as skill_router
 from . import sdk as sdk_generator
 from .vault import (
     delete_runtime_secret,
@@ -178,6 +179,7 @@ app.include_router(mind_router)
 app.include_router(account_router)
 app.include_router(kaggle_router)
 app.include_router(supabase_router)
+app.include_router(skill_router)
 
 origins = [x.strip() for x in os.getenv("CORS_ORIGINS", "").split(",") if x.strip()]
 origin_regex = (os.getenv("CORS_ORIGIN_REGEX") or "").strip() or None

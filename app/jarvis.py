@@ -447,6 +447,10 @@ TOOL_CMD = re.compile(
     r"^\s*(?:run\s+|chalao\s+|use\s+|chala\s+|try\s+)?tool\s+([A-Za-z0-9][\w.\-]*)\s*(.*)$",
     re.IGNORECASE | re.DOTALL,
 )
+SKILL_CMD = re.compile(
+    r"^\s*(?:run\s+|chalao\s+|use\s+|apply\s+)?skill\s+([A-Za-z0-9][\w.\-]*)\s*(.*)$",
+    re.IGNORECASE | re.DOTALL,
+)
 CAPABILITY_RE = re.compile(
     r"\b(tools?\s*(list|batao|dikhao|kaunse|kitne)|kitne tools|capabilit|kya kya kar sakta|"
     r"what can you do|toolbelt|tool belt|saare tools)\b",
@@ -494,6 +498,57 @@ def _tool_command(message: str) -> dict[str, Any] | None:
     return {"tool": tool_id, "args": _parse_args(rest)}
 
 
+def _skill_command(message: str) -> dict[str, Any] | None:
+    """`skill text.stats.inline text="hello"` — direct, no model needed."""
+
+    match = SKILL_CMD.match(message or "")
+    if not match:
+        return None
+    import shlex
+
+    skill_id, rest = match.group(1), match.group(2) or ""
+    args: dict[str, Any] = {}
+    try:
+        tokens = shlex.split(rest)
+    except ValueError:
+        tokens = rest.split()
+    for token in tokens:
+        if "=" not in token:
+            continue
+        key, _, raw = token.partition("=")
+        value: Any = raw
+        if raw.lower() in {"true", "false"}:
+            value = raw.lower() == "true"
+        elif re.fullmatch(r"-?\d+", raw):
+            value = int(raw)
+        elif re.fullmatch(r"-?\d*\.\d+", raw):
+            value = float(raw)
+        args[key.strip()] = value
+    return {"skill": skill_id, "args": args}
+
+
+def _skill_chat(skill_id: str, args: dict[str, Any]) -> dict[str, Any]:
+    from . import skill_runners, skills
+
+    try:
+        run = skills.run(skill_id, args)
+    except skill_runners.SkillUnavailable as exc:
+        nearby = [item["id"] for item in skills.search(skill_id, limit=3)["results"]]
+        hint = f" Kareeb ke skills: {', '.join(nearby)}." if nearby else ""
+        return {"ok": False, "reply": f"{exc}.{hint}", "error": str(exc)}
+    except skill_runners.SkillInputError as exc:
+        return {"ok": False, "reply": f"{skill_id} nahi chala — {exc}", "error": str(exc)}
+    except KeyError as exc:
+        return {"ok": False, "reply": str(exc).strip('"'), "error": str(exc)}
+
+    body = run.get("result") or {}
+    preview = json.dumps(body, ensure_ascii=False)
+    if len(preview) > 500:
+        preview = preview[:500] + "…"
+    return {"ok": True, "reply": f"{skill_id}: done — {preview}", "result": body,
+            "elapsed_ms": run.get("elapsed_ms")}
+
+
 def tool_chat(tool_id: str, args: dict[str, Any]) -> dict[str, Any]:
     try:
         run = toolbelt.run(tool_id, args)
@@ -521,6 +576,15 @@ def capability_reply() -> str:
     missing = belt["missing"][:4]
     if missing:
         lines.append("Missing: " + "; ".join(f"{row['id']} ({row['detail']})" for row in missing))
+    try:
+        from . import skills
+
+        catalogue = skills.stats()
+        lines.append(f"Skills: {catalogue['total']} registered — {catalogue['native']} native "
+                     f"({catalogue['available_now']} abhi ready) + {catalogue['external']} external "
+                     "MCP imports. `skill text.stats.inline text=\"hello\"`")
+    except Exception:  # noqa: BLE001 - the belt line below still works
+        pass
     lines.append("Chalane ke liye: `tool ffmpeg op=probe path=video.mp4`. Poori list: GET /v1/belt")
     return "\n".join(lines)
 
@@ -603,7 +667,28 @@ def chat(message: str, session: str = "default", dry_run: bool = False) -> dict[
         return {"reply": reply, "intent": "memory", "actions": [], "learned": learned,
                 "used_model": False, "session": session, **inner}
 
-    if CAPABILITY_RE.search(message) and not TOOL_CMD.match(message):
+    skill_request = _skill_command(message)
+    if skill_request:
+        outcome = _skill_chat(skill_request["skill"], skill_request["args"])
+        action = {"agent": f"skill:{skill_request['skill']}", "input": skill_request["args"],
+                  "ok": bool(outcome.get("ok")), "result": outcome.get("result") or {},
+                  **({} if outcome.get("ok") else {"error": outcome.get("error")})}
+        add_episode("user", message, session)
+        add_episode("jarvis", outcome["reply"], session,
+                    {"intent": "skill", "skill": skill_request["skill"]})
+        governance.record("jarvis.chat", target=session,
+                          detail={"intent": "skill", "skill": skill_request["skill"],
+                                  "ok": bool(outcome.get("ok"))})
+        inner = _finish_turn(session=session, message=message,
+                             intent=f"skill:{skill_request['skill']}",
+                             ok=bool(outcome.get("ok")), tools=1,
+                             error=str(outcome.get("error") or ""))
+        return {"reply": outcome["reply"], "intent": f"skill:{skill_request['skill']}",
+                "actions": [action], "learned": learned, "used_model": False,
+                "model": None, "session": session, "available_agents": len(agents.AGENTS),
+                **inner}
+
+    if CAPABILITY_RE.search(message) and not TOOL_CMD.match(message) and not SKILL_CMD.match(message):
         reply = capability_reply()
         add_episode("user", message, session)
         add_episode("jarvis", reply, session, {"intent": "tools"})
