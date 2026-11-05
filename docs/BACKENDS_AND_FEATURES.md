@@ -79,6 +79,11 @@ Real HTTP upload (`multipart`) → asset → task:
 - **Fixed:** `gemini-2.0-flash` default dead tha (Google ne June 2026 me band kiya) → ab
   `gemini-3.8-flash`.
 
+## 3.5a Naya: job queue (SQLite, Redis ke bina)
+
+`/v1/jobs/*` — durable async jobs (video ops built-in). Redis ki zarurat khatam, restart ke
+baad bhi jobs bache rehte hain. Detail: `docs/JOB_QUEUE.md`.
+
 ## 3.5b Naya: video toolkit (FFmpeg, zero keys)
 
 `/v1/video/*` — probe, **silence cut**, **auto-chapters**, thumbnail set, loudnorm (−14 LUFS),
