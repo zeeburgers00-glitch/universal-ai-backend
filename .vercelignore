@@ -1,0 +1,15 @@
+# Keep the runtime payload small. catalog/ is NOT ignored: the tool registry
+# (205 repos) is read at runtime by /v1/tools/search.
+.venv/
+tests/
+docs/
+data/
+.git/
+.gitignore
+node_modules/
+studio/node_modules/
+studio/src/
+__pycache__/
+.pytest_cache/
+*.tar.gz
+*.md

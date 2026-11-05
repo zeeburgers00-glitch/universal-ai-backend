@@ -1,8 +1,9 @@
+# Runtime dependencies. Keep this list minimal: every deploy installs it, including
+# the Vercel serverless bundle (250 MB unzipped limit).
 fastapi>=0.115,<1.0
 uvicorn[standard]>=0.30,<1.0
 httpx>=0.27,<1.0
 pydantic>=2.8,<3.0
-pytest>=8.0,<9.0
 python-dotenv>=1.0,<2.0
 pyyaml>=6.0,<7.0
 celery[redis]>=5.4,<6.0
@@ -10,3 +11,5 @@ celery[redis]>=5.4,<6.0
 imageio-ffmpeg>=0.5,<1.0
 # Needed by the media worker's upload routes when exercised locally.
 python-multipart>=0.0.9,<1.0
+# CI installs this file only, so the test runner has to live here too.
+pytest>=8.0,<9.0

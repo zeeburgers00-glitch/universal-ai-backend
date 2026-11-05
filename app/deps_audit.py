@@ -113,7 +113,22 @@ def _relative(paths: set[str], root: Path) -> list[str]:
 
 
 def audit(root: Path, requirements: Path) -> dict[str, Any]:
+    """Audit the runtime manifest, plus a sibling requirements-dev.txt when present.
+
+    Dev-only packages (pytest) are recorded but never shipped: the deploy bundle, and
+    the Vercel lambda size limit, only see requirements.txt.
+    """
+
     required = parse_requirements(requirements)
+    dev_entries: list[dict[str, Any]] = []
+    dev_file = requirements.parent / "requirements-dev.txt"
+    if dev_file.is_file():
+        dev_entries = [entry for entry in parse_requirements(dev_file) if not any(
+            entry["key"] == existing["key"] for existing in required
+        )]
+        for entry in dev_entries:
+            entry["dev_only"] = True
+        required = required + dev_entries
     imports = imported_modules(root)
 
     used: list[dict[str, Any]] = []
@@ -164,6 +179,7 @@ def audit(root: Path, requirements: Path) -> dict[str, Any]:
         "used": used,
         "declared_but_not_imported": unused,
         "imported_but_not_declared": missing,
+        "dev_only": [entry["name"] for entry in required if entry.get("dev_only")],
         "unpinned": [entry["name"] for entry in required if not entry["bounded"]],
         "python_files_scanned": len({path for users in imports.values() for path in users}),
         "top_imports": sorted(

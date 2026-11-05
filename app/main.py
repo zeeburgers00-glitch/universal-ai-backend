@@ -491,6 +491,8 @@ def _start_job_workers() -> None:
     the service is perfectly able to work — confusing during an incident.
     """
 
+    if os.getenv("UAI_SERVERLESS") or os.getenv("VERCEL"):
+        return  # no long-lived process: the queue is drained by run-once/cron instead
     try:
         jobs.ensure_started()
     except Exception:  # a queue problem must never stop the API from serving
