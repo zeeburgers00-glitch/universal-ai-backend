@@ -27,7 +27,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from . import agents, governance, toolbelt
+from . import agents, governance, task_router, toolbelt
 
 _lock = threading.Lock()
 
@@ -500,6 +500,20 @@ def _tool_command(message: str) -> dict[str, Any] | None:
     return {"tool": tool_id, "args": _parse_args(rest)}
 
 
+def skills_search_hint(message: str) -> str:
+    """A near-miss skill id for the honest 'samajh nahi aaya' answer, if any."""
+
+    try:
+        from . import skills
+
+        hits = skills.search(message, limit=1)["results"]
+    except Exception:  # noqa: BLE001 - a hint must never break the reply
+        return ""
+    if not hits or float(hits[0].get("score") or 0) < 6:
+        return ""
+    return f"{hits[0]['id']} ({hits[0]['name']})"
+
+
 def _skill_command(message: str) -> dict[str, Any] | None:
     """`skill text.stats.inline text="hello"` — direct, no model needed."""
 
@@ -608,26 +622,90 @@ def claude_available() -> bool:
     return anthropic.available()
 
 
+def _skill_tool_definitions() -> list[dict[str, Any]]:
+    """Two meta-tools instead of 1,000 definitions: search the catalogue, then run a hit."""
+
+    return [
+        {
+            "name": "skill_search",
+            "description": ("Search the local skill catalogue (2,845 skills: video/audio/image/"
+                            "table/text/code/docs). Returns ids with availability. Search before "
+                            "acting, then call skill_run with a returned id."),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "what the user wants, in words"},
+                    "limit": {"type": "integer", "description": "how many ids to return (1-10)"},
+                },
+                "required": ["query"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "skill_run",
+            "description": ("Run one catalogue skill by id. Arguments depend on the skill; "
+                            "GET /v1/skills/{id} documents them. Returns the real output path or "
+                            "an 'unavailable: ...' error — never invent a result."),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "skill_id": {"type": "string"},
+                    "args": {"type": "object",
+                             "description": 'skill arguments, e.g. {"path": "clip.mp4"}'},
+                },
+                "required": ["skill_id"],
+                "additionalProperties": False,
+            },
+        },
+    ]
+
+
+def _skill_tool_dispatch(name: str, args: dict[str, Any]) -> dict[str, Any]:
+    from . import skill_runners, skills
+
+    try:
+        if name == "skill_search":
+            result = skills.search(str(args.get("query") or ""),
+                                   limit=max(1, min(int(args.get("limit") or 5), 10)))
+            return {"results": [{"id": item["id"], "name": item["name"],
+                                 "available": item["available"], "detail": item["detail"],
+                                 "inputs": item["inputs"], "example": item["example"]}
+                                for item in result["results"]]}
+        if name == "skill_run":
+            run = skills.run(str(args.get("skill_id") or ""), args.get("args") or {})
+            return {key: run[key] for key in ("skill", "ok", "elapsed_ms", "result") if key in run}
+        raise skill_runners.SkillInputError(f"unknown skill tool: {name}")
+    except (skill_runners.SkillUnavailable, skill_runners.SkillInputError) as exc:
+        return {"error": str(exc)}
+
+
 def _claude_turn(message: str) -> dict[str, Any] | None:
-    """Claude decides which free tool to call, we run it, Claude reads the result."""
+    """Claude decides which free tool or skill to call, we run it, Claude reads the result."""
 
     from . import anthropic
 
     if not anthropic.available():
         return None
 
-    definitions = toolbelt.claude_tools(only_available=True)
+    definitions = toolbelt.claude_tools(only_available=True) + _skill_tool_definitions()
+
+    def dispatch(name: str, args: dict[str, Any]) -> dict[str, Any]:
+        if name in {"skill_search", "skill_run"}:
+            return _skill_tool_dispatch(name, args)
+        return toolbelt.run_from_claude(name, args)
     belt = toolbelt.summary()
     system = (
         _inner_block() + PERSONA_TOOLS
         + "\n\nMEMORY (facts about the user):\n" + _memory_block()
         + f"\n\nTOOL BELT: {belt['ready']} of {belt['total']} tools ready — "
         + ", ".join(belt["ready_ids"])
+        + "\n\nSKILLS: thousands of one-shot skills (video/audio/image/table/text/code/docs). "
+          "You cannot see them all — call skill_search first, then skill_run with a real id."
     )
     try:
         answer = anthropic.tool_turn(
-            system, message, definitions, toolbelt.run_from_claude,
-            max_rounds=3, max_tokens=1200, temperature=0.3,
+            system, message, definitions, dispatch,
+            max_rounds=4, max_tokens=1200, temperature=0.3,
         )
     except anthropic.AnthropicError as exc:
         return {"error": str(exc), "unavailable": exc.unavailable}
@@ -734,6 +812,32 @@ def chat(message: str, session: str = "default", dry_run: bool = False) -> dict[
                 **inner}
 
     steps = detect_intents(message)
+    routed = None if (dry_run or steps) else task_router.plan(message)
+    if routed and routed["confidence"] >= 0.75:
+        outcome = _skill_chat(routed["skill"], routed["args"], routed.get("why", ""))
+        if outcome.get("ok"):
+            reply = (f"Samajh gaya — {routed['skill']} chalaya "
+                     f"({int(routed['confidence'] * 100)}% match: {routed['why']}).\n"
+                     f"{outcome['reply']}")
+        else:
+            reply = (f"Ye kaam {routed['skill']} se hona chahiye tha, par nahi chala: "
+                     f"{outcome['reply']}")
+        action = {"agent": f"skill:{routed['skill']}", "input": routed["args"],
+                  "ok": bool(outcome.get("ok")), "result": outcome.get("result") or {},
+                  **({} if outcome.get("ok") else {"error": outcome.get("error")})}
+        add_episode("user", message, session)
+        add_episode("jarvis", reply, session,
+                    {"intent": "routed", "skill": routed["skill"], "confidence": routed["confidence"]})
+        governance.record("jarvis.chat", target=session,
+                          detail={"intent": "routed", "skill": routed["skill"],
+                                  "ok": bool(outcome.get("ok"))})
+        inner = _finish_turn(session=session, message=message, intent=f"skill:{routed['skill']}",
+                             ok=bool(outcome.get("ok")), tools=1,
+                             error=str(outcome.get("error") or ""))
+        return {"reply": reply, "intent": f"skill:{routed['skill']}", "actions": [action],
+                "learned": learned, "used_model": False, "model": None, "session": session,
+                "plan": routed, "available_agents": len(agents.AGENTS), **inner}
+
     outcomes = execute(steps) if (steps and not dry_run) else []
     used_model = False
     reply: str | None = None
@@ -787,10 +891,13 @@ def chat(message: str, session: str = "default", dry_run: bool = False) -> dict[
             reply = "Iska seedha tool nahi hai. Sabse relevant yaad: " + \
                 "; ".join(f"{item.get('key', 'episode')}={item.get('value', item.get('text', ''))[:60]}" for item in memories[:2])
         else:
+            hint = task_router.plan(message)
+            near = skills_search_hint(message)
             reply = (
                 "Ye mujhe samajh nahi aaya. Jo pakka kar sakta hoon: " + ", ".join(sorted(agents.AGENTS)[:10]) +
                 f" … plus {toolbelt.summary()['available']} free tools (`tool ffmpeg op=probe path=video.mp4`). "
                 "Poori list /v1/belt par. Claude brain lagana ho to ANTHROPIC_API_KEY daal do."
+                + (f" Kareeb ka skill: {near}." if near else "")
             )
 
     add_episode("user", message, session)

@@ -58,16 +58,28 @@ def _input_path(value: str) -> Path:
 
 
 def _fs_path(value: str) -> Path:
-    """Any existing file (code, text, config) — relative paths resolve against CWD."""
+    """Any existing file (code, text, config).
 
-    path = Path(str(value)).expanduser()
-    if not path.is_absolute():
-        path = Path.cwd() / path
-    if not path.exists():
-        raise SkillInputError(f"file not found: {value}")
-    if not path.is_file():
+    Relative names are tried against CWD, then the repo, then UAI_DATA_ROOT — the same
+    order a person means when they say "photo.png".
+    """
+
+    raw = str(value)
+    if not raw.strip():
+        raise SkillInputError("path is required")
+    candidate = Path(raw).expanduser()
+    if candidate.is_absolute():
+        attempts = [candidate]
+    else:
+        roots = [Path.cwd(), Path(video_tools.REPO_ROOT), *video_tools._roots()]
+        attempts = [root / candidate for root in roots]
+        attempts.append(candidate)
+    for attempt in attempts:
+        if attempt.is_file():
+            return attempt.resolve()
+    if candidate.exists() and not candidate.is_file():
         raise SkillInputError(f"not a file: {value}")
-    return path
+    raise SkillInputError(f"file not found: {value}")
 
 
 def _output(stem: str, suffix: str) -> Path:

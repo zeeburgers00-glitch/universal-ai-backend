@@ -72,7 +72,16 @@ skill text.stats.inline text="hello world"
 skill media.video.convert.mp4-to-webm-vp9 path=clip.mp4
 ```
 
-`kitne tools hain` poochho to JARVIS skill count bhi batata hai.
+Normal sentence bhi chalta hai (`app/task_router.py`, koi model key nahi chahiye):
+
+```
+clip.mp4 ko 480p me chhota kar do      → media.video.resize.mp4-to-480p
+rows.csv me duplicate hata do          → data.table.op.dedupe.csv
+photo.png ko jpg me convert karo       → media.image.convert.png-to-jpg-q85
+```
+
+`kitne tools hain` poochho to JARVIS skill count bhi batata hai. Poora "kya complete karega,
+kya nahi" hisaab: `docs/JARVIS_TASKS.md`.
 
 ## External layer (1,763 MCP servers — jo abhi installed NAHI hain)
 
