@@ -79,6 +79,12 @@ Real HTTP upload (`multipart`) → asset → task:
 - **Fixed:** `gemini-2.0-flash` default dead tha (Google ne June 2026 me band kiya) → ab
   `gemini-3.8-flash`.
 
+## 3.3b Naya: scopes + audit log + approval gates + BM25 tool search
+
+Scoped API keys (reads free, writes scope-bound), append-only `audit.jsonl` with key
+fingerprints, single-use approval tokens for dangerous writes, aur 205-repo catalog +
+131 routes par BM25 search. Detail: `docs/GOVERNANCE.md`.
+
 ## 3.4 Naya: dependency audit
 
 `GET /v1/audit/dependencies` — requirements.txt vs actual AST imports. Aaj: 10 declared,

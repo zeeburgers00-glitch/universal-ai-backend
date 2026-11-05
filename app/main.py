@@ -26,7 +26,7 @@ from .editor_assets import EDITOR_HTML
 from .explorer_ui import EXPLORER_HTML
 from .studio_ui import STUDIO_HTML
 from .github_discovery import list_discovery_presets, search_github_repositories
-from . import ai_router, deps_audit, github_registry, model_catalog, obs, quota
+from . import ai_router, deps_audit, governance, github_registry, model_catalog, obs, quota
 from .providers import chat_with_provider, provider_status
 from .pexels import search_pexels_videos
 from .metricool import metricool_request, metricool_status, schedule_youtube_video
@@ -45,6 +45,7 @@ from .code_routes import router as code_router
 from .video_routes import router as video_router
 from .job_routes import router as job_router
 from .data_routes import router as data_router
+from .governance_routes import router as governance_router
 from . import sdk as sdk_generator
 from .vault import (
     delete_runtime_secret,
@@ -92,6 +93,21 @@ async def observe_requests(request: Request, call_next):
                 content={"detail": "rate limit exceeded", "retry_after": retry_after},
                 headers={"Retry-After": str(int(retry_after) + 1)},
             )
+    # Scopes: only enforced when UAI_KEY_SCOPES is configured.
+    api_key = request.headers.get("x-api-key")
+    path = request.url.path
+    try:
+        governance.authorise(api_key, path, request.method)
+    except governance.GovernanceError as exc:
+        return JSONResponse(status_code=exc.status, content={"detail": str(exc)})
+
+    # Approval gates for dangerous writes.
+    if governance.needs_approval(path) and request.method != "GET":
+        try:
+            governance.consume(request.headers.get("x-approval-token"), path, key=api_key)
+        except governance.GovernanceError as exc:
+            return JSONResponse(status_code=exc.status, content={"detail": str(exc)})
+
     obs.track_inflight(1)
     started = time.perf_counter()
     status = 500
@@ -101,7 +117,14 @@ async def observe_requests(request: Request, call_next):
         return response
     finally:
         obs.track_inflight(-1)
-        obs.observe(request.method, request.url.path, status, time.perf_counter() - started)
+        obs.observe(request.method, path, status, time.perf_counter() - started)
+        if request.method in {"POST", "PUT", "PATCH", "DELETE"} and not path.startswith(("/metrics", "/health")):
+            governance.record(
+                "http.write",
+                key=api_key,
+                target=path,
+                outcome="ok" if status < 400 else f"error:{status}",
+            )
 
 
 @app.get("/v1/audit/dependencies")
@@ -135,6 +158,7 @@ app.include_router(code_router)
 app.include_router(video_router)
 app.include_router(job_router)
 app.include_router(data_router)
+app.include_router(governance_router)
 
 origins = [x.strip() for x in os.getenv("CORS_ORIGINS", "").split(",") if x.strip()]
 origin_regex = (os.getenv("CORS_ORIGIN_REGEX") or "").strip() or None
