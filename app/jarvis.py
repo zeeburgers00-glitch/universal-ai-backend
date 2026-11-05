@@ -340,6 +340,44 @@ def _ask_model(system: str, user: str) -> dict[str, Any] | None:
     return {"text": text, "provider": answer.get("provider"), "model": answer.get("model")}
 
 
+def _inner_block() -> str:
+    """Identity and mood, prepended to every brain prompt."""
+
+    from . import affect, character
+
+    try:
+        identity = character.prompt_block()
+    except Exception:  # noqa: BLE001 - a broken character file must not break chat
+        identity = PERSONA
+    try:
+        mood = affect.state()
+        feeling = f"{mood['label']} — {mood['tone_directive']}"
+    except Exception:  # noqa: BLE001
+        feeling = "neutral"
+    return f"{identity}\n\nCURRENT MOOD: {feeling}"
+
+
+def _finish_turn(*, session: str, message: str, intent: str, ok: bool = True,
+                 tools: int = 0, used_model: bool = False, error: str = "") -> dict[str, Any]:
+    """Record the turn for the self layer and move the mood. Failures never break chat."""
+
+    from . import affect, mind
+
+    mood: dict[str, Any] = {}
+    try:
+        # Only an actual run can be a success or failure; talking alone moves nothing.
+        mood = affect.observe(message, outcome_ok=(ok if tools else None), tools_used=tools)
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        mind.record_turn(session=session, message=message, intent=intent, ok=bool(ok),
+                         tools=tools, used_model=used_model, error=error)
+        mind.maybe_reflect()
+    except Exception:  # noqa: BLE001
+        pass
+    return {"mood": mood.get("label"), "affect_triggered": mood.get("triggered", [])}
+
+
 def _memory_block(limit: int = 8) -> str:
     entries = facts(limit=limit)
     if not entries:
@@ -504,7 +542,7 @@ def _claude_turn(message: str) -> dict[str, Any] | None:
     definitions = toolbelt.claude_tools(only_available=True)
     belt = toolbelt.summary()
     system = (
-        PERSONA + PERSONA_TOOLS
+        _inner_block() + PERSONA_TOOLS
         + "\n\nMEMORY (facts about the user):\n" + _memory_block()
         + f"\n\nTOOL BELT: {belt['ready']} of {belt['total']} tools ready — "
         + ", ".join(belt["ready_ids"])
@@ -561,17 +599,19 @@ def chat(message: str, session: str = "default", dry_run: bool = False) -> dict[
             if stored else "Abhi kuch yaad nahi — bolo 'yaad rakho ...' to main rakh lunga."
         add_episode("user", message, session)
         add_episode("jarvis", reply, session, {"intent": "memory"})
+        inner = _finish_turn(session=session, message=message, intent="memory")
         return {"reply": reply, "intent": "memory", "actions": [], "learned": learned,
-                "used_model": False, "session": session}
+                "used_model": False, "session": session, **inner}
 
     if CAPABILITY_RE.search(message) and not TOOL_CMD.match(message):
         reply = capability_reply()
         add_episode("user", message, session)
         add_episode("jarvis", reply, session, {"intent": "tools"})
         governance.record("jarvis.chat", target=session, detail={"intent": "tools"})
+        inner = _finish_turn(session=session, message=message, intent="tools")
         return {"reply": reply, "intent": "tools", "actions": [], "learned": learned,
                 "used_model": False, "model": None, "session": session,
-                "available_agents": len(agents.AGENTS)}
+                "available_agents": len(agents.AGENTS), **inner}
 
     tool_request = _tool_command(message)
     if tool_request:
@@ -585,9 +625,14 @@ def chat(message: str, session: str = "default", dry_run: bool = False) -> dict[
         governance.record("jarvis.chat", target=session,
                           detail={"intent": "tool", "tool": tool_request["tool"],
                                   "ok": bool(outcome.get("ok"))})
+        inner = _finish_turn(session=session, message=message,
+                             intent=f"tool:{tool_request['tool']}",
+                             ok=bool(outcome.get("ok")), tools=1,
+                             error=str(outcome.get("error") or ""))
         return {"reply": outcome["reply"], "intent": f"tool:{tool_request['tool']}",
                 "actions": [action], "learned": learned, "used_model": False,
-                "model": None, "session": session, "available_agents": len(agents.AGENTS)}
+                "model": None, "session": session, "available_agents": len(agents.AGENTS),
+                **inner}
 
     steps = detect_intents(message)
     outcomes = execute(steps) if (steps and not dry_run) else []
@@ -617,7 +662,7 @@ def chat(message: str, session: str = "default", dry_run: bool = False) -> dict[
         tool_report = summarise(outcomes) or "(no tool was run yet)"
         catalogue = ", ".join(sorted(agents.AGENTS))[:1500]
         answer = _ask_model(
-            PERSONA + "\n\nMEMORY:\n" + memory_text + "\n\nTOOLS RUN THIS TURN:\n" + tool_report,
+            _inner_block() + "\n\nMEMORY:\n" + memory_text + "\n\nTOOLS RUN THIS TURN:\n" + tool_report,
             f"User said: {message}\n\n"
             f"Agents you can suggest by id: {catalogue}\n\n"
             "Answer in 1-4 sentences, in the user's language. If a tool failed, say what to fix. "
@@ -658,6 +703,13 @@ def chat(message: str, session: str = "default", dry_run: bool = False) -> dict[
         "model": used_model,
     })
 
+    first_error = next((str(item.get("error")) for item in outcomes if not item.get("ok")), "")
+    inner = _finish_turn(
+        session=session, message=message,
+        intent=steps[0]["intent"] if steps else ("chat" if used_model else "unknown"),
+        ok=not first_error, tools=len(outcomes), used_model=used_model, error=first_error,
+    )
+
     return {
         "reply": reply,
         "intent": steps[0]["intent"] if steps else ("chat" if used_model else "unknown"),
@@ -668,6 +720,7 @@ def chat(message: str, session: str = "default", dry_run: bool = False) -> dict[
         "model_note": model_note,
         "session": session,
         "available_agents": len(agents.AGENTS),
+        **inner,
     }
 
 
@@ -707,8 +760,29 @@ def status() -> dict[str, Any]:
         "tools": {"total": belt["total"], "ready": belt["ready"],
                   "available": belt["available"], "runnable": belt["runnable"],
                   "ready_ids": belt["ready_ids"]},
+        "character": {"name": character_status()["name"], "preset": character_status()["preset"]},
+        "mood": mood_status()["label"],
+        "self": {"lessons": mind_counts()["lessons"], "open_proposals": mind_counts()["proposals"]},
         "sessions": _sessions(),
     }
+
+
+def character_status() -> dict[str, Any]:
+    from . import character
+
+    return character.status()
+
+
+def mood_status() -> dict[str, Any]:
+    from . import affect
+
+    return affect.state()
+
+
+def mind_counts() -> dict[str, Any]:
+    from . import mind
+
+    return {"lessons": len(mind.lessons(200)), "proposals": len(mind.proposals("open", 100))}
 
 
 def _sessions() -> list[dict[str, Any]]:

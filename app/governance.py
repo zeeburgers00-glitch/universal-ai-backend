@@ -41,7 +41,8 @@ SCOPE_RULES = {
 }
 
 # Operations that can be gated behind an approval token.
-DANGEROUS = ("/v1/code/write", "/v1/code/apply", "/v1/data/restore", "/v1/git/commit")
+DANGEROUS = ("/v1/code/write", "/v1/code/apply", "/v1/data/restore", "/v1/git/commit",
+             "/v1/accounts/send")
 
 
 class GovernanceError(RuntimeError):
