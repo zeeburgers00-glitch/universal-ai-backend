@@ -158,7 +158,18 @@ def enqueue_rea_inspection(request: ReaInspectJob):
         "operation": request.operation,
         "resolved_target": resolved_target,
     }
-    task = celery_app.send_task("rea_worker.run_inspection", kwargs={"payload": payload}, task_id=request.task_id)
+    try:
+        task = celery_app.send_task("rea_worker.run_inspection", kwargs={"payload": payload}, task_id=request.task_id)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Task queue unavailable: cannot reach the Redis broker. "
+                "Start it (docker compose up -d redis) and retry."
+            ),
+        ) from exc
     return {
         "task_id": task.id,
         "status": "queued",

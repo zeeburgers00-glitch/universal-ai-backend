@@ -41,7 +41,14 @@ def test_builtin_cloud_runtime_makes_all_45_providers_9_workers_37_channels_and_
     assert prov_data["total"] == 48
     assert prov_data["ready_count"] == 48
     assert all(p["ready"] is True for p in prov_data["providers"])
-    assert len(prov_data["workers"]) == 9
+    from app.task_gateway import SERVICES
+
+    # The control plane knows 12 service slots; 9 of them have shipped workers,
+    # the rest are optional externals the API reports as unconfigured.
+    assert len(prov_data["workers"]) == len(SERVICES)
+    assert {"voice", "media", "automation", "agents", "youtube", "channels", "rea"} <= {
+        worker["id"] for worker in prov_data["workers"]
+    }
     assert all(w["configured"] is True for w in prov_data["workers"])
 
     # 2. All 37 publishing channels configured

@@ -25,7 +25,7 @@ from typing import Any
 
 import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from videoengine import build_timeline, plan as plan_command
 from videoengine.assembly import FfmpegNotFound, find_ffmpeg, probe, render_timeline
@@ -79,6 +79,11 @@ _PALETTE = [
 ]
 
 class CommandRequest(BaseModel):
+    # Reject unknown fields: a caller sending {"duration_seconds": 12} used to be
+    # silently ignored and got a 60s video, because the real knob is
+    # `scene_seconds`. Better a 422 that names the bad field than a wrong result.
+    model_config = ConfigDict(extra="forbid")
+
     command: str = Field(min_length=3, max_length=4000)
     render: bool = Field(default=True, description="Start rendering immediately")
     scene_seconds: float | None = Field(default=None, ge=2, le=60)

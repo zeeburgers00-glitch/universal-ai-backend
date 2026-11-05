@@ -132,3 +132,17 @@ services:
     depends_on:
       - redis
     mem_limit: 512m
+
+  # Celery-only consumer for POST /v1/chat/tasks. It exposes no HTTP port: the
+  # API publishes to the broker and this worker picks the job up. Without it the
+  # chat endpoint queues work nobody executes.
+  autopilot_worker:
+    <<: *common
+    build:
+      context: ../..
+      dockerfile: workers/autopilot_worker/Dockerfile
+    environment:
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:?set CELERY_BROKER_URL in .env}
+    depends_on:
+      - redis
+    mem_limit: 512m

@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from voice_worker.app import ASSET_ROOT, OUTPUT_ROOT, PROFILE_ROOT, celery_app
+from voice_worker.app import ASSET_ROOT, OUTPUT_ROOT, PROFILE_ROOT, celery_app, resolve_ffmpeg
 
 
 @celery_app.task(bind=True, name="voice_worker.synthesize", acks_late=True)
@@ -73,8 +73,7 @@ def _convert_audio(source_wav: Path, output_format: str, task_id: str) -> tuple[
         raise ValueError("output_format must be wav, mp3, ogg or flac")
     if output_format == "wav":
         return source_wav, mime_by_format["wav"]
-    import shutil
-    ffmpeg = shutil.which("ffmpeg")
+    ffmpeg = resolve_ffmpeg()
     if not ffmpeg:
         raise RuntimeError("FFmpeg is required for mp3/ogg/flac output; request wav or install FFmpeg")
     converted = OUTPUT_ROOT / f"{task_id}.{output_format}"

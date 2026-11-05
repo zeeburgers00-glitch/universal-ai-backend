@@ -8,3 +8,5 @@ pyyaml>=6.0,<7.0
 celery[redis]>=5.4,<6.0
 # Ships a static ffmpeg binary so hosts without apt (Vercel, Lambda) can render.
 imageio-ffmpeg>=0.5,<1.0
+# Needed by the media worker's upload routes when exercised locally.
+python-multipart>=0.0.9,<1.0

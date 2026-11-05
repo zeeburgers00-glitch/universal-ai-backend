@@ -227,7 +227,18 @@ def submit_tts_job(request: VoiceJob):
     if engine == "f5-tts" and request.commercial_use and os.getenv("F5_TTS_MODEL_LICENSE_CLASS", "").lower() != "commercial_approved":
         raise HTTPException(status_code=403, detail="F5-TTS pretrained weights may be non-commercial; configure a compatible commercial checkpoint first")
     task_id = request.task_id or secrets.token_hex(16)
-    async_result = celery_app.send_task("voice_worker.synthesize", kwargs={"payload": request.model_dump()}, task_id=task_id)
+    try:
+        async_result = celery_app.send_task("voice_worker.synthesize", kwargs={"payload": request.model_dump()}, task_id=task_id)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Task queue unavailable: cannot reach the Redis broker. "
+                "Start it (docker compose up -d redis) and retry."
+            ),
+        ) from exc
     return {"task_id": async_result.id, "status": "queued", "engine": engine, "poll_url": f"/v1/tasks/{async_result.id}"}
 
 
@@ -267,3 +278,23 @@ def get_voice_result(task_id: str):
     if OUTPUT_ROOT.resolve() not in path.parents or not path.is_file():
         raise HTTPException(status_code=404, detail="Audio file is unavailable")
     return FileResponse(path, media_type=str(meta.get("mime_type", "audio/wav")), filename=path.name)
+
+
+def resolve_ffmpeg() -> str | None:
+    """Path to an FFmpeg binary: system package first, then the pip-bundled one.
+
+    Worker images install FFmpeg via apt, but a plain local `.venv` run has no
+    system binary. `imageio-ffmpeg` ships a static build inside site-packages,
+    so rendering and audio conversion work without root/apt.
+    """
+    import shutil
+
+    found = shutil.which("ffmpeg")
+    if found:
+        return found
+    try:
+        import imageio_ffmpeg
+
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        return None

@@ -11,7 +11,7 @@ from uuid import uuid4
 
 import httpx
 
-from media_worker.app import ASSET_ROOT, DATA_ROOT, celery_app
+from media_worker.app import ASSET_ROOT, DATA_ROOT, celery_app, resolve_ffmpeg
 
 WORKFLOW_ROOT = DATA_ROOT / "workflows"
 OUTPUT_ROOT = ASSET_ROOT / "videos"
@@ -52,9 +52,9 @@ def _store_output(path: Path, asset_id: str, mime: str) -> dict[str, Any]:
 
 
 def _run_ffmpeg(args: list[str], timeout: int = 900) -> None:
-    executable = shutil.which("ffmpeg")
+    executable = resolve_ffmpeg()
     if not executable:
-        raise RuntimeError("FFmpeg is not installed in this worker image")
+        raise RuntimeError("FFmpeg is unavailable: install it (apt install ffmpeg) or pip install imageio-ffmpeg")
     completed = subprocess.run([executable, *args], capture_output=True, text=True, timeout=timeout, check=False)
     if completed.returncode != 0:
         # Do not return raw command output or local paths to the public API.
@@ -180,7 +180,7 @@ def _replace_template(value: Any, prompt: str, negative_prompt: str, seed: int) 
 def _run_comfyui_job(task_id: str, task_type: str, inputs: dict[str, Any], commercial_use: bool) -> dict[str, Any]:
     base_url = os.getenv("COMFYUI_BASE_URL", "").strip().rstrip("/")
     if not base_url:
-        raise RuntimeError("COMFYUI_BASE_URL is not configured; generation is not running in the Vercel process")
+        raise RuntimeError("COMFYUI_BASE_URL is not configured; point it at a running ComfyUI endpoint (see deploy/modal) to enable generation")
     workflow_id = str(inputs.get("workflow_id", ""))
     if not re.fullmatch(r"[a-zA-Z0-9_-]{2,120}", workflow_id):
         raise ValueError("workflow_id must identify a reviewed server-side ComfyUI workflow")

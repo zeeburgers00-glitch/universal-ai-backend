@@ -20,5 +20,8 @@ def test_temp_mail_is_limited_to_testing_and_blocks_bypass():
 def test_ads_policy_forbids_artificial_interactions():
     data = json.loads((ROOT / "catalog" / "monetization_streams.json").read_text(encoding="utf-8"))
     policy = data["policies"]["ad_traffic"].lower()
+    # Wording may change; the prohibitions must not.
     assert "never click" in policy
-    assert "artificial traffic" in policy
+    assert "incentivize" in policy
+    assert "automate ad interactions" in policy
+    assert "artificial traffic" in policy or "genuine human traffic" in policy

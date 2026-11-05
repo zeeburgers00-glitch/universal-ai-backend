@@ -56,7 +56,18 @@ def run_agent(request: AgentRun):
     agent_risk = str(request.agent.get("risk_level", "unknown")).lower()
     if agent_risk == "critical" and not request.user_approved:
         raise HTTPException(status_code=409, detail="Critical-risk agent requests require explicit approval")
-    task = celery_app.send_task("agent_worker.plan_agent", kwargs={"payload": request.model_dump()}, task_id=request.task_id)
+    try:
+        task = celery_app.send_task("agent_worker.plan_agent", kwargs={"payload": request.model_dump()}, task_id=request.task_id)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Task queue unavailable: cannot reach the Redis broker. "
+                "Start it (docker compose up -d redis) and retry."
+            ),
+        ) from exc
     return {
         "task_id": task.id,
         "status": "queued",

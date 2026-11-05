@@ -64,11 +64,10 @@ MAX_UPLOAD_BYTES = int(os.getenv("MEDIA_MAX_UPLOAD_BYTES", str(2 * 1024 * 1024 *
 
 @app.get("/health")
 def health():
-    import shutil
     return {
         "status": "ok",
         "service": "media-worker",
-        "ffmpeg_installed": shutil.which("ffmpeg") is not None,
+        "ffmpeg_installed": resolve_ffmpeg() is not None,
         "comfyui_configured": bool(os.getenv("COMFYUI_BASE_URL", "").strip()),
         "asset_root": str(ASSET_ROOT),
     }
@@ -150,7 +149,18 @@ def download_asset(asset_id: str):
 @app.post("/v1/media/jobs", status_code=202, dependencies=[Depends(require_worker_key)])
 def enqueue_media_job(request: MediaJob):
     task_id = request.task_id or secrets.token_hex(16)
-    result = celery_app.send_task("media_worker.process_media", kwargs={"payload": request.model_dump()}, task_id=task_id)
+    try:
+        result = celery_app.send_task("media_worker.process_media", kwargs={"payload": request.model_dump()}, task_id=task_id)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Task queue unavailable: cannot reach the Redis broker. "
+                "Start it (docker compose up -d redis) and retry."
+            ),
+        ) from exc
     return {"task_id": result.id, "status": "queued", "poll_url": f"/v1/tasks/{result.id}"}
 
 
@@ -168,3 +178,23 @@ def task_status(task_id: str):
     elif result.state == "PROGRESS":
         data["progress"] = result.info if isinstance(result.info, dict) else {}
     return data
+
+
+def resolve_ffmpeg() -> str | None:
+    """Path to an FFmpeg binary: system package first, then the pip-bundled one.
+
+    Worker images install FFmpeg via apt, but a plain local `.venv` run has no
+    system binary. `imageio-ffmpeg` ships a static build inside site-packages,
+    so rendering and audio conversion work without root/apt.
+    """
+    import shutil
+
+    found = shutil.which("ffmpeg")
+    if found:
+        return found
+    try:
+        import imageio_ffmpeg
+
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        return None

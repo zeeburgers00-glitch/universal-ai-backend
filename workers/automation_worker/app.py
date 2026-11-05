@@ -66,7 +66,18 @@ def run_workflow(request: WorkflowRun):
         raise HTTPException(status_code=400, detail="inputs.actions must be a list with at most 20 explicit actions")
     if action_list and not request.dry_run and not request.user_approved:
         raise HTTPException(status_code=409, detail="Dispatching workflow actions requires explicit user_approved=true")
-    task = celery_app.send_task("automation_worker.dispatch_workflow", kwargs={"payload": request.model_dump()}, task_id=request.task_id)
+    try:
+        task = celery_app.send_task("automation_worker.dispatch_workflow", kwargs={"payload": request.model_dump()}, task_id=request.task_id)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Task queue unavailable: cannot reach the Redis broker. "
+                "Start it (docker compose up -d redis) and retry."
+            ),
+        ) from exc
     return {
         "task_id": task.id,
         "status": "queued",

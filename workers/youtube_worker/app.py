@@ -61,7 +61,18 @@ def enqueue_publish(request: PublishRequest):
         raise HTTPException(status_code=403, detail="The requested YouTube channel connection is not configured for this worker")
     if not all(os.getenv(k, "").strip() for k in ["YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET", "YOUTUBE_REFRESH_TOKEN", "YOUTUBE_CHANNEL_ID"]):
         raise HTTPException(status_code=503, detail="YouTube OAuth credentials/channel are not configured")
-    result = celery_app.send_task("youtube_worker.publish_video", kwargs={"payload": request.model_dump()}, task_id=request.task_id)
+    try:
+        result = celery_app.send_task("youtube_worker.publish_video", kwargs={"payload": request.model_dump()}, task_id=request.task_id)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Task queue unavailable: cannot reach the Redis broker. "
+                "Start it (docker compose up -d redis) and retry."
+            ),
+        ) from exc
     return {"task_id": result.id, "status": "queued", "poll_url": f"/v1/tasks/{result.id}"}
 
 

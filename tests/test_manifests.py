@@ -122,7 +122,11 @@ def test_channel_manifest_does_not_claim_every_connector_is_live():
 def test_control_plane_imports_and_exposes_worker_and_base44_routes():
     from app.main import app
 
-    paths = {route.path for route in app.routes}
+    # Newer FastAPI wraps included routers in an opaque _IncludedRouter, so
+    # app.routes is no longer walkable for paths. The OpenAPI schema is the
+    # supported way to enumerate every route the app actually serves.
+    paths = set(app.openapi()["paths"])
+    paths |= {route.path for route in app.routes if hasattr(route, "path")}
     required = {
         "/health",
         "/explorer",
