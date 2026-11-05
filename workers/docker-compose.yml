@@ -163,7 +163,9 @@ services:
       AGENT_RUNTIME_EXECUTOR_POLL_SECONDS: ${AGENT_RUNTIME_EXECUTOR_POLL_SECONDS:-5}
       AGENT_RUNTIME_ALLOW_PRIVATE_NETWORK_HTTP: ${AGENT_RUNTIME_ALLOW_PRIVATE_NETWORK_HTTP:-false}
       AGENT_RUNTIME_PRIVATE_HTTP_HOSTS: ${AGENT_RUNTIME_PRIVATE_HTTP_HOSTS:-agent-api}
-    depends_on: { agent-api: { condition: service_started } }
+    depends_on:
+      agent-api: { condition: service_started }
+      agent-runner: { condition: service_started }
     restart: unless-stopped
     networks: [workers-private]
 

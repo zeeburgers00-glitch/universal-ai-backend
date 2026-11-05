@@ -7,9 +7,9 @@ and scoped text memory. It is API-only and does not create 120 continuously runn
 ## Capabilities
 
 - **Task queue:** submit work, list/filter tasks, inspect task details and event history, cancel queued or approval-pending tasks. Running work cannot be hard-cancelled by the API; stop it through the executor first.
-- **Worker leases:** workers claim one task at a time, heartbeat leases, and complete or fail tasks.
+- **Worker leases:** workers claim one task at a time, heartbeat leases, and complete or fail tasks. Global parallelism defaults to 5 (hard-capped at 20); per-agent concurrency defaults to 1.
 - **Retries:** failed work returns to the queue while attempts remain; expired leases are recovered on the next claim.
-- **Workflow DAGs:** up to 100 steps per workflow, with dependency validation and cycle detection. A step is claimable only after every dependency succeeds.
+- **Workflow DAGs:** up to 100 steps per workflow, with dependency validation and cycle detection. A step is claimable only after every dependency succeeds. Its inputs can use explicit `$from_step` references to consume structured outputs from direct prerequisites.
 - **Approvals:** high and critical tasks are held in pending_approval; an operator must approve or reject them through the API before claim.
 - **Memory:** simple scoped key/content memory with substring search and metadata. This is not an embeddings/vector database.
 - **Audit history:** task creation, claims, heartbeats, approvals, completion, retries and dependency blocking are recorded.
@@ -96,14 +96,16 @@ Worker protocol:
 - POST /v1/agent-runtime/workers/{worker_id}/tasks/{task_id}/complete
 - POST /v1/agent-runtime/workers/{worker_id}/tasks/{task_id}/fail
 
-Create a workflow with step dependencies:
+Create a workflow with step dependencies and hand results from one agent to the next. The `$from_step` reference can only name a direct dependency; its dotted path is read from that step's stored result JSON:
+
+
 
 ~~~json
 {
   "name": "research then write",
   "steps": [
     {"id":"research","objective":"Research the topic","agent_id":"research-agent"},
-    {"id":"write","objective":"Draft the script","agent_id":"script-agent","depends_on":["research"]}
+    {"id":"write","objective":"Draft the script","agent_id":"script-agent","depends_on":["research"],"inputs":{"research_summary":{"$from_step":"research","path":"output.summary"}}}
   ]
 }
 ~~~

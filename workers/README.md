@@ -56,7 +56,7 @@ run arbitrary code, or execute media jobs.
 
 Set `AGENT_RUNTIME_API_URL`, `BACKEND_API_KEY`, `AGENT_WORKER_URL`, and
 `AGENT_WORKER_API_KEY` in `workers/.env.workers`. Start it with
-`docker compose --env-file workers/.env.workers -f workers/docker-compose.yml --profile agent-runtime up --build -d agent-api agent-runtime-worker`. Keep the no-card attestation false
+`docker compose --env-file workers/.env.workers -f workers/docker-compose.yml --profile agent-runtime up --build -d agent-api agent-runner agent-runtime-worker`. Keep the no-card attestation false
 until the actual model provider/account has been checked. For the compose-private
 `agent-api` hostname only, HTTP can be opted into with
 `AGENT_RUNTIME_ALLOW_PRIVATE_NETWORK_HTTP=true` and

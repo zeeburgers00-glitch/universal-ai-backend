@@ -246,6 +246,63 @@ def _effective_risk(requested: str, blueprint: dict[str, Any] | None) -> str:
     return max((requested, catalog_level), key=lambda value: levels[value])
 
 
+def _bounded_env_int(name: str, default: int, minimum: int, maximum: int) -> int:
+    try:
+        value = int(os.getenv(name, str(default)))
+    except (TypeError, ValueError):
+        value = default
+    return max(minimum, min(maximum, value))
+
+
+def _validate_input_refs(value: Any, allowed_steps: set[str], path: str = "inputs") -> None:
+    if isinstance(value, dict):
+        if "$from_step" in value:
+            if set(value) != {"$from_step", "path"}:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"{path}: dependency references must contain only $from_step and path.",
+                )
+            source = value.get("$from_step")
+            result_path = value.get("path")
+            if not isinstance(source, str) or source not in allowed_steps:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"{path}: referenced step must be a direct dependency.",
+                )
+            if not isinstance(result_path, str) or not re.fullmatch(
+                r"[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*", result_path
+            ):
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"{path}: dependency result path is invalid.",
+                )
+            return
+        for key, child in value.items():
+            _validate_input_refs(child, allowed_steps, f"{path}.{key}")
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            _validate_input_refs(child, allowed_steps, f"{path}[{index}]")
+
+
+def _resolve_input_refs(value: Any, dependency_results: dict[str, Any]) -> Any:
+    if isinstance(value, dict):
+        if "$from_step" in value:
+            source = value["$from_step"]
+            current = dependency_results[source]
+            for segment in value["path"].split("."):
+                if isinstance(current, dict) and segment in current:
+                    current = current[segment]
+                elif isinstance(current, list) and segment.isdigit() and int(segment) < len(current):
+                    current = current[int(segment)]
+                else:
+                    raise KeyError(f"Dependency result path is missing: {source}.{value['path']}")
+            return current
+        return {key: _resolve_input_refs(child, dependency_results) for key, child in value.items()}
+    if isinstance(value, list):
+        return [_resolve_input_refs(child, dependency_results) for child in value]
+    return value
+
+
 def _event(conn: sqlite3.Connection, task_id: str, event_type: str, status: str,
            message: str, payload: dict[str, Any] | None = None) -> None:
     conn.execute(
@@ -554,6 +611,8 @@ def runtime_status():
         "memory_records": memories,
         "workers_known": workers,
         "workers_seen_within_90s": online_workers,
+        "running_tasks": counts.get("running", 0),
+        "max_parallel_tasks": _bounded_env_int("AGENT_RUNTIME_MAX_PARALLEL_TASKS", 5, 1, 20),
         "execution_attested_no_card": attested,
         "no_card_only": True,
         "paid_provider_fallback": False,
@@ -565,6 +624,7 @@ def runtime_status():
 def create_task(body: TaskCreate):
     _check_secrets(body.inputs)
     _check_secrets(body.tool_allowlist, "tool_allowlist")
+    _validate_input_refs(body.inputs, set())
     blueprint = _agent_blueprint(body.agent_id)
     effective_risk = _effective_risk(body.risk_level, blueprint)
     with _db() as conn:
@@ -734,19 +794,35 @@ def claim_task(body: WorkerClaim):
                 (owned_task["task_id"], now_s, now_s, body.worker_id),
             )
             return {"task": None, "queue_empty": True, "worker_busy": True}
+        max_parallel = _bounded_env_int("AGENT_RUNTIME_MAX_PARALLEL_TASKS", 5, 1, 20)
+        max_per_agent = _bounded_env_int("AGENT_RUNTIME_MAX_PARALLEL_PER_AGENT", 1, 1, 10)
+        running_total = conn.execute(
+            "SELECT COUNT(*) FROM agent_tasks WHERE status='running'"
+        ).fetchone()[0]
+        if running_total >= max_parallel:
+            conn.execute(
+                "UPDATE agent_runtime_workers SET status='idle',current_task_id=NULL,updated_at=?,last_seen=? WHERE worker_id=?",
+                (now_s, now_s, body.worker_id),
+            )
+            return {"task": None, "queue_empty": False, "concurrency_limited": True}
         candidates = conn.execute(
             "SELECT * FROM agent_tasks WHERE status='queued' ORDER BY created_at ASC LIMIT 200"
         ).fetchall()
         selected = None
+        per_agent_limited = False
         for row in candidates:
             dependencies = _decode(row["depends_on_json"], [])
             if dependencies:
                 placeholders = ",".join("?" for _ in dependencies)
                 dep_rows = conn.execute(
-                    f"SELECT task_id,status FROM agent_tasks WHERE task_id IN ({placeholders})",
+                    f"SELECT task_id,status,step_key,result_json FROM agent_tasks WHERE task_id IN ({placeholders})",
                     tuple(dependencies),
                 ).fetchall()
                 dep_states = {item["task_id"]: item["status"] for item in dep_rows}
+                dependency_results = {
+                    str(item["step_key"]): _decode(item["result_json"], {})
+                    for item in dep_rows if item["step_key"]
+                }
                 if any(dep_states.get(dep) in {"failed", "blocked", "cancelled"} for dep in dependencies):
                     conn.execute(
                         "UPDATE agent_tasks SET status='blocked',updated_at=?,error=? WHERE task_id=?",
@@ -757,6 +833,39 @@ def claim_task(body: WorkerClaim):
                     continue
                 if not all(dep_states.get(dep) == "succeeded" for dep in dependencies):
                     continue
+                task_payload = _decode(row["payload_json"], {})
+                original_inputs = task_payload.get("inputs") or {}
+                try:
+                    resolved_inputs = _resolve_input_refs(original_inputs, dependency_results)
+                except (KeyError, IndexError, TypeError, ValueError) as exc:
+                    conn.execute(
+                        "UPDATE agent_tasks SET status='blocked',updated_at=?,error=? WHERE task_id=?",
+                        (now_s, str(exc)[:1000], row["task_id"]),
+                    )
+                    _event(conn, row["task_id"], "dependency_output_missing", "blocked",
+                           "A referenced dependency output was unavailable.")
+                    _refresh_workflow(conn, row["workflow_id"])
+                    continue
+                if resolved_inputs != original_inputs:
+                    task_payload["inputs"] = resolved_inputs
+                    conn.execute(
+                        "UPDATE agent_tasks SET payload_json=?,updated_at=? WHERE task_id=?",
+                        (_json(task_payload), now_s, row["task_id"]),
+                    )
+                    _event(conn, row["task_id"], "dependency_outputs_resolved", "queued",
+                           "Resolved workflow inputs from completed dependency outputs.",
+                           {"source_steps": sorted(dependency_results)})
+                    row = conn.execute(
+                        "SELECT * FROM agent_tasks WHERE task_id=?", (row["task_id"],)
+                    ).fetchone()
+            if row["agent_id"]:
+                current_for_agent = conn.execute(
+                    "SELECT COUNT(*) FROM agent_tasks WHERE status='running' AND agent_id=?",
+                    (row["agent_id"],),
+                ).fetchone()[0]
+                if current_for_agent >= max_per_agent:
+                    per_agent_limited = True
+                    continue
             selected = row
             break
         if not selected:
@@ -764,7 +873,8 @@ def claim_task(body: WorkerClaim):
                 "UPDATE agent_runtime_workers SET status='idle',current_task_id=NULL,updated_at=?,last_seen=? WHERE worker_id=?",
                 (now_s, now_s, body.worker_id),
             )
-            return {"task": None, "queue_empty": True}
+            return {"task": None, "queue_empty": not per_agent_limited,
+                    "concurrency_limited": running_total >= max_parallel or per_agent_limited}
         lease_seconds = selected["lease_seconds"]
         lease_until = _iso(now + timedelta(seconds=lease_seconds))
         attempt = selected["attempts"] + 1
@@ -886,6 +996,8 @@ def _validate_dag(steps: list[WorkflowStep]) -> None:
                     ready.append(key)
     if visited != len(steps):
         raise HTTPException(status_code=422, detail="Workflow contains a dependency cycle.")
+    for step in steps:
+        _validate_input_refs(step.inputs, set(step.depends_on), f"steps.{step.id}.inputs")
 
 
 @router.post("/workflows", status_code=202)

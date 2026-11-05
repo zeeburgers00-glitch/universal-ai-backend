@@ -38,6 +38,12 @@ def test_enqueue_idempotency_and_secret_rejection(monkeypatch, tmp_path):
         json={"objective": "Run agent safely", "inputs": {"api_key": "never-store-this"}},
     )
     assert rejected.status_code == 422
+    unresolved_ref = client.post(
+        "/v1/agent-runtime/tasks", headers=HEADERS,
+        json={"objective": "Do not accept unresolved workflow references",
+              "inputs": {"summary": {"$from_step": "research", "path": "output.summary"}}},
+    )
+    assert unresolved_ref.status_code == 422
 
 
 def test_worker_claim_requires_no_card_attestation(monkeypatch, tmp_path):
@@ -93,7 +99,8 @@ def test_workflow_dag_respects_dependencies(monkeypatch, tmp_path):
         "/v1/agent-runtime/workflows", headers=HEADERS,
         json={"name": "research then write", "steps": [
             {"id": "research", "objective": "Research the topic"},
-            {"id": "write", "objective": "Write the script", "depends_on": ["research"]},
+            {"id": "write", "objective": "Write the script", "depends_on": ["research"],
+             "inputs": {"research_summary": {"$from_step": "research", "path": "output.summary"}}},
         ]},
     )
     assert response.status_code == 202, response.text
@@ -104,10 +111,11 @@ def test_workflow_dag_respects_dependencies(monkeypatch, tmp_path):
     assert second_claim["task"] is None
     client.post(
         f"/v1/agent-runtime/workers/worker-1/tasks/{first['task_id']}/complete",
-        headers=HEADERS, json={"result": {"summary": "research ready"}},
+        headers=HEADERS, json={"result": {"output": {"summary": "research ready"}}},
     )
     next_claim = client.post("/v1/agent-runtime/workers/claim", headers=HEADERS, json={"worker_id": "worker-2"}).json()["task"]
     assert next_claim["step_key"] == "write"
+    assert next_claim["payload"]["inputs"]["research_summary"] == "research ready"
     client.post(
         f"/v1/agent-runtime/workers/worker-2/tasks/{next_claim['task_id']}/complete",
         headers=HEADERS, json={"result": {"script": "draft"}},
@@ -317,3 +325,45 @@ def test_worker_registry_blocks_parallel_claims_for_same_worker_and_cannot_hard_
         f"/v1/agent-runtime/tasks/{first['task_id']}/cancel", headers=HEADERS,
     )
     assert cannot_cancel.status_code == 409
+
+
+def test_workflow_rejects_reference_to_non_dependency(monkeypatch, tmp_path):
+    _configure(monkeypatch, tmp_path)
+    response = client.post(
+        "/v1/agent-runtime/workflows", headers=HEADERS,
+        json={"name": "invalid handoff", "steps": [
+            {"id": "research", "objective": "Research the topic"},
+            {"id": "write", "objective": "Write a script",
+             "inputs": {"summary": {"$from_step": "research", "path": "output.summary"}}},
+        ]},
+    )
+    assert response.status_code == 422
+
+
+def test_parallel_task_limit_is_enforced(monkeypatch, tmp_path):
+    _configure(monkeypatch, tmp_path)
+    monkeypatch.setenv("AGENT_RUNTIME_MAX_PARALLEL_TASKS", "1")
+    first = client.post(
+        "/v1/agent-runtime/tasks", headers=HEADERS, json={"objective": "First parallel task"}
+    ).json()
+    second = client.post(
+        "/v1/agent-runtime/tasks", headers=HEADERS, json={"objective": "Second parallel task"}
+    ).json()
+    claimed = client.post(
+        "/v1/agent-runtime/workers/claim", headers=HEADERS, json={"worker_id": "parallel-worker-1"}
+    ).json()["task"]
+    assert claimed["task_id"] == first["task_id"]
+    limited = client.post(
+        "/v1/agent-runtime/workers/claim", headers=HEADERS, json={"worker_id": "parallel-worker-2"}
+    ).json()
+    assert limited["task"] is None
+    assert limited["concurrency_limited"] is True
+    completed = client.post(
+        f"/v1/agent-runtime/workers/parallel-worker-1/tasks/{first['task_id']}/complete",
+        headers=HEADERS, json={"result": {"done": True}},
+    )
+    assert completed.status_code == 200
+    next_claim = client.post(
+        "/v1/agent-runtime/workers/claim", headers=HEADERS, json={"worker_id": "parallel-worker-2"}
+    ).json()["task"]
+    assert next_claim["task_id"] == second["task_id"]

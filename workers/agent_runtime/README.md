@@ -5,7 +5,7 @@ This container polls the protected Universal Agent Runtime API, claims one task 
 ## Run
 
 ~~~bash
-docker compose --env-file workers/.env.workers -f workers/docker-compose.yml --profile agent-runtime up --build -d agent-api agent-runtime-worker
+docker compose --env-file workers/.env.workers -f workers/docker-compose.yml --profile agent-runtime up --build -d agent-api agent-runner agent-runtime-worker
 ~~~
 
 Configure the variables from `workers/.env.workers.example`. The API server and worker must both have `AGENT_RUNTIME_WORKER_NO_CARD_CONFIRMED=true`, but only after the chosen model provider and account have been checked as free/no-card. The default is false and worker claims are denied until attested.
