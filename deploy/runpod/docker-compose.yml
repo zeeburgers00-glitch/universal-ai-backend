@@ -1,0 +1,128 @@
+name: universal-ai-backend
+
+# RunPod GPU pod stack: control plane + Redis + worker services.
+#
+# network_mode: host is deliberate. app/task_gateway.py only permits plain HTTP
+# worker URLs when the host is 127.0.0.1 or localhost (see _worker_config), so
+# Docker service names on a bridge network would be rejected. On a single pod,
+# host networking gives every worker a real 127.0.0.1 port instead.
+#
+# Only port 8000 is exposed publicly through RunPod's HTTP proxy. Worker ports
+# stay on the pod's loopback and still require their Bearer keys.
+
+x-common: &common
+  restart: unless-stopped
+  network_mode: host
+  env_file:
+    - .env
+
+services:
+  redis:
+    <<: *common
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}"]
+    volumes:
+      - /workspace/redis:/data
+
+  api:
+    <<: *common
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    environment:
+      PORT: "8000"
+      WORKER_ALLOW_INSECURE_HTTP: "true"
+    volumes:
+      - /workspace/data:/data
+    depends_on:
+      - redis
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4)"]
+      interval: 30s
+      timeout: 6s
+      retries: 5
+      start_period: 45s
+
+  voice_worker:
+    <<: *common
+    build:
+      context: ../../workers/voice_worker
+      dockerfile: Dockerfile
+    environment:
+      VOICE_WORKER_API_KEY: ${VOICE_WORKER_API_KEY:?set in .env}
+    volumes:
+      - /workspace/data:/data
+    depends_on:
+      - redis
+
+  media_worker:
+    <<: *common
+    build:
+      context: ../../workers/media_worker
+      dockerfile: Dockerfile
+    environment:
+      MEDIA_WORKER_API_KEY: ${MEDIA_WORKER_API_KEY:?set in .env}
+    volumes:
+      - /workspace/data:/data
+    depends_on:
+      - redis
+
+  youtube_worker:
+    <<: *common
+    build:
+      context: ../../workers/youtube_worker
+      dockerfile: Dockerfile
+    environment:
+      YOUTUBE_WORKER_API_KEY: ${YOUTUBE_WORKER_API_KEY:?set in .env}
+    volumes:
+      - /workspace/data:/data
+    depends_on:
+      - redis
+
+  channel_worker:
+    <<: *common
+    build:
+      context: ../../workers/channel_worker
+      dockerfile: Dockerfile
+    environment:
+      CHANNEL_WORKER_API_KEY: ${CHANNEL_WORKER_API_KEY:?set in .env}
+    volumes:
+      - /workspace/data:/data
+    depends_on:
+      - redis
+
+  agent_worker:
+    <<: *common
+    build:
+      context: ../../workers/agent_worker
+      dockerfile: Dockerfile
+    environment:
+      AGENT_WORKER_API_KEY: ${AGENT_WORKER_API_KEY:?set in .env}
+    volumes:
+      - /workspace/data:/data
+    depends_on:
+      - redis
+
+  automation_worker:
+    <<: *common
+    build:
+      context: ../../workers/automation_worker
+      dockerfile: Dockerfile
+    environment:
+      AUTOMATION_WORKER_API_KEY: ${AUTOMATION_WORKER_API_KEY:?set in .env}
+    volumes:
+      - /workspace/data:/data
+    depends_on:
+      - redis
+
+  rea_worker:
+    <<: *common
+    build:
+      context: ../../workers/rea_worker
+      dockerfile: Dockerfile
+    environment:
+      REA_WORKER_API_KEY: ${REA_WORKER_API_KEY:?set in .env}
+    volumes:
+      - /workspace/data:/data
+    depends_on:
+      - redis
