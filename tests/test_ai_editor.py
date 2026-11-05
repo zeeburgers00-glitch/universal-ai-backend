@@ -48,8 +48,10 @@ def test_editor_is_honest_about_model_requirements():
 def test_every_endpoint_the_editor_calls_exists():
     """Drift guard: renaming a route must not silently break the editor UI."""
 
-    called = set(re.findall(r"/v1/[a-z0-9\-/]+", EDITOR_HTML))
-    known = set(app.openapi()["paths"])
+    # The UI builds URLs by concatenation ("/v1/agents/runtime/" + id), so a trailing
+    # slash is expected and normalised away before comparing with the schema.
+    called = {path.rstrip("/") for path in re.findall(r"/v1/[a-z0-9\-/]+", EDITOR_HTML)}
+    known = {path.rstrip("/") for path in app.openapi()["paths"]}
     unknown = {path for path in called if path not in known}
     assert not unknown, f"editor calls endpoints that do not exist: {sorted(unknown)}"
 

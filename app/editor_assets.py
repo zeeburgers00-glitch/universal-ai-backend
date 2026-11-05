@@ -134,6 +134,7 @@ EDITOR_HTML = r"""<!DOCTYPE html>
       <div class="tab" data-tab="chat" onclick="showTab('chat')">Chat</div>
       <div class="tab" data-tab="git" onclick="showTab('git'); loadGit()">Git</div>
       <div class="tab" data-tab="tools" onclick="showTab('tools')">Tools</div>
+      <div class="tab" data-tab="agents" onclick="showTab('agents'); loadAgents()">Agents</div>
     </div>
     <div class="editor-wrap">
       <div id="gutter"></div>
@@ -170,6 +171,17 @@ EDITOR_HTML = r"""<!DOCTYPE html>
         <input type="text" id="gitMessage" placeholder="commit message…" />
         <button onclick="commitGit()">Commit all</button>
       </div>
+    </div>
+    <div class="panel" id="panel-agents">
+      <h3>Agents <span class="meta">(37 runnable, zero keys)</span></h3>
+      <select id="agentPicker" onchange="describeAgent()" style="width:100%;margin-bottom:8px"></select>
+      <div id="agentHelp" class="meta" style="margin-bottom:8px">pick an agent</div>
+      <textarea id="agentInput" rows="4" placeholder='{"path": "app/main.py"}' style="width:100%;font-family:ui-monospace,monospace"></textarea>
+      <div class="chat-input">
+        <button onclick="runAgent()">Run</button>
+        <button onclick="showTab('agents');document.getElementById('agentResult').textContent=''">Clear</button>
+      </div>
+      <pre id="agentResult" class="meta" style="white-space:pre-wrap;max-height:260px;overflow:auto;margin-top:8px"></pre>
     </div>
     <div class="panel" id="panel-tools">
       <h3>Tool search <span class="meta">(BM25 over the repo catalog)</span></h3>
@@ -463,6 +475,65 @@ chatPanel.insertAdjacentHTML('afterbegin',
   '<div style="display:flex;gap:6px;margin-bottom:8px">' +
   '<select id="provider"><option value="ollama">ollama (local)</option><option value="groq">groq</option><option value="gemini">gemini</option><option value="openai">openai</option></select>' +
   '<input type="text" id="model" placeholder="model (optional)" style="flex:1" /></div>');
+
+async function loadAgents() {
+  const picker = document.getElementById('agentPicker');
+  if (picker.options.length) return;
+  const help = document.getElementById('agentHelp');
+  try {
+    const data = await api('/v1/agents/runtime');
+    data.agents.forEach(entry => {
+      const option = document.createElement('option');
+      option.value = entry.id;
+      option.textContent = entry.name + ' · ' + entry.category;
+      picker.appendChild(option);
+    });
+    help.textContent = data.count + ' agents ready. Pick one, fill the input, press Run.';
+    describeAgent();
+  } catch (error) {
+    help.textContent = 'could not load agents: ' + error.message;
+  }
+}
+
+async function describeAgent() {
+  const picker = document.getElementById('agentPicker');
+  const help = document.getElementById('agentHelp');
+  if (!picker.value) return;
+  try {
+    const entry = await api('/v1/agents/runtime/' + encodeURIComponent(picker.value));
+    const required = entry.required.length ? 'required: ' + entry.required.join(', ') : 'no required inputs';
+    const model = entry.needs_model ? ' · needs a model' : '';
+    help.textContent = entry.description + ' (' + entry.engine + ', ' + required + model + ')';
+    const example = {};
+    entry.required.forEach(key => {
+      example[key] = key === 'path' ? 'app/main.py' : key === 'topic' ? 'free video editing' : 'value';
+    });
+    document.getElementById('agentInput').value = JSON.stringify(example, null, 1);
+  } catch (error) {
+    help.textContent = 'describe failed: ' + error.message;
+  }
+}
+
+async function runAgent() {
+  const picker = document.getElementById('agentPicker');
+  const box = document.getElementById('agentResult');
+  let payload = {};
+  const raw = document.getElementById('agentInput').value.trim();
+  if (raw) {
+    try { payload = JSON.parse(raw); } catch (error) { box.textContent = 'input is not valid JSON'; return; }
+  }
+  box.textContent = 'running ' + picker.value + '…';
+  try {
+    const started = performance.now();
+    const result = await api('/v1/agents/runtime/' + encodeURIComponent(picker.value) + '/run',
+      { method: 'POST', body: { input: payload } });
+    const took = Math.round(performance.now() - started);
+    box.textContent = picker.value + ' finished in ' + took + ' ms\n\n' +
+      JSON.stringify(result.result, null, 2);
+  } catch (error) {
+    box.textContent = 'failed: ' + error.message;
+  }
+}
 
 async function loadGit() {
   const statusBox = document.getElementById('gitStatus');

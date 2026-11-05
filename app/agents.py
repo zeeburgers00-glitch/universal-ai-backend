@@ -262,9 +262,19 @@ def route_guard(payload: dict[str, Any]) -> dict[str, Any]:
     from .editor_assets import EDITOR_HTML
     from .main import app
 
-    known = set(app.openapi()["paths"])
-    called = set(re.findall(r"['\"`](/v1/[a-zA-Z0-9_\-/{}.]+)", EDITOR_HTML))
-    missing = sorted({path.split("?")[0] for path in called} - known)
+    known = {path.rstrip("/") for path in app.openapi()["paths"]}
+    raw_calls = set(re.findall(r"['\"`](/v1/[a-zA-Z0-9_\-/{}.]+)", EDITOR_HTML))
+
+    def normalise(path: str) -> str:
+        """UI builds URLs by concatenation, so strip ids, template tails and slashes."""
+
+        cleaned = path.split("?")[0]
+        for marker in ("{", "$"):
+            cleaned = cleaned.split(marker)[0]
+        return cleaned.rstrip("/")
+
+    called = {normalise(path) for path in raw_calls}
+    missing = sorted(path for path in called if path and path not in known)
     return {
         "ui_calls": len(called),
         "schema_paths": len(known),
