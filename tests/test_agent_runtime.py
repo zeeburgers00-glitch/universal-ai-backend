@@ -367,3 +367,141 @@ def test_parallel_task_limit_is_enforced(monkeypatch, tmp_path):
         "/v1/agent-runtime/workers/claim", headers=HEADERS, json={"worker_id": "parallel-worker-2"}
     ).json()["task"]
     assert next_claim["task_id"] == second["task_id"]
+
+
+
+def test_worker_drain_allows_current_task_to_finish_but_prevents_new_claims(monkeypatch, tmp_path):
+    _configure(monkeypatch, tmp_path)
+    first = client.post(
+        "/v1/agent-runtime/tasks", headers=HEADERS, json={"objective": "Finish current work"}
+    ).json()
+    second = client.post(
+        "/v1/agent-runtime/tasks", headers=HEADERS, json={"objective": "Wait for worker undrain"}
+    ).json()
+    client.post(
+        "/v1/agent-runtime/workers/register", headers=HEADERS,
+        json={"worker_id": "drain-worker", "capabilities": {"executor": "test"}},
+    )
+    claimed = client.post(
+        "/v1/agent-runtime/workers/claim", headers=HEADERS,
+        json={"worker_id": "drain-worker"},
+    ).json()["task"]
+    assert claimed["task_id"] == first["task_id"]
+
+    drained = client.post(
+        "/v1/agent-runtime/workers/drain-worker/drain", headers=HEADERS,
+        json={"reason": "Rolling deployment"},
+    )
+    assert drained.status_code == 200
+    assert drained.json()["current_task_id"] == first["task_id"]
+    heartbeat = client.post(
+        f"/v1/agent-runtime/workers/drain-worker/tasks/{first['task_id']}/heartbeat",
+        headers=HEADERS, json={"extend_seconds": 120},
+    )
+    assert heartbeat.status_code == 200
+    assert client.get("/v1/agent-runtime/workers", headers=HEADERS).json()["items"][0]["status"] == "draining"
+
+    completed = client.post(
+        f"/v1/agent-runtime/workers/drain-worker/tasks/{first['task_id']}/complete",
+        headers=HEADERS, json={"result": {"done": True}},
+    )
+    assert completed.status_code == 200
+    blocked_claim = client.post(
+        "/v1/agent-runtime/workers/claim", headers=HEADERS,
+        json={"worker_id": "drain-worker"},
+    ).json()
+    assert blocked_claim["task"] is None
+    assert blocked_claim["worker_draining"] is True
+    assert client.get(f"/v1/agent-runtime/tasks/{second['task_id']}", headers=HEADERS).json()["status"] == "queued"
+
+    undrained = client.post(
+        "/v1/agent-runtime/workers/drain-worker/undrain", headers=HEADERS,
+    )
+    assert undrained.status_code == 200
+    assert undrained.json()["status"] == "idle"
+    next_task = client.post(
+        "/v1/agent-runtime/workers/claim", headers=HEADERS,
+        json={"worker_id": "drain-worker"},
+    ).json()["task"]
+    assert next_task["task_id"] == second["task_id"]
+
+
+def test_manual_retry_resets_failed_task_and_requires_fresh_approval_for_critical(monkeypatch, tmp_path):
+    _configure(monkeypatch, tmp_path)
+    low = client.post(
+        "/v1/agent-runtime/tasks", headers=HEADERS,
+        json={"objective": "Retry a failed research task", "max_attempts": 1},
+    ).json()
+    low_claim = client.post(
+        "/v1/agent-runtime/workers/claim", headers=HEADERS, json={"worker_id": "retry-worker"}
+    ).json()["task"]
+    client.post(
+        f"/v1/agent-runtime/workers/retry-worker/tasks/{low_claim['task_id']}/fail",
+        headers=HEADERS, json={"error": "permanent first failure", "retryable": False},
+    )
+    retried = client.post(
+        f"/v1/agent-runtime/tasks/{low['task_id']}/retry", headers=HEADERS,
+    )
+    assert retried.status_code == 202
+    assert retried.json()["status"] == "queued"
+    assert retried.json()["attempts"] == 0
+    low_retry_claim = client.post(
+        "/v1/agent-runtime/workers/claim", headers=HEADERS, json={"worker_id": "retry-worker"}
+    ).json()["task"]
+    client.post(
+        f"/v1/agent-runtime/workers/retry-worker/tasks/{low_retry_claim['task_id']}/complete",
+        headers=HEADERS, json={"result": {"done": True}},
+    )
+
+    critical = client.post(
+        "/v1/agent-runtime/tasks", headers=HEADERS,
+        json={"objective": "Prepare a high impact publishing action", "risk_level": "critical"},
+    ).json()
+    approval_id = critical["approval_id"]
+    client.post(
+        f"/v1/agent-runtime/approvals/{approval_id}/decision", headers=HEADERS,
+        json={"decision": "approved", "note": "Initial review"},
+    )
+    critical_claim = client.post(
+        "/v1/agent-runtime/workers/claim", headers=HEADERS,
+        json={"worker_id": "retry-worker-2"},
+    ).json()["task"]
+    client.post(
+        f"/v1/agent-runtime/workers/retry-worker-2/tasks/{critical_claim['task_id']}/fail",
+        headers=HEADERS, json={"error": "execution failed", "retryable": False},
+    )
+    critical_retry = client.post(
+        f"/v1/agent-runtime/tasks/{critical['task_id']}/retry", headers=HEADERS,
+    )
+    assert critical_retry.status_code == 202
+    assert critical_retry.json()["status"] == "pending_approval"
+    approval = client.get("/v1/agent-runtime/approvals?status=pending", headers=HEADERS).json()["items"]
+    assert any(item["approval_id"] == approval_id for item in approval)
+
+
+def test_runtime_prometheus_metrics_expose_operational_gauges(monkeypatch, tmp_path):
+    _configure(monkeypatch, tmp_path)
+    client.post(
+        "/v1/agent-runtime/tasks", headers=HEADERS,
+        json={"objective": "Expose a useful metric"},
+    )
+    response = client.get("/v1/agent-runtime/metrics", headers=HEADERS)
+    assert response.status_code == 200
+    assert "text/plain" in response.headers["content-type"]
+    assert 'agent_runtime_tasks{status="queued"} 1' in response.text
+    assert 'agent_runtime_workers{status="draining"}' in response.text
+    assert "agent_runtime_execution_attested_no_card 1" in response.text
+
+
+def test_cancel_pending_approval_also_closes_approval_record(monkeypatch, tmp_path):
+    _configure(monkeypatch, tmp_path)
+    task = client.post(
+        "/v1/agent-runtime/tasks", headers=HEADERS,
+        json={"objective": "Cancel a task waiting for review", "risk_level": "critical"},
+    ).json()
+    cancelled = client.post(
+        f"/v1/agent-runtime/tasks/{task['task_id']}/cancel", headers=HEADERS,
+    )
+    assert cancelled.status_code == 200
+    rejected = client.get("/v1/agent-runtime/approvals?status=rejected", headers=HEADERS).json()["items"]
+    assert rejected[0]["decision_note"] == "Cancelled by API request."

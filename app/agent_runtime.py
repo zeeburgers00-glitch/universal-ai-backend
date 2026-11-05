@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 
 from .security import require_api_key
@@ -487,6 +488,10 @@ class WorkerRegister(BaseModel):
     capabilities: dict[str, Any] = Field(default_factory=dict)
 
 
+class WorkerDrainRequest(BaseModel):
+    reason: str = Field(default="Operator requested worker drain.", max_length=500)
+
+
 class WorkerClaim(BaseModel):
     worker_id: str = Field(min_length=2, max_length=128, pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 
@@ -617,8 +622,59 @@ def runtime_status():
         "execution_attested_no_card": attested,
         "no_card_only": True,
         "paid_provider_fallback": False,
-        "features": ["task_queue", "leases", "retries", "workflow_dag", "workflow_output_handoffs", "bounded_concurrency", "human_approvals", "scoped_memory", "event_log", "unified_agent_catalog", "worker_registry"],
+        "features": ["task_queue", "leases", "retries", "manual_retry", "workflow_dag", "workflow_output_handoffs", "bounded_concurrency", "human_approvals", "scoped_memory", "event_log", "unified_agent_catalog", "worker_registry", "worker_drain", "prometheus_metrics"],
     }
+
+
+
+@router.get("/metrics", response_class=PlainTextResponse)
+def runtime_metrics():
+    """Prometheus exposition format for queue, worker, approval and memory health."""
+    now = _now()
+    with _db() as conn:
+        task_rows = conn.execute("SELECT status,COUNT(*) AS total FROM agent_tasks GROUP BY status").fetchall()
+        worker_rows = conn.execute("SELECT status,last_seen FROM agent_runtime_workers").fetchall()
+        approval_rows = conn.execute("SELECT status,COUNT(*) AS total FROM agent_approvals GROUP BY status").fetchall()
+        memory_total = int(conn.execute("SELECT COUNT(*) FROM agent_memory").fetchone()[0])
+        oldest = conn.execute("SELECT MIN(created_at) FROM agent_tasks WHERE status='queued'").fetchone()[0]
+    task_counts = {str(row["status"]): int(row["total"]) for row in task_rows}
+    approval_counts = {str(row["status"]): int(row["total"]) for row in approval_rows}
+    worker_counts = {"idle": 0, "busy": 0, "draining": 0, "offline": 0}
+    cutoff = now - timedelta(seconds=90)
+    for row in worker_rows:
+        status = "offline" if row["last_seen"] < _iso(cutoff) else str(row["status"])
+        if status in worker_counts:
+            worker_counts[status] += 1
+    task_statuses = ("queued", "pending_approval", "running", "succeeded", "failed", "blocked", "cancelled")
+    approval_statuses = ("pending", "approved", "rejected")
+    lines = ["# HELP agent_runtime_tasks Current task count by lifecycle status.", "# TYPE agent_runtime_tasks gauge"]
+    lines.extend(f'agent_runtime_tasks{{status="{s}"}} {task_counts.get(s, 0)}' for s in task_statuses)
+    lines.extend(["# HELP agent_runtime_workers Current worker count by liveness status.", "# TYPE agent_runtime_workers gauge"])
+    lines.extend(f'agent_runtime_workers{{status="{s}"}} {worker_counts[s]}' for s in ("idle", "busy", "draining", "offline"))
+    lines.extend(["# HELP agent_runtime_approvals Current approval count by status.", "# TYPE agent_runtime_approvals gauge"])
+    lines.extend(f'agent_runtime_approvals{{status="{s}"}} {approval_counts.get(s, 0)}' for s in approval_statuses)
+    oldest_age = 0.0
+    if oldest:
+        try:
+            oldest_age = max(0.0, (now - datetime.fromisoformat(oldest)).total_seconds())
+        except ValueError:
+            oldest_age = 0.0
+    lines.extend([
+        "# HELP agent_runtime_queue_oldest_seconds Age of the oldest queued task.",
+        "# TYPE agent_runtime_queue_oldest_seconds gauge",
+        f"agent_runtime_queue_oldest_seconds {oldest_age:.3f}",
+        "# HELP agent_runtime_memory_records Number of stored memory records.",
+        "# TYPE agent_runtime_memory_records gauge",
+        f"agent_runtime_memory_records {memory_total}",
+        "# HELP agent_runtime_execution_attested_no_card Whether worker no-card attestation is enabled.",
+        "# TYPE agent_runtime_execution_attested_no_card gauge",
+        f"agent_runtime_execution_attested_no_card {1 if os.getenv('AGENT_RUNTIME_WORKER_NO_CARD_CONFIRMED', 'false').lower() == 'true' else 0}",
+        "# HELP agent_runtime_max_pending_tasks Configured queue capacity.",
+        "# TYPE agent_runtime_max_pending_tasks gauge",
+        f"agent_runtime_max_pending_tasks {_bounded_env_int('AGENT_RUNTIME_MAX_PENDING_TASKS', 1000, 1, 10000)}",
+        "",
+    ])
+    return PlainTextResponse("\n".join(lines), media_type="text/plain; version=0.0.4; charset=utf-8")
 
 
 @router.post("/tasks", status_code=202)
@@ -701,13 +757,69 @@ def cancel_task(task_id: str):
             raise HTTPException(status_code=409, detail=f"Task is already {row['status']}")
         if row["status"] == "running":
             raise HTTPException(status_code=409, detail="A running task cannot be hard-cancelled. Stop it through the executor, then report its final state.")
+        now = _iso()
+        if row["approval_id"] and row["status"] == "pending_approval":
+            conn.execute(
+                """UPDATE agent_approvals SET status='rejected',updated_at=?,decided_at=?,
+                   decision_note=? WHERE approval_id=? AND status='pending'""",
+                (now, now, "Cancelled by API request.", row["approval_id"]),
+            )
         conn.execute(
             "UPDATE agent_tasks SET status='cancelled',worker_id=NULL,lease_until=NULL,updated_at=? WHERE task_id=?",
-            (_iso(), task_id),
+            (now, task_id),
         )
         _event(conn, task_id, "cancelled", "cancelled", "Task cancelled by API request.")
         _refresh_workflow(conn, row["workflow_id"])
         return {"task_id": task_id, "status": "cancelled"}
+
+
+
+@router.post("/tasks/{task_id}/retry", status_code=202)
+def retry_failed_task(task_id: str):
+    """Manually requeue a terminal failure; high-risk work must be approved again."""
+    with _db() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute("SELECT * FROM agent_tasks WHERE task_id=?", (task_id,)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Task not found")
+        if row["workflow_id"]:
+            raise HTTPException(status_code=409, detail="Retry failed workflow steps by submitting a new workflow; individual step replay is not supported.")
+        if row["status"] != "failed":
+            raise HTTPException(status_code=409, detail=f"Only failed tasks can be manually retried (current status: {row['status']}).")
+        now = _iso()
+        approval_id = row["approval_id"]
+        next_status = "queued"
+        if row["risk_level"] in {"high", "critical"}:
+            next_status = "pending_approval"
+            if approval_id:
+                conn.execute(
+                    """UPDATE agent_approvals SET status='pending',created_at=?,updated_at=?,decided_at=NULL,
+                       decision_note=NULL,reason=? WHERE approval_id=?""",
+                    (now, now, "Manual retry of high-risk or critical task requires fresh approval.", approval_id),
+                )
+            else:
+                approval_id = _new_approval(conn, task_id, row["risk_level"])
+                conn.execute(
+                    """INSERT INTO agent_approvals
+                       (approval_id,task_id,risk_level,reason,status,created_at,updated_at)
+                       VALUES(?,?,?,?,?,?,?)""",
+                    (approval_id, task_id, row["risk_level"],
+                     "Manual retry of high-risk or critical task requires fresh approval.",
+                     "pending", now, now),
+                )
+        conn.execute(
+            """UPDATE agent_tasks SET status=?,attempts=0,worker_id=NULL,lease_until=NULL,
+               result_json=NULL,error=NULL,approval_id=?,updated_at=? WHERE task_id=?""",
+            (next_status, approval_id, now, task_id),
+        )
+        _event(
+            conn, task_id, "manual_retry", next_status,
+            "Task manually requeued; fresh human approval is required." if next_status == "pending_approval"
+            else "Task manually requeued by operator.",
+            {"previous_attempts": row["attempts"], "approval_required": next_status == "pending_approval"},
+        )
+        refreshed = conn.execute("SELECT * FROM agent_tasks WHERE task_id=?", (task_id,)).fetchone()
+        return _task_dict(refreshed)
 
 
 @router.post("/workers/register")
@@ -720,12 +832,63 @@ def register_worker(body: WorkerRegister):
                (worker_id,status,capabilities_json,created_at,updated_at,last_seen,current_task_id)
                VALUES(?,?,?,?,?,?,NULL)
                ON CONFLICT(worker_id) DO UPDATE SET
-                 status=CASE WHEN agent_runtime_workers.current_task_id IS NULL THEN 'idle' ELSE agent_runtime_workers.status END,
+                 status=CASE WHEN agent_runtime_workers.status='draining' THEN 'draining' WHEN agent_runtime_workers.current_task_id IS NULL THEN 'idle' ELSE agent_runtime_workers.status END,
                  capabilities_json=excluded.capabilities_json,
                  updated_at=excluded.updated_at,last_seen=excluded.last_seen""",
             (body.worker_id, "idle", _json(body.capabilities), now, now, now),
         )
-    return {"worker_id": body.worker_id, "status": "idle", "last_seen": now}
+        updated = conn.execute(
+            "SELECT status FROM agent_runtime_workers WHERE worker_id=?", (body.worker_id,)
+        ).fetchone()
+    return {"worker_id": body.worker_id, "status": updated["status"], "last_seen": now}
+
+
+
+@router.post("/workers/{worker_id}/drain")
+def drain_worker(worker_id: str, body: WorkerDrainRequest = WorkerDrainRequest()):
+    """Stop assigning new tasks while allowing the current lease to finish."""
+    with _db() as conn:
+        row = conn.execute(
+            "SELECT * FROM agent_runtime_workers WHERE worker_id=?", (worker_id,)
+        ).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Worker not found")
+        conn.execute(
+            "UPDATE agent_runtime_workers SET status='draining',updated_at=? WHERE worker_id=?",
+            (_iso(), worker_id),
+        )
+    return {
+        "worker_id": worker_id,
+        "status": "draining",
+        "current_task_id": row["current_task_id"],
+        "reason": body.reason,
+        "new_tasks_enabled": False,
+    }
+
+
+@router.post("/workers/{worker_id}/undrain")
+def undrain_worker(worker_id: str):
+    """Allow a drained worker to claim tasks again."""
+    now = _iso()
+    with _db() as conn:
+        row = conn.execute(
+            "SELECT * FROM agent_runtime_workers WHERE worker_id=?", (worker_id,)
+        ).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Worker not found")
+        active = None
+        if row["current_task_id"]:
+            active = conn.execute(
+                """SELECT task_id FROM agent_tasks WHERE task_id=? AND worker_id=?
+                   AND status='running' AND lease_until>=?""",
+                (row["current_task_id"], worker_id, now),
+            ).fetchone()
+        status = "busy" if active else "idle"
+        conn.execute(
+            "UPDATE agent_runtime_workers SET status=?,current_task_id=?,updated_at=? WHERE worker_id=?",
+            (status, active["task_id"] if active else None, now, worker_id),
+        )
+    return {"worker_id": worker_id, "status": status, "new_tasks_enabled": True}
 
 
 @router.get("/workers")
@@ -780,11 +943,15 @@ def claim_task(body: WorkerClaim):
             )
             if row["worker_id"]:
                 conn.execute(
-                    "UPDATE agent_runtime_workers SET status='offline',current_task_id=NULL,updated_at=?,last_seen=? WHERE worker_id=?",
-                    (now_s, now_s, row["worker_id"]),
+                    """UPDATE agent_runtime_workers SET status=CASE WHEN status='draining' THEN 'draining' ELSE 'offline' END,
+                       current_task_id=NULL,updated_at=? WHERE worker_id=?""",
+                    (now_s, row["worker_id"]),
                 )
             _event(conn, row["task_id"], "lease_expired", status, "Worker lease expired; task returned to queue." if retry else "Worker lease expired; retry limit reached.")
             _refresh_workflow(conn, row["workflow_id"])
+        worker_state = conn.execute("SELECT status FROM agent_runtime_workers WHERE worker_id=?", (body.worker_id,)).fetchone()
+        if worker_state and worker_state["status"] == "draining":
+            return {"task": None, "queue_empty": True, "worker_draining": True}
         owned_task = conn.execute(
             "SELECT * FROM agent_tasks WHERE status='running' AND worker_id=? AND lease_until>=? LIMIT 1",
             (body.worker_id, now_s),
@@ -910,7 +1077,7 @@ def heartbeat_task(worker_id: str, task_id: str, body: WorkerHeartbeat):
         conn.execute("UPDATE agent_tasks SET lease_until=?,updated_at=? WHERE task_id=?",
                      (lease_until, _iso(now), task_id))
         conn.execute(
-            "UPDATE agent_runtime_workers SET status='busy',last_seen=?,updated_at=? WHERE worker_id=?",
+            "UPDATE agent_runtime_workers SET status=CASE WHEN status='draining' THEN 'draining' ELSE 'busy' END,last_seen=?,updated_at=? WHERE worker_id=?",
             (_iso(now), _iso(now), worker_id),
         )
         _event(conn, task_id, "heartbeat", "running", "Worker lease extended.",
@@ -940,7 +1107,7 @@ def complete_task(worker_id: str, task_id: str, body: WorkerComplete):
             (encoded, _iso(), task_id),
         )
         conn.execute(
-            "UPDATE agent_runtime_workers SET status='idle',current_task_id=NULL,last_seen=?,updated_at=? WHERE worker_id=?",
+            "UPDATE agent_runtime_workers SET status=CASE WHEN status='draining' THEN 'draining' ELSE 'idle' END,current_task_id=NULL,last_seen=?,updated_at=? WHERE worker_id=?",
             (_iso(), _iso(), worker_id),
         )
         _event(conn, task_id, "completed", "succeeded", "Task completed successfully.")

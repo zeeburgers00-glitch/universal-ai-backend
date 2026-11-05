@@ -141,3 +141,40 @@ That private-network HTTP exception requires both
 `AGENT_RUNTIME_PRIVATE_HTTP_HOSTS=agent-api`; keep the host allowlist narrow. Public API
 URLs still require HTTPS. The worker container exits unless
 `AGENT_RUNTIME_WORKER_NO_CARD_CONFIRMED=true` is explicitly set.
+
+
+## Worker draining, operator retry and Prometheus metrics
+
+Use worker draining during rolling deployments or maintenance. A drained worker will
+not receive new tasks, but its current lease can heartbeat and finish normally:
+
+~~~bash
+curl -X POST "$BACKEND_URL/v1/agent-runtime/workers/agent-worker-01/drain" \
+  -H "X-API-Key: $BACKEND_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"reason":"Rolling deployment"}'
+~~~
+
+Re-enable task claims after maintenance:
+
+~~~bash
+curl -X POST "$BACKEND_URL/v1/agent-runtime/workers/agent-worker-01/undrain" \
+  -H "X-API-Key: $BACKEND_API_KEY"
+~~~
+
+A terminally failed standalone task can be manually retried by an authenticated operator:
+
+~~~bash
+curl -X POST "$BACKEND_URL/v1/agent-runtime/tasks/TASK_ID/retry" \
+  -H "X-API-Key: $BACKEND_API_KEY"
+~~~
+
+Manual retry resets the attempt counter and clears the prior result/error. High and critical
+tasks return to pending_approval; the previous approval is reopened and must be decided
+again. Failed workflow steps are intentionally not replayed individually: submit a new
+workflow so its dependency graph and handoffs are rebuilt consistently.
+
+The GET /v1/agent-runtime/metrics endpoint returns Prometheus text exposition with task,
+worker, approval, queue-age, memory and no-card-attestation gauges. The endpoint uses the
+same X-API-Key protection as the other runtime endpoints. Configure your scraper with
+this header; do not expose metrics publicly without an authenticated reverse proxy.

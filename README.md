@@ -14,6 +14,7 @@ API-only backend for an existing app. It is designed as an extensible integratio
 - API-key protection for chat, worker dispatches, and catalog writes.
 - Vercel-compatible FastAPI entrypoint and unified Docker Compose stack (`workers/docker-compose.yml`) for GPU/async workers.
 - Universal Agent Runtime (`/v1/agent-runtime`): searchable merged directory of 282 current agent blueprints, SQLite-backed queue, worker registry/leases/heartbeats, retries, DAG workflows, approval gates, scoped memory and task event history; Dockerized polling bridge at `workers/agent_runtime`.
+- Runtime operations: worker drain/undrain for safe maintenance, manual retry of failed standalone tasks with renewed approval for high/critical work, and authenticated Prometheus metrics.
 - Safe-by-default integration model: listing a repo never installs or executes its code. Agent runtime execution is disabled until the worker is explicitly attested as free/no-card; high/critical tasks require approval.
 
 
