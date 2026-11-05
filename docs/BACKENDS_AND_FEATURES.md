@@ -79,6 +79,11 @@ Real HTTP upload (`multipart`) → asset → task:
 - **Fixed:** `gemini-2.0-flash` default dead tha (Google ne June 2026 me band kiya) → ab
   `gemini-3.8-flash`.
 
+## 3.4 Naya: dependency audit
+
+`GET /v1/audit/dependencies` — requirements.txt vs actual AST imports. Aaj: 10 declared,
+0 unused, 0 undeclared, 0 unpinned. Detail: `docs/DEPENDENCY_AUDIT.md`.
+
 ## 3.4a Naya: backup / restore
 
 `/v1/data/manifest|backup|backups|restore|verify|download` — poora data dir ek tar.gz me,

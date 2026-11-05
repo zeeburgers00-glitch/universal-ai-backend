@@ -26,7 +26,7 @@ from .editor_assets import EDITOR_HTML
 from .explorer_ui import EXPLORER_HTML
 from .studio_ui import STUDIO_HTML
 from .github_discovery import list_discovery_presets, search_github_repositories
-from . import ai_router, github_registry, model_catalog, obs, quota
+from . import ai_router, deps_audit, github_registry, model_catalog, obs, quota
 from .providers import chat_with_provider, provider_status
 from .pexels import search_pexels_videos
 from .metricool import metricool_request, metricool_status, schedule_youtube_video
@@ -102,6 +102,18 @@ async def observe_requests(request: Request, call_next):
     finally:
         obs.track_inflight(-1)
         obs.observe(request.method, request.url.path, status, time.perf_counter() - started)
+
+
+@app.get("/v1/audit/dependencies")
+def audit_dependencies(_key: str = Depends(require_api_key)):
+    """Prove requirements.txt matches what the source actually imports."""
+
+    from pathlib import Path as _Path
+
+    root = _Path(__file__).resolve().parent.parent
+    report = deps_audit.audit(root, root / "requirements.txt")
+    report["verdict"] = deps_audit.verdict(report)
+    return report
 
 
 @app.get("/metrics", response_class=Response)
