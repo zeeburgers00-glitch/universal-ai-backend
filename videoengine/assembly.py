@@ -10,6 +10,7 @@ crashed render resume by reusing segments that already exist.
 
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import subprocess
@@ -302,6 +303,11 @@ def render_timeline(
 
     if current != output:
         shutil.move(str(current), str(output))
+
+    # Serverless disk is tiny; keep the segments only when asked (resume/debug).
+    if os.getenv("COMMAND_KEEP_SEGMENTS", "0") != "1":
+        shutil.rmtree(work_dir, ignore_errors=True)
+
     if progress:
         progress(1.0, "done")
     return {

@@ -39,7 +39,30 @@ from .vault import get_secret
 
 router = APIRouter(prefix="/v1/command", tags=["command"])
 
-DATA_DIR = Path(os.getenv("COMMAND_DATA_DIR", "data/command")).resolve()
+def _resolve_data_dir() -> Path:
+    """Pick a writable directory.
+
+    Serverless filesystems are read-only apart from /tmp, so a relative default
+    would raise on import before the app could even answer /health.
+    """
+    explicit = (os.getenv("COMMAND_DATA_DIR") or "").strip()
+    candidates: list[Path] = []
+    if explicit:
+        candidates.append(Path(explicit))
+    candidates.extend([Path.cwd() / "data" / "command", Path("/tmp/universal-ai-command")])
+    for candidate in candidates:
+        try:
+            candidate.mkdir(parents=True, exist_ok=True)
+            probe = candidate / ".write-probe"
+            probe.write_text("ok", encoding="utf-8")
+            probe.unlink()
+            return candidate.resolve()
+        except OSError:
+            continue
+    raise RuntimeError("No writable directory for command output; set COMMAND_DATA_DIR.")
+
+
+DATA_DIR = _resolve_data_dir()
 JOB_DIR = DATA_DIR / "jobs"
 OUTPUT_DIR = DATA_DIR / "output"
 for _directory in (JOB_DIR, OUTPUT_DIR):
@@ -310,6 +333,28 @@ def create_command(request: CommandRequest, _: bool = Depends(require_api_key)) 
         "capabilities": capabilities(),
     }
     _save(job)
+
+    serverless = bool(os.getenv("VERCEL")) or os.getenv("COMMAND_SYNC_RENDER") == "1"
+    max_sync = float(os.getenv("COMMAND_SYNC_MAX_SECONDS", "90"))
+
+    if request.render and serverless:
+        # Serverless freezes the instance once a response is sent, so a
+        # background thread would silently die. Render inline instead, but only
+        # when the video fits inside the function timeout.
+        if timeline.duration <= max_sync:
+            _render_job(job_id, request, plan_data, images, logo)
+            return _load(job_id)
+        return _update(
+            job_id,
+            status="planned",
+            stage="too long for this host",
+            hint=(
+                f"This deployment renders up to {int(max_sync)}s inline. For "
+                "{int(timeline.duration)}s, use a long-running host "
+                "(deploy/runpod, deploy/cpu-free or render.yaml). The plan and SEO "
+                "pack are saved and can be rendered there unchanged."
+            ),
+        )
 
     if request.render:
         threading.Thread(
