@@ -202,3 +202,19 @@ no-card/free-credit-only eligibility. The default SQLite data directory is ephem
 configure persistent storage before relying on jobs in production. Commercial rendering
 is blocked until all selected code, checkpoints, dependencies, datasets and assets have
 been reviewed.
+
+
+### OpenAvatar Studio AI agent fleet
+
+OpenAvatar includes 120 task-scoped specialist agents across 12 departments and 12
+prebuilt production workflows. Browse with GET /v1/openavatar/agents and
+GET /v1/openavatar/workflows; plan a production job with POST /v1/openavatar/plan;
+dispatch an individual role with POST /v1/openavatar/agents/{agent_id}/run, or selected
+teams of up to 120 with POST /v1/openavatar/teams/run.
+
+The fleet reuses the existing authenticated AGENT_WORKER_URL. Agent execution stays
+disabled until OPENAVATAR_AGENT_WORKER_NO_CARD_CONFIRMED=true is explicitly set after
+checking that the configured worker is genuinely no-card/free-only. Team concurrency
+defaults to 5 and is capped at 20. Role definitions are blueprints, not continuously
+running agents; worker acceptance is not completion. High-risk/critical tasks require
+approval, and the model/license/consent restrictions from docs/OPENAVATAR_STUDIO.md apply.

@@ -5,6 +5,7 @@ GPU execution is delegated to explicitly enabled free-tier workers.
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import secrets
@@ -20,6 +21,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from .security import require_api_key
+from .task_gateway import post_worker, service_status
 
 router = APIRouter()
 api = APIRouter(prefix="/v1/openavatar", tags=["OpenAvatar Studio"])
@@ -826,6 +828,335 @@ def worker_fail(
     finally:
         conn.close()
 
+
+
+
+# ---- OpenAvatar Studio specialist-agent fleet ---------------------------------
+_FLEET_PATH = Path(__file__).resolve().parent.parent / "catalog" / "openavatar_agent_fleet.json"
+
+
+def _agent_fleet() -> dict[str, Any]:
+    try:
+        data = json.loads(_FLEET_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise HTTPException(status_code=500, detail="OpenAvatar agent fleet manifest is unavailable") from exc
+    agents = data.get("agents", [])
+    departments = data.get("departments", [])
+    if (
+        data.get("agent_slots") != len(agents)
+        or data.get("department_count") != len(departments)
+        or len({item.get("id") for item in agents}) != len(agents)
+    ):
+        raise HTTPException(status_code=500, detail="OpenAvatar agent fleet manifest failed its integrity check")
+    return data
+
+
+def _agent_worker_no_card_confirmed() -> bool:
+    return os.getenv("OPENAVATAR_AGENT_WORKER_NO_CARD_CONFIRMED", "false").lower() == "true"
+
+
+def _agent_worker_configured() -> bool:
+    if not _agent_worker_no_card_confirmed():
+        return False
+    try:
+        worker = next((item for item in service_status() if item.get("id") == "agents"), None)
+        return bool(worker and worker.get("configured"))
+    except Exception:
+        return False
+
+
+class OpenAvatarAgentRun(BaseModel):
+    objective: str = Field(min_length=3, max_length=12000)
+    inputs: dict[str, Any] = Field(default_factory=dict)
+    user_approved: bool = False
+    dry_run: bool = True
+    idempotency_key: str | None = Field(default=None, min_length=8, max_length=120, pattern=r"^[A-Za-z0-9_-]+$")
+
+
+class OpenAvatarTeamRun(BaseModel):
+    objective: str = Field(min_length=3, max_length=12000)
+    agent_ids: list[str] = Field(min_length=1, max_length=120)
+    inputs: dict[str, Any] = Field(default_factory=dict)
+    max_parallel: int = Field(default=5, ge=1, le=20)
+    user_approved: bool = False
+    dry_run: bool = True
+    idempotency_key: str | None = Field(default=None, min_length=8, max_length=120, pattern=r"^[A-Za-z0-9_-]+$")
+
+
+def _agent_by_id(data: dict[str, Any], agent_id: str) -> dict[str, Any] | None:
+    return next((item for item in data["agents"] if item.get("id") == agent_id), None)
+
+
+def _agent_worker_payload(
+    *,
+    task_id: str,
+    agent: dict[str, Any],
+    objective: str,
+    inputs: dict[str, Any],
+    user_approved: bool,
+    dry_run: bool,
+) -> dict[str, Any]:
+    return {
+        "task_id": task_id,
+        "agent_id": agent["id"],
+        "agent": agent,
+        "objective": objective,
+        "inputs": {
+            **inputs,
+            "studio": "openavatar",
+            "studio_policy": {
+                "no_card_only": True,
+                "no_paid_provider_fallback": True,
+                "never_expose_provider_secrets": True,
+                "commercial_model_use": "blocked_until_license_review",
+                "face_and_voice_processing": "requires_documented_consent",
+            },
+        },
+        "user_approved": user_approved,
+        "dry_run": dry_run,
+        "execution_mode": "async",
+    }
+
+
+async def _dispatch_openavatar_agent(
+    *,
+    task_id: str,
+    agent: dict[str, Any],
+    objective: str,
+    inputs: dict[str, Any],
+    user_approved: bool,
+    dry_run: bool,
+) -> dict[str, Any]:
+    risk = agent.get("risk_level", "high")
+    if not _agent_worker_no_card_confirmed():
+        return {
+            "agent_id": agent["id"],
+            "agent_name": agent["name"],
+            "status": "blocked_no_card_gate",
+            "detail": "Set OPENAVATAR_AGENT_WORKER_NO_CARD_CONFIRMED=true only after verifying the configured agent worker uses free/no-card infrastructure.",
+        }
+    if risk in {"high", "critical"} and not dry_run and not user_approved:
+        return {
+            "agent_id": agent["id"],
+            "agent_name": agent["name"],
+            "status": "approval_required",
+            "detail": "High-risk or critical agent work requires explicit user approval.",
+        }
+    payload = _agent_worker_payload(
+        task_id=task_id,
+        agent=agent,
+        objective=objective,
+        inputs=inputs,
+        user_approved=user_approved,
+        dry_run=dry_run,
+    )
+    try:
+        status_code, content_type, body = await post_worker(
+            "agents", "/v1/agents/run", payload, timeout_seconds=45
+        )
+        if "application/json" not in content_type:
+            return {
+                "agent_id": agent["id"],
+                "agent_name": agent["name"],
+                "status": "worker_error",
+                "detail": "Agent worker returned a non-JSON response.",
+            }
+        try:
+            result = json.loads(body.decode("utf-8")) if body else {}
+        except (ValueError, UnicodeDecodeError):
+            return {
+                "agent_id": agent["id"],
+                "agent_name": agent["name"],
+                "status": "worker_error",
+                "detail": "Agent worker returned invalid JSON.",
+            }
+        return {
+            "agent_id": agent["id"],
+            "agent_name": agent["name"],
+            "status": "accepted" if status_code < 400 else "worker_error",
+            "worker_status_code": status_code,
+            "task_id": task_id,
+            "result": result,
+        }
+    except HTTPException as exc:
+        return {
+            "agent_id": agent["id"],
+            "agent_name": agent["name"],
+            "status": "worker_unavailable" if exc.status_code in {502, 503, 504} else "rejected",
+            "detail": exc.detail,
+        }
+
+
+@api.get("/fleet")
+def openavatar_agent_fleet() -> dict[str, Any]:
+    data = _agent_fleet()
+    return {
+        "name": data["name"],
+        "version": data["version"],
+        "agent_slots": data["agent_slots"],
+        "department_count": data["department_count"],
+        "workflow_count": len(data.get("workflows", [])),
+        "default_max_parallel": data["default_max_parallel"],
+        "max_parallel_hard_cap": data["max_parallel_hard_cap"],
+        "execution_policy": data["execution_policy"],
+        "no_card_policy": data["no_card_policy"],
+        "worker": {
+            "service": "agents",
+            "configured": _agent_worker_configured(),
+            "no_card_attested": _agent_worker_no_card_confirmed(),
+            "execution_mode": "on_demand_delegated_worker",
+        },
+        "departments": [
+            {"id": item["id"], "name": item["name"], "capacity": item["capacity"], "mission": item["mission"]}
+            for item in data["departments"]
+        ],
+        "note": "These are role templates, not 120 always-running agent processes. Only dispatched tasks execute.",
+    }
+
+
+@api.get("/departments")
+def openavatar_agent_departments() -> dict[str, Any]:
+    items = _agent_fleet()["departments"]
+    return {"total": len(items), "items": items}
+
+
+@api.get("/agents")
+def openavatar_agents(
+    q: str | None = None,
+    department: str | None = None,
+    risk_level: str | None = None,
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+) -> dict[str, Any]:
+    items = _agent_fleet()["agents"]
+    if department:
+        items = [item for item in items if item["department_id"] == department]
+    if risk_level:
+        items = [item for item in items if item["risk_level"] == risk_level.casefold()]
+    if q:
+        needle = q.casefold()
+        items = [item for item in items if needle in json.dumps(item, ensure_ascii=False).casefold()]
+    return {
+        "total": len(items),
+        "limit": limit,
+        "offset": offset,
+        "items": items[offset:offset + limit],
+    }
+
+
+@api.get("/agents/{agent_id}")
+def openavatar_agent_detail(agent_id: str) -> dict[str, Any]:
+    agent = _agent_by_id(_agent_fleet(), agent_id)
+    if not agent:
+        raise HTTPException(status_code=404, detail="OpenAvatar agent blueprint not found")
+    return {"agent": agent}
+
+
+@api.get("/workflows")
+def openavatar_agent_workflows() -> dict[str, Any]:
+    items = _agent_fleet().get("workflows", [])
+    return {"total": len(items), "items": items}
+
+
+@api.post("/plan", dependencies=[Depends(require_api_key)])
+async def openavatar_plan(request: OpenAvatarAgentRun) -> dict[str, Any]:
+    data = _agent_fleet()
+    orchestrator = _agent_by_id(data, "oa-openavatar-chief-orchestrator")
+    if not orchestrator:
+        raise HTTPException(status_code=500, detail="OpenAvatar chief orchestrator is missing")
+    available = [
+        {"id": item["id"], "name": item["name"], "department_id": item["department_id"],
+         "capabilities": item["capabilities"], "risk_level": item["risk_level"]}
+        for item in data["agents"]
+    ]
+    inputs = {
+        **request.inputs,
+        "available_openavatar_agents": available,
+        "available_workflows": data.get("workflows", []),
+        "planning_only": True,
+        "do_not_dispatch_subagents": True,
+        "do_not_execute_external_actions": True,
+        "max_parallel_agents": min(
+            int(os.getenv("OPENAVATAR_MAX_PARALLEL_AGENTS", str(data["default_max_parallel"]))),
+            int(data["max_parallel_hard_cap"]),
+        ),
+    }
+    task_id = request.idempotency_key or uuid.uuid4().hex
+    return await _dispatch_openavatar_agent(
+        task_id=task_id,
+        agent=orchestrator,
+        objective=request.objective,
+        inputs=inputs,
+        user_approved=False,
+        dry_run=True,
+    )
+
+
+@api.post("/agents/{agent_id}/run", dependencies=[Depends(require_api_key)])
+async def run_openavatar_agent(agent_id: str, request: OpenAvatarAgentRun) -> dict[str, Any]:
+    data = _agent_fleet()
+    agent = _agent_by_id(data, agent_id)
+    if not agent:
+        raise HTTPException(status_code=404, detail="OpenAvatar agent blueprint not found")
+    if agent.get("risk_level") == "critical" and not request.user_approved and not request.dry_run:
+        raise HTTPException(status_code=409, detail="Critical-risk agent requires explicit approval or dry_run=true.")
+    task_id = request.idempotency_key or uuid.uuid4().hex
+    return await _dispatch_openavatar_agent(
+        task_id=task_id,
+        agent=agent,
+        objective=request.objective,
+        inputs=request.inputs,
+        user_approved=request.user_approved,
+        dry_run=request.dry_run,
+    )
+
+
+@api.post("/teams/run", status_code=202, dependencies=[Depends(require_api_key)])
+async def run_openavatar_team(request: OpenAvatarTeamRun) -> dict[str, Any]:
+    data = _agent_fleet()
+    if len(set(request.agent_ids)) != len(request.agent_ids):
+        raise HTTPException(status_code=422, detail="agent_ids must not contain duplicates")
+    agents = []
+    for agent_id in request.agent_ids:
+        agent = _agent_by_id(data, agent_id)
+        if not agent:
+            raise HTTPException(status_code=404, detail=f"Unknown OpenAvatar agent: {agent_id}")
+        agents.append(agent)
+    high_risk = [item["id"] for item in agents if item["risk_level"] in {"high", "critical"}]
+    if high_risk and not request.user_approved and not request.dry_run:
+        raise HTTPException(
+            status_code=409,
+            detail={"message": "Team contains high-risk or critical roles; explicitly approve or submit as dry_run.", "approval_required_agents": high_risk},
+        )
+    configured_parallel = int(os.getenv("OPENAVATAR_MAX_PARALLEL_AGENTS", str(data["default_max_parallel"])))
+    effective_parallel = max(1, min(request.max_parallel, configured_parallel, int(data["max_parallel_hard_cap"])))
+    semaphore = asyncio.Semaphore(effective_parallel)
+    base_task_id = request.idempotency_key or uuid.uuid4().hex
+
+    async def run_one(index: int, agent: dict[str, Any]) -> dict[str, Any]:
+        async with semaphore:
+            return await _dispatch_openavatar_agent(
+                task_id=f"{base_task_id}-{index + 1}",
+                agent=agent,
+                objective=request.objective,
+                inputs=request.inputs,
+                user_approved=request.user_approved,
+                dry_run=request.dry_run,
+            )
+
+    results = await asyncio.gather(*(run_one(index, agent) for index, agent in enumerate(agents)))
+    accepted = sum(1 for item in results if item["status"] == "accepted")
+    return {
+        "team_task_id": base_task_id,
+        "studio": "openavatar",
+        "selected_agents": len(agents),
+        "accepted": accepted,
+        "not_accepted": len(agents) - accepted,
+        "max_parallel": effective_parallel,
+        "dry_run": request.dry_run,
+        "results": results,
+        "note": "Accepted means the worker accepted the task; it does not mean the agent has completed its work.",
+    }
 
 router.include_router(api)
 router.include_router(internal)

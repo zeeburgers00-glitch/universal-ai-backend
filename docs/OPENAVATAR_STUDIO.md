@@ -199,3 +199,43 @@ For muxing, install FFmpeg and optionally set FFMPEG_BIN.
 - MuseTalk: https://github.com/TMElyralab/MuseTalk
 - Whisper.cpp: https://github.com/ggml-org/whisper.cpp
 - FFmpeg licensing: https://ffmpeg.org/legal.html
+
+
+## OpenAvatar 120-agent fleet
+
+The Studio includes 120 on-demand specialist agent blueprints across 12 departments:
+orchestration, creative development, portrait preparation, voice, lip-sync and motion,
+model/GPU routing, post-production, captions/localization, rights and safety, QA,
+packaging/SEO, and operations. It also includes 12 production workflow templates.
+
+These are role templates, not 120 continuously running agents. Dispatch is delegated
+to the repository's existing AGENT_WORKER_URL / AGENT_WORKER_API_KEY agent worker.
+The OpenAvatar API does not launch its own paid model service and cannot guarantee a
+worker is running.
+
+### Agent endpoints
+
+- GET /v1/openavatar/fleet — capacity, department and worker configuration summary.
+- GET /v1/openavatar/departments — department missions and capacities.
+- GET /v1/openavatar/agents?q=lip&department=lipsync — filter specialist blueprints.
+- GET /v1/openavatar/agents/{agent_id} — one specialist role.
+- GET /v1/openavatar/workflows — 12 multi-role production workflows.
+- POST /v1/openavatar/plan — planning-only chief-orchestrator request.
+- POST /v1/openavatar/agents/{agent_id}/run — dispatch one task-scoped agent.
+- POST /v1/openavatar/teams/run — dispatch up to 120 selected roles, bounded by server
+  concurrency (default 5, hard cap 20). The response distinguishes worker-accepted tasks
+  from completed work.
+
+All dispatch routes require X-API-Key. Set OPENAVATAR_AGENT_WORKER_NO_CARD_CONFIRMED=true
+only after verifying that AGENT_WORKER_URL is a free/no-card runtime, that it has no paid
+fallback or automatic upgrades, and that its credentials remain server-side. The default
+is false, so fleet browsing works but execution is blocked until this attestation exists.
+
+Set OPENAVATAR_MAX_PARALLEL_AGENTS to control concurrency (default 5, maximum 20). Team
+runs default to dry_run=true. High-risk and critical roles require explicit user approval
+for live dispatch; critical roles also carry specialist consent and release policies.
+A returned "accepted" status only means the worker accepted the task, not that it has
+finished the agent's work.
+
+The agent worker must enforce the role's permissions and approval rules. Do not put
+secrets, raw provider credentials or unrestricted tool access into agent prompts.
