@@ -239,6 +239,45 @@ def _agent_blueprint(agent_id: str | None) -> dict[str, Any] | None:
     raise HTTPException(status_code=404, detail="Agent blueprint not found in the installed catalogs")
 
 
+
+def _normalise_required_capabilities(values: list[str]) -> list[str]:
+    cleaned: list[str] = []
+    for value in values:
+        if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,63}", value):
+            raise HTTPException(status_code=422, detail="Required capabilities must be short identifier strings.")
+        item = value.lower()
+        if item in cleaned:
+            raise HTTPException(status_code=422, detail=f"Duplicate required capability: {value}")
+        cleaned.append(item)
+    return cleaned
+
+
+def _worker_supports_task(worker_capabilities: dict[str, Any], task: sqlite3.Row) -> bool:
+    """Match explicit worker routing declarations; undeclared filters remain backward-compatible."""
+    for key, task_value in {
+        "agent_ids": task["agent_id"],
+        "task_types": task["task_type"],
+        "risk_levels": task["risk_level"],
+    }.items():
+        if key not in worker_capabilities:
+            continue
+        allowed = worker_capabilities.get(key)
+        if not isinstance(allowed, list):
+            return False
+        allowed_values = {str(item).lower() for item in allowed}
+        if "*" not in allowed_values and str(task_value or "").lower() not in allowed_values:
+            return False
+    required = (_decode(task["payload_json"], {}).get("required_capabilities") or [])
+    if required:
+        offered = worker_capabilities.get("capabilities", [])
+        if not isinstance(offered, list):
+            return False
+        offered_values = {str(item).lower() for item in offered}
+        if not set(map(str.lower, required)).issubset(offered_values):
+            return False
+    return True
+
+
 def _effective_risk(requested: str, blueprint: dict[str, Any] | None) -> str:
     levels = {"low": 0, "medium": 1, "high": 2, "critical": 3}
     catalog_level = str((blueprint or {}).get("risk_level", "low")).lower()
@@ -364,6 +403,7 @@ def _insert_task(
     depends_on: list[str],
     dry_run: bool,
     tool_allowlist: list[str],
+    required_capabilities: list[str],
     workflow_id: str | None = None,
     step_key: str | None = None,
     task_id: str | None = None,
@@ -401,6 +441,7 @@ def _insert_task(
         "user_approved": False,
         "dry_run": dry_run,
         "tool_allowlist": tool_allowlist,
+        "required_capabilities": required_capabilities,
         "no_paid_provider_fallback": True,
         "no_secrets_in_prompt": True,
     }
@@ -458,6 +499,7 @@ class TaskCreate(BaseModel):
     risk_level: Literal["low", "medium", "high", "critical"] = "low"
     dry_run: bool = False
     tool_allowlist: list[str] = Field(default_factory=list, max_length=100)
+    required_capabilities: list[str] = Field(default_factory=list, max_length=50)
     max_attempts: int = Field(default=3, ge=1, le=10)
     lease_seconds: int = Field(default=180, ge=15, le=3600)
     depends_on: list[str] = Field(default_factory=list, max_length=100)
@@ -473,6 +515,7 @@ class WorkflowStep(BaseModel):
     risk_level: Literal["low", "medium", "high", "critical"] = "low"
     dry_run: bool = False
     tool_allowlist: list[str] = Field(default_factory=list, max_length=100)
+    required_capabilities: list[str] = Field(default_factory=list, max_length=50)
     depends_on: list[str] = Field(default_factory=list, max_length=100)
 
 
@@ -622,7 +665,7 @@ def runtime_status():
         "execution_attested_no_card": attested,
         "no_card_only": True,
         "paid_provider_fallback": False,
-        "features": ["task_queue", "leases", "retries", "manual_retry", "workflow_dag", "workflow_output_handoffs", "bounded_concurrency", "human_approvals", "scoped_memory", "event_log", "unified_agent_catalog", "worker_registry", "worker_drain", "prometheus_metrics"],
+        "features": ["task_queue", "leases", "retries", "manual_retry", "workflow_dag", "workflow_output_handoffs", "bounded_concurrency", "human_approvals", "scoped_memory", "event_log", "unified_agent_catalog", "worker_registry", "worker_drain", "prometheus_metrics", "capability_based_worker_routing"],
     }
 
 
@@ -681,6 +724,7 @@ def runtime_metrics():
 def create_task(body: TaskCreate):
     _check_secrets(body.inputs)
     _check_secrets(body.tool_allowlist, "tool_allowlist")
+    required_capabilities = _normalise_required_capabilities(body.required_capabilities)
     _validate_input_refs(body.inputs, set())
     blueprint = _agent_blueprint(body.agent_id)
     effective_risk = _effective_risk(body.risk_level, blueprint)
@@ -691,7 +735,8 @@ def create_task(body: TaskCreate):
             inputs=body.inputs, risk_level=effective_risk, max_attempts=body.max_attempts,
             lease_seconds=body.lease_seconds, idempotency_key=body.idempotency_key,
             depends_on=body.depends_on, dry_run=body.dry_run,
-            tool_allowlist=body.tool_allowlist, agent_blueprint=blueprint,
+            tool_allowlist=body.tool_allowlist, required_capabilities=required_capabilities,
+            agent_blueprint=blueprint,
         )
         return task
 
@@ -949,9 +994,10 @@ def claim_task(body: WorkerClaim):
                 )
             _event(conn, row["task_id"], "lease_expired", status, "Worker lease expired; task returned to queue." if retry else "Worker lease expired; retry limit reached.")
             _refresh_workflow(conn, row["workflow_id"])
-        worker_state = conn.execute("SELECT status FROM agent_runtime_workers WHERE worker_id=?", (body.worker_id,)).fetchone()
+        worker_state = conn.execute("SELECT status,capabilities_json FROM agent_runtime_workers WHERE worker_id=?", (body.worker_id,)).fetchone()
         if worker_state and worker_state["status"] == "draining":
             return {"task": None, "queue_empty": True, "worker_draining": True}
+        worker_capabilities = _decode(worker_state["capabilities_json"], {}) if worker_state else {}
         owned_task = conn.execute(
             "SELECT * FROM agent_tasks WHERE status='running' AND worker_id=? AND lease_until>=? LIMIT 1",
             (body.worker_id, now_s),
@@ -978,7 +1024,11 @@ def claim_task(body: WorkerClaim):
         ).fetchall()
         selected = None
         per_agent_limited = False
+        capability_limited = False
         for row in candidates:
+            if not _worker_supports_task(worker_capabilities, row):
+                capability_limited = True
+                continue
             dependencies = _decode(row["depends_on_json"], [])
             if dependencies:
                 placeholders = ",".join("?" for _ in dependencies)
@@ -1041,8 +1091,9 @@ def claim_task(body: WorkerClaim):
                 "UPDATE agent_runtime_workers SET status='idle',current_task_id=NULL,updated_at=?,last_seen=? WHERE worker_id=?",
                 (now_s, now_s, body.worker_id),
             )
-            return {"task": None, "queue_empty": not per_agent_limited,
-                    "concurrency_limited": running_total >= max_parallel or per_agent_limited}
+            return {"task": None, "queue_empty": not per_agent_limited and not capability_limited,
+                    "concurrency_limited": running_total >= max_parallel or per_agent_limited,
+                    "capability_mismatch": capability_limited}
         lease_seconds = selected["lease_seconds"]
         lease_until = _iso(now + timedelta(seconds=lease_seconds))
         attempt = selected["attempts"] + 1
@@ -1173,6 +1224,7 @@ def create_workflow(body: WorkflowCreate):
     blueprints: dict[str, dict[str, Any] | None] = {}
     for step in body.steps:
         _check_secrets(step.inputs, f"steps.{step.id}.inputs")
+        _normalise_required_capabilities(step.required_capabilities)
         blueprints[step.id] = _agent_blueprint(step.agent_id)
     _validate_dag(body.steps)
     workflow_id = str(uuid.uuid4())
@@ -1191,6 +1243,7 @@ def create_workflow(body: WorkflowCreate):
                 inputs=step.inputs, risk_level=_effective_risk(step.risk_level, blueprints[step.id]), max_attempts=body.max_attempts,
                 lease_seconds=body.lease_seconds, idempotency_key=f"workflow:{workflow_id}:{step.id}",
                 depends_on=deps, dry_run=step.dry_run, tool_allowlist=step.tool_allowlist,
+                required_capabilities=_normalise_required_capabilities(step.required_capabilities),
                 workflow_id=workflow_id, step_key=step.id,
                 task_id=step_task_ids[step.id], validate_dependencies=False,
                 agent_blueprint=blueprints[step.id],

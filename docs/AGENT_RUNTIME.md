@@ -178,3 +178,30 @@ The GET /v1/agent-runtime/metrics endpoint returns Prometheus text exposition wi
 worker, approval, queue-age, memory and no-card-attestation gauges. The endpoint uses the
 same X-API-Key protection as the other runtime endpoints. Configure your scraper with
 this header; do not expose metrics publicly without an authenticated reverse proxy.
+
+
+## Capability-aware worker routing
+
+Task and workflow-step requests may declare required_capabilities, for example
+["ffmpeg", "video.encode"]. Workers can register routing declarations alongside
+their capability labels:
+
+~~~json
+{
+  "worker_id": "video-worker-01",
+  "capabilities": {
+    "task_types": ["video.render"],
+    "agent_ids": ["video-editor"],
+    "risk_levels": ["low", "medium"],
+    "capabilities": ["ffmpeg", "video.encode"]
+  }
+}
+~~~
+
+A worker with explicit task_types, agent_ids, or risk_levels accepts only matching
+tasks (the wildcard * is supported). A task's required capability labels must be
+a subset of the worker's declared capabilities list. Generic workers that do not
+declare routing filters remain backward-compatible. A worker with no match leaves
+the task queued and receives capability_mismatch=true; another eligible worker can
+claim it. Capability declarations are routing hints, not a security sandbox: the
+worker must still enforce tool allowlists and server-side permissions.

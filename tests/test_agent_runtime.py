@@ -505,3 +505,64 @@ def test_cancel_pending_approval_also_closes_approval_record(monkeypatch, tmp_pa
     assert cancelled.status_code == 200
     rejected = client.get("/v1/agent-runtime/approvals?status=rejected", headers=HEADERS).json()["items"]
     assert rejected[0]["decision_note"] == "Cancelled by API request."
+
+
+
+def test_worker_capability_routing_keeps_unmatched_tasks_queued(monkeypatch, tmp_path):
+    _configure(monkeypatch, tmp_path)
+    task = client.post(
+        "/v1/agent-runtime/tasks", headers=HEADERS,
+        json={"objective": "Render the final video", "task_type": "video.render",
+              "required_capabilities": ["ffmpeg", "video.encode"]},
+    )
+    assert task.status_code == 202, task.text
+    task_id = task.json()["task_id"]
+    voice = client.post(
+        "/v1/agent-runtime/workers/register", headers=HEADERS,
+        json={"worker_id": "voice-worker", "capabilities": {
+            "task_types": ["voice.tts"], "capabilities": ["tts"],
+        }},
+    )
+    assert voice.status_code == 200
+    mismatch = client.post(
+        "/v1/agent-runtime/workers/claim", headers=HEADERS,
+        json={"worker_id": "voice-worker"},
+    ).json()
+    assert mismatch["task"] is None
+    assert mismatch["capability_mismatch"] is True
+    assert client.get(f"/v1/agent-runtime/tasks/{task_id}", headers=HEADERS).json()["status"] == "queued"
+    video = client.post(
+        "/v1/agent-runtime/workers/register", headers=HEADERS,
+        json={"worker_id": "video-worker", "capabilities": {
+            "task_types": ["video.render"], "capabilities": ["ffmpeg", "video.encode"],
+        }},
+    )
+    assert video.status_code == 200
+    matched = client.post(
+        "/v1/agent-runtime/workers/claim", headers=HEADERS,
+        json={"worker_id": "video-worker"},
+    ).json()
+    assert matched["task"]["task_id"] == task_id
+
+
+def test_required_worker_capabilities_are_validated_and_workflow_handed_off(monkeypatch, tmp_path):
+    _configure(monkeypatch, tmp_path)
+    invalid = client.post(
+        "/v1/agent-runtime/tasks", headers=HEADERS,
+        json={"objective": "Reject duplicate capability labels",
+              "required_capabilities": ["ffmpeg", "FFMPEG"]},
+    )
+    assert invalid.status_code == 422
+    workflow = client.post(
+        "/v1/agent-runtime/workflows", headers=HEADERS,
+        json={"name": "capability-aware pipeline", "steps": [
+            {"id": "research", "objective": "Research a video topic",
+             "required_capabilities": ["web.research"]},
+            {"id": "script", "objective": "Write the script", "depends_on": ["research"],
+             "required_capabilities": ["text.generation"]},
+        ]},
+    )
+    assert workflow.status_code == 202, workflow.text
+    tasks = workflow.json()["tasks"]
+    assert tasks[0]["payload"]["required_capabilities"] == ["web.research"]
+    assert tasks[1]["payload"]["required_capabilities"] == ["text.generation"]
