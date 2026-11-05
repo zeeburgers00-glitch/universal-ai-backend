@@ -28,6 +28,24 @@ Live URL shape: `https://universal-ai-backend-api.vercel.app/health`
 Jobs chahiye to `POST /v1/jobs` + `POST /v1/jobs/run-once` (cron ya client tick) —
 payload 60s ke andar khatam hona chahiye.
 
+### Deployment status (2026-11-05)
+
+| Platform | State |
+|---|---|
+| Vercel project | **created**: `universal-ai-backend-api` (`prj_Enk7Y0s92o4pMD6t4ZTxXheGoLOu`), repo root se linked, env vars set |
+| Vercel deploy | **blocked today**: 402 `api-deployments-free-per-day` — free plan ka 100 deploys/day quota khatam. 24 ghante me reset hota hai. |
+| Render blueprint | **taiyaar**, ek click chahiye (Render account) |
+
+Quota wapas aane par:
+
+```bash
+# CLI se (apne laptop par, Vercel login ke saath)
+npx vercel deploy --prod --yes --token $VERCEL_TOKEN
+# ya dashboard: https://vercel.com/zeeburgers00-2355s-projects/universal-ai-backend-api
+```
+
+Ya API se: `POST /v13/deployments` with `gitSource.ref = arena/9721d491-universal-ai-backend`.
+
 ## Render — ready (recommended for real work)
 
 `render.yaml` blueprint pehle se hai. Render par:
