@@ -176,3 +176,29 @@ The default budget target is USD 100/month. This is a planning target, **not an 
 
 Ad revenue workflows focus on eligibility, original content, real audiences, policy review, and provider reporting. Automated clicks, refreshes, incentivized ad interactions, fake traffic, and impression manipulation are prohibited. Provider account approval and monetization eligibility are not guaranteed by this software.
 
+
+## OpenAvatar Studio (no-card-first video/avatar pipeline)
+
+OpenAvatar Studio adds a separate worker-based avatar/video job control plane. It is
+designed for free-tier/no-card infrastructure and has no paid GPU provider or paid
+fallback. It includes authenticated uploads, job queue/leases, quota tracking, worker
+heartbeats, artifacts, and conservative model-license metadata.
+
+- GET /v1/openavatar/status, /providers, /models, and authenticated /quota
+- POST /v1/openavatar/assets and /jobs; job status and artifact downloads
+- Worker endpoints under /internal/openavatar/*, protected by a dedicated worker token
+- Hugging Face ZeroGPU Gradio worker: workers/openavatar/huggingface/
+- Optional manual Kaggle and Lightning workers: workers/openavatar/kaggle/ and
+  workers/openavatar/lightning/
+- Local CPU worker for OpenVoice adapter, whisper.cpp and FFmpeg: workers/openavatar/local_cpu/
+- Implementation and setup: docs/OPENAVATAR_STUDIO.md
+- Model license review: catalog/openavatar_models.json and
+  docs/OPENAVATAR_MODEL_LICENSES.md
+
+The default Hugging Face local quota guard is 270 seconds/day and 60 seconds/job; the
+provider's actual quota remains authoritative. Kaggle is enforced as
+personal/non-commercial only. Lightning is disabled until the user explicitly confirms
+no-card/free-credit-only eligibility. The default SQLite data directory is ephemeral;
+configure persistent storage before relying on jobs in production. Commercial rendering
+is blocked until all selected code, checkpoints, dependencies, datasets and assets have
+been reviewed.

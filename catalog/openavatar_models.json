@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "policy": {
+    "commercial_use_default": false,
+    "commercial_use_enabled": false,
+    "reason": "No model is marked commercially cleared until code, checkpoint, dependency, and data terms are reviewed together.",
+    "f5_tts_weights_policy": "non_commercial_only"
+  },
+  "models": [
+    {
+      "id": "sadtalker",
+      "purpose": "portrait_to_talking_head",
+      "repository": "https://github.com/OpenTalker/SadTalker",
+      "code_license": "Apache-2.0",
+      "weights_license": "review_required",
+      "dependency_license": "review_required",
+      "dataset_license": "review_required",
+      "commercial_status": "review_required",
+      "integration": "Implemented upstream CLI adapter in the Hugging Face ZeroGPU and shared workers; requires a prepared upstream checkout and checkpoints."
+    },
+    {
+      "id": "musetalk",
+      "purpose": "audio_driven_lip_sync",
+      "repository": "https://github.com/TMElyralab/MuseTalk",
+      "code_license": "MIT",
+      "weights_license": "review_required",
+      "dependency_license": "review_required",
+      "dataset_license": "review_required",
+      "commercial_status": "review_required",
+      "integration": "Plugin adapter contract; a separately reviewed OPENAVATAR_MUSETALK_ADAPTER is required."
+    },
+    {
+      "id": "openvoice_v2",
+      "purpose": "voice_cloning_and_tts",
+      "repository": "https://github.com/myshell-ai/OpenVoice",
+      "code_license": "MIT",
+      "weights_license": "review_required",
+      "dependency_license": "review_required",
+      "dataset_license": "review_required",
+      "commercial_status": "review_required",
+      "integration": "Pluggable worker adapter contract via OPENAVATAR_OPENVOICE_ADAPTER; weights are not bundled."
+    },
+    {
+      "id": "whisper_cpp",
+      "purpose": "transcription_and_subtitles",
+      "repository": "https://github.com/ggml-org/whisper.cpp",
+      "code_license": "MIT",
+      "weights_license": "review_required",
+      "dependency_license": "review_required",
+      "dataset_license": "review_required",
+      "commercial_status": "review_required",
+      "integration": "Implemented CLI adapter; requires a local whisper.cpp binary and model file."
+    },
+    {
+      "id": "ffmpeg",
+      "purpose": "video_and_audio_assembly",
+      "repository": "https://ffmpeg.org/",
+      "code_license": "LGPL-2.1-or-later_or_GPL",
+      "weights_license": "not_applicable",
+      "dependency_license": "review_required",
+      "dataset_license": "not_applicable",
+      "commercial_status": "review_required",
+      "integration": "Implemented CLI adapter; exact LGPL/GPL obligations depend on the selected build configuration."
+    },
+    {
+      "id": "f5_tts",
+      "purpose": "speech_generation",
+      "repository": "https://github.com/SWivid/F5-TTS",
+      "code_license": "MIT",
+      "weights_license": "CC-BY-NC",
+      "dependency_license": "review_required",
+      "dataset_license": "review_required",
+      "commercial_status": "not_approved",
+      "integration": "Not enabled. Do not use published non-commercial pretrained weights in commercial workflows without separate permission."
+    }
+  ]
+}
