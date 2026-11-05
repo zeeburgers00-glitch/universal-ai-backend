@@ -11,3 +11,6 @@ htmlcov/
 .vercel/
 dist/
 build/
+
+# command-centre render output
+data/
