@@ -22,6 +22,7 @@ from .base44_integration import (
 )
 from .builtin_workers import builtin_runtime_enabled
 from .explorer_ui import EXPLORER_HTML
+from .studio_ui import STUDIO_HTML
 from .github_discovery import list_discovery_presets, search_github_repositories
 from .providers import chat_with_provider, provider_status
 from .pexels import search_pexels_videos
@@ -308,6 +309,7 @@ def root(accept: str | None = Header(default=None)):
         "version": "0.6.0",
         "status": "ok",
         "explorer": "/explorer",
+        "studio": "/app",
         "docs": "/docs",
         "health": "/health",
         "catalog": "/v1/tools",
@@ -335,6 +337,17 @@ def root(accept: str | None = Header(default=None)):
 @app.get("/explorer", response_class=HTMLResponse)
 def explorer():
     return HTMLResponse(content=EXPLORER_HTML)
+
+
+@app.get("/app", response_class=HTMLResponse)
+def studio():
+    """Single-page Universal AI Studio app (same-origin, no CDN dependencies)."""
+    return HTMLResponse(content=STUDIO_HTML)
+
+
+@app.get("/studio", response_class=HTMLResponse)
+def studio_alias():
+    return HTMLResponse(content=STUDIO_HTML)
 
 
 @app.get("/health")

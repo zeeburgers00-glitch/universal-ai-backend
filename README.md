@@ -31,7 +31,7 @@ Copy-Item .env.example .env
 uvicorn app.main:app --reload --env-file .env
 ```
 
-Open `http://127.0.0.1:8000/docs`.
+Open `http://127.0.0.1:8000/app` for the Studio UI, or `http://127.0.0.1:8000/docs` for the API reference.
 
 ## Environment variables
 
@@ -45,6 +45,7 @@ Open `http://127.0.0.1:8000/docs`.
 ## API routes
 
 - `GET /` — service metadata
+- `GET /app` — **Universal AI Studio**, a dependency-free single-page app (catalog search, chat, providers, agents, workflows, discovery, finance) served from the same origin as the API
 - `GET /explorer` — interactive web explorer across all AI tools, REA MCP tools, providers, blueprints, and live discovery
 - `GET /health` — health check
 - `GET /v1/tools?q=voice&category=audio-voice&min_stars=500&language=Python` — search the global AI & MCP registry
