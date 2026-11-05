@@ -187,6 +187,11 @@ def test_deep_health_flags_a_read_only_data_root(monkeypatch, tmp_path):
     assert report["status"] == "fail"
 
 
+def test_queue_check_reports_worker_state():
+    check = next(item for item in health_deep.probe()["checks"] if item["name"] == "queue")
+    assert "workers=" in check["detail"]
+
+
 def test_deep_health_endpoint_status_codes(monkeypatch):
     with TestClient(app) as client:
         healthy = client.get("/health/deep")

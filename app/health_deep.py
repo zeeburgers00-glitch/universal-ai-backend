@@ -78,14 +78,16 @@ def _check_queue() -> dict[str, Any]:
     try:
         stats = jobs.stats()
         counts = stats.get("counts", {})
-        worker = stats.get("workers", 0)
+        workers_up = bool(stats.get("worker_threads_running"))
+        concurrency = stats.get("concurrency", 0)
         failed = counts.get("failed", 0)
         detail = (
             f"queued={counts.get('queued', 0)} running={counts.get('running', 0)} "
-            f"done={counts.get('done', 0)} failed={failed} workers={worker}"
+            f"done={counts.get('done', 0)} failed={failed} "
+            f"workers={'up x' + str(concurrency) if workers_up else 'off'}"
         )
         ok = True
-        if worker == 0 and counts.get("queued", 0) > 0:
+        if not workers_up and counts.get("queued", 0) > 0:
             ok = False  # jobs piling up with nobody to run them
             detail += " (queued jobs but no worker thread)"
         return {"name": "queue", "ok": ok, "critical": False, "detail": detail}
