@@ -118,6 +118,7 @@ def render_scene(
     audio: Path | None = None,
     ken_burns: bool = True,
     fade: bool = False,
+    grade: str = "",
 ) -> Path:
     """Render one scene to an mp4 with video and audio streams of equal length."""
     if duration <= 0:
@@ -147,6 +148,8 @@ def render_scene(
         # Index 0 is always the visual input, so the audio source is always 1.
         audio_map = ["-map", "1:a:0", "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2"]
 
+    if grade:
+        filters.append(grade)
     if fade:
         filters.append(f"fade=t=in:st=0:d=0.4,fade=t=out:st={max(0.0, duration - 0.4):.3f}:d=0.4")
 
@@ -209,10 +212,15 @@ def mix_music(video: Path, music: Path, out: Path, *, ffmpeg: str, music_volume:
     return out
 
 
-def burn_captions(video: Path, subtitles: Path, out: Path, *, ffmpeg: str) -> Path:
+def burn_captions(
+    video: Path, subtitles: Path, out: Path, *, ffmpeg: str, force_style: str | None = None
+) -> Path:
     escaped = str(subtitles.resolve()).replace("\\", "\\\\").replace(":", "\\:").replace("'", "\\'")
+    subtitle_filter = f"subtitles='{escaped}'"
+    if force_style:
+        subtitle_filter += f":force_style='{force_style}'"
     run_ffmpeg(
-        ["-y", "-i", str(video), "-vf", f"subtitles='{escaped}'",
+        ["-y", "-i", str(video), "-vf", subtitle_filter,
          "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", "-c:a", "copy", str(out)],
         ffmpeg=ffmpeg,
     )
@@ -228,6 +236,10 @@ def render_timeline(
     ffmpeg: str | None = None,
     music: Path | None = None,
     captions: bool = False,
+    caption_style: str | None = None,
+    grade: str = "",
+    logo: Path | None = None,
+    logo_position: str = "br",
     resume: bool = True,
     progress: ProgressFn | None = None,
 ) -> dict[str, Any]:
@@ -254,6 +266,7 @@ def render_timeline(
                 audio=assets.get("audio"),
                 ken_burns=bool(assets.get("ken_burns", True)),
                 fade=scene.transition == "fade",
+                grade=grade,
             )
         segments.append(segment)
         if progress:
@@ -274,7 +287,18 @@ def render_timeline(
                 progress(0.95, "burning captions")
             srt_path = work_dir / "captions.srt"
             srt_path.write_text(subtitle_text, encoding="utf-8")
-            current = burn_captions(current, srt_path, work_dir / "with_captions.mp4", ffmpeg=binary)
+            current = burn_captions(
+                current, srt_path, work_dir / "with_captions.mp4", ffmpeg=binary, force_style=caption_style
+            )
+
+    if logo is not None and logo.is_file():
+        if progress:
+            progress(0.98, "stamping logo")
+        from .effects import overlay_logo
+
+        current = overlay_logo(
+            current, logo, work_dir / "with_logo.mp4", ffmpeg=binary, position=logo_position
+        )
 
     if current != output:
         shutil.move(str(current), str(output))

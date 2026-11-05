@@ -110,3 +110,59 @@ aspect detection, exact multi-hour timeline maths, chunk boundaries, captions,
 auth, path traversal rejection, and one **real ffmpeg render** whose output is
 probed for duration and resolution. The render test skips cleanly where ffmpeg is
 absent rather than failing.
+
+## Making it look produced (not generated)
+
+The same POST accepts presentation controls:
+
+```json
+{
+  "command": "make a 3 minute video about tea farming",
+  "grade": "cinematic",
+  "caption_style": "yellow",
+  "logo_path": "/data/command/brand/logo.png",
+  "seo": true
+}
+```
+
+| Field | Options |
+|---|---|
+| `grade` | `none`, `cinematic`, `warm`, `cool`, `teal_orange`, `noir`, `vivid`, `film`, `dream`, `punch` |
+| `caption_style` | `clean`, `bold`, `yellow`, `boxed`, `minimal` |
+| `logo_path` | PNG with alpha, stamped bottom-right; must live under `COMMAND_DATA_DIR` |
+| `seo` | adds a viral metadata pack to the job (see below) |
+
+An unknown grade degrades to `none` rather than failing the render.
+
+### The SEO pack
+
+Every job returns `seo` with 5 titles, a spoken hook, a description, 15 hashtags,
+10 keywords, 3 thumbnail phrases and **timestamped chapters** derived from the
+real timeline. With a model key the copy is written by the model; without one the
+templates still produce something publishable. A failed model call never loses
+the metadata — it falls back with the reason recorded in `seo.source`.
+
+## Talking avatars — what is allowed
+
+`videoengine/avatar.py` supports three paths and refuses a fourth:
+
+| Path | Requirement |
+|---|---|
+| `self` | Your face + your voice + a consent record |
+| `licensed` | Someone else's face/voice + their written consent record |
+| `synthetic` | A generated persona — no real person copied |
+| **refused** | A named public figure, or any real person without consent |
+
+```json
+{"avatar": {"name": "Me", "relation": "self", "consent_confirmed": true,
+            "consent_record_id": "signed-2026-11-05", "image_path": "...", "voice_sample_path": "..."}}
+```
+
+The job reports `status: needs_assets` with the exact missing pieces, or
+`blocked` with the reason. **A blocked avatar never fails the video** — it just
+isn't included.
+
+This is not squeamishness: harvesting a named person's photos and voice to build
+a talking likeness is impersonation, it violates every platform's rules, and it
+is legally actionable in most jurisdictions. The synthetic path gives you a
+presenter character with none of that risk.

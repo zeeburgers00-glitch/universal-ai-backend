@@ -29,7 +29,11 @@ from pydantic import BaseModel, Field
 
 from videoengine import build_timeline, plan as plan_command
 from videoengine.assembly import FfmpegNotFound, find_ffmpeg, probe, render_timeline
+from videoengine.avatar import AvatarSpec, evaluate as evaluate_avatar
+from videoengine.effects import effect_summary, grade_filter, caption_style as caption_style_for
+from videoengine.seo import seo_pack
 
+from .ai_router import chain as ai_chain, complete as ai_complete
 from .security import require_api_key
 from .vault import get_secret
 
@@ -51,60 +55,32 @@ _PALETTE = [
     (0x2B, 0x22, 0x14), (0x1E, 0x1E, 0x2B), (0x2A, 0x14, 0x18), (0x17, 0x25, 0x38),
 ]
 
-_MODEL_CANDIDATES = (
-    ("AI_BASE_URL", "AI_API_KEY", "AI_DEFAULT_MODEL", None),
-    ("GROQ_BASE_URL", "GROQ_API_KEY", "GROQ_DEFAULT_MODEL", "https://api.groq.com/openai/v1"),
-    ("OPENAI_BASE_URL", "OPENAI_API_KEY", "OPENAI_DEFAULT_MODEL", "https://api.openai.com/v1"),
-)
-
-
 class CommandRequest(BaseModel):
     command: str = Field(min_length=3, max_length=4000)
     render: bool = Field(default=True, description="Start rendering immediately")
     scene_seconds: float | None = Field(default=None, ge=2, le=60)
     fps: int = Field(default=30)
-    captions: bool = Field(default=True)
+    captions: bool = True
     image_paths: list[str] = Field(default_factory=list, max_length=5000)
+    grade: str = Field(default="cinematic", max_length=32)
+    caption_style: str = Field(default="bold", max_length=32)
+    logo_path: str | None = Field(default=None, max_length=1000)
+    seo: bool = True
+    avatar: dict[str, Any] | None = None
 
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-# --------------------------------------------------------------------------- keys
-def _model_config() -> tuple[str, str, str] | None:
-    for base_env, key_env, model_env, default_base in _MODEL_CANDIDATES:
-        key = (get_secret(key_env) or "").strip()
-        model = (os.getenv(model_env) or "").strip()
-        base = (os.getenv(base_env) or "").strip() or (default_base or "")
-        if key and model and base.startswith("https://"):
-            return base.rstrip("/"), key, model
-    return None
+def _model_config():
+    """First usable provider from the router, or None when no key is configured."""
+    routes = ai_chain()
+    return routes[0] if routes else None
 
 
 def _sync_model_call(system: str, user: str, *, max_tokens: int = 2000) -> str:
-    config = _model_config()
-    if config is None:
-        raise RuntimeError("no model provider configured")
-    base, key, model = config
-    endpoint = base if base.endswith("/chat/completions") else f"{base}/chat/completions"
-    with httpx.Client(timeout=httpx.Timeout(90, connect=10), follow_redirects=False) as client:
-        response = client.post(
-            endpoint,
-            headers={"Authorization": f"Bearer {key}"},
-            json={
-                "model": model,
-                "temperature": 0.4,
-                "max_tokens": max_tokens,
-                "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
-            },
-        )
-        response.raise_for_status()
-        payload = response.json()
-    choices = payload.get("choices") or []
-    if not choices:
-        raise RuntimeError("model provider returned no choices")
-    return str((choices[0].get("message") or {}).get("content") or "").strip()
+    return ai_complete(system, user, max_tokens=max_tokens)["text"]
 
 
 def capabilities() -> dict[str, Any]:
@@ -115,10 +91,11 @@ def capabilities() -> dict[str, Any]:
     except FfmpegNotFound:
         ffmpeg, ffmpeg_ready = None, False
 
-    model = _model_config()
+    routes = ai_chain()
+    model = routes[0] if routes else None
     upgrades: list[str] = []
     if model is None:
-        upgrades.append("AI_API_KEY + AI_DEFAULT_MODEL (or GROQ_/OPENAI_ pair) for real scripts")
+        upgrades.append("a model key (GROQ_ / GEMINI_ / MISTRAL_ / OPENROUTER_ / ZAI_ / HF_) for real scripts")
     if not (os.getenv("PEXELS_API_KEY") or "").strip():
         upgrades.append("PEXELS_API_KEY for real stock footage instead of colour cards")
     if not (os.getenv("VOICE_WORKER_URL") or "").strip():
@@ -130,8 +107,10 @@ def capabilities() -> dict[str, Any]:
         "renderer": {"ready": ffmpeg_ready, "ffmpeg": ffmpeg},
         "script_writer": {
             "ready": model is not None,
-            "provider_base": model[0] if model else None,
-            "model": model[2] if model else None,
+            "provider": model.id if model else None,
+            "provider_base": model.base if model else None,
+            "model": model.model if model else None,
+            "fallback_chain": [route.id for route in routes],
         },
         "works_without_keys": True,
         "fallbacks": {
@@ -207,7 +186,24 @@ def _resolve_images(request: CommandRequest) -> list[Path]:
     return allowed
 
 
-def _render_job(job_id: str, request: CommandRequest, plan_data: dict[str, Any], images: list[Path]) -> None:
+def _resolve_logo(raw: str | None) -> Path | None:
+    if not raw:
+        return None
+    candidate = Path(raw).resolve()
+    if not str(candidate).startswith(str(DATA_DIR)):
+        raise HTTPException(status_code=400, detail="logo_path must live under COMMAND_DATA_DIR")
+    if not candidate.is_file():
+        raise HTTPException(status_code=400, detail=f"logo not found: {candidate.name}")
+    return candidate
+
+
+def _render_job(
+    job_id: str,
+    request: CommandRequest,
+    plan_data: dict[str, Any],
+    images: list[Path],
+    logo: Path | None = None,
+) -> None:
     try:
         timeline = build_timeline(
             title=plan_data["title"],
@@ -240,6 +236,10 @@ def _render_job(job_id: str, request: CommandRequest, plan_data: dict[str, Any],
             work_dir=DATA_DIR / "work" / job_id,
             ffmpeg=binary,
             captions=request.captions,
+            caption_style=caption_style_for(request.caption_style),
+            grade=grade_filter(request.grade),
+            logo=logo,
+            logo_position="br",
             progress=progress,
         )
         _update(
@@ -273,6 +273,7 @@ def create_command(request: CommandRequest, _: bool = Depends(require_api_key)) 
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     images = _resolve_images(request)
+    logo = _resolve_logo(request.logo_path)
     try:
         timeline = build_timeline(
             title=plan_data["title"],
@@ -287,6 +288,11 @@ def create_command(request: CommandRequest, _: bool = Depends(require_api_key)) 
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+    avatar_status = evaluate_avatar(AvatarSpec.from_dict(request.avatar))
+    seo = None
+    if request.seo:
+        seo = seo_pack(plan_data, timeline, _sync_model_call if _model_config() else None)
+
     job_id = f"cmd-{uuid.uuid4().hex[:16]}"
     job = {
         "job_id": job_id,
@@ -298,13 +304,16 @@ def create_command(request: CommandRequest, _: bool = Depends(require_api_key)) 
         "updated_at": _now(),
         "plan": plan_data,
         "timeline": timeline.to_dict(),
+        "seo": seo,
+        "avatar": avatar_status,
+        "effects": effect_summary(request.grade, request.caption_style, logo is not None),
         "capabilities": capabilities(),
     }
     _save(job)
 
     if request.render:
         threading.Thread(
-            target=_render_job, args=(job_id, request, plan_data, images),
+            target=_render_job, args=(job_id, request, plan_data, images, logo),
             name=f"render-{job_id}", daemon=True,
         ).start()
         job = _update(job_id, status="queued", stage="queued for rendering")
