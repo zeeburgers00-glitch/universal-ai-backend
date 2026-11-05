@@ -132,6 +132,8 @@ EDITOR_HTML = r"""<!DOCTYPE html>
       <div class="tab" data-tab="plan" onclick="showTab('plan')">Plan</div>
       <div class="tab" data-tab="diff" onclick="showTab('diff')">Diff</div>
       <div class="tab" data-tab="chat" onclick="showTab('chat')">Chat</div>
+      <div class="tab" data-tab="git" onclick="showTab('git'); loadGit()">Git</div>
+      <div class="tab" data-tab="tools" onclick="showTab('tools')">Tools</div>
     </div>
     <div class="editor-wrap">
       <div id="gutter"></div>
@@ -158,6 +160,24 @@ EDITOR_HTML = r"""<!DOCTYPE html>
         <input type="text" id="chatInput" placeholder="ask about this file…" onkeydown="if(event.key==='Enter')sendChat()" />
         <button onclick="sendChat()">Send</button>
       </div>
+    </div>
+    <div class="panel" id="panel-git">
+      <h3>Git <span class="meta">(local commits only, never pushes)</span></h3>
+      <div id="gitStatus" class="meta">open to load…</div>
+      <div id="gitFiles"></div>
+      <pre id="gitDiff" class="meta" style="white-space:pre-wrap;max-height:200px;overflow:auto;margin:8px 0"></pre>
+      <div class="chat-input">
+        <input type="text" id="gitMessage" placeholder="commit message…" />
+        <button onclick="commitGit()">Commit all</button>
+      </div>
+    </div>
+    <div class="panel" id="panel-tools">
+      <h3>Tool search <span class="meta">(BM25 over the repo catalog)</span></h3>
+      <div class="chat-input">
+        <input type="text" id="toolQuery" placeholder="e.g. text to speech" onkeydown="if(event.key==='Enter')searchTools()" />
+        <button onclick="searchTools()">Search</button>
+      </div>
+      <div id="toolResults" class="meta"></div>
     </div>
   </aside>
 </main>
@@ -443,6 +463,79 @@ chatPanel.insertAdjacentHTML('afterbegin',
   '<div style="display:flex;gap:6px;margin-bottom:8px">' +
   '<select id="provider"><option value="ollama">ollama (local)</option><option value="groq">groq</option><option value="gemini">gemini</option><option value="openai">openai</option></select>' +
   '<input type="text" id="model" placeholder="model (optional)" style="flex:1" /></div>');
+
+async function loadGit() {
+  const statusBox = document.getElementById('gitStatus');
+  const listBox = document.getElementById('gitFiles');
+  try {
+    const info = await api('/v1/git/status');
+    statusBox.textContent = info.branch + ' · ' +
+      (info.dirty ? info.file_count + ' changed' : 'clean') +
+      (info.ahead ? ' · ahead ' + info.ahead : '');
+    listBox.innerHTML = '';
+    info.files.forEach(file => {
+      const row = document.createElement('div');
+      row.className = 'meta';
+      row.style.cursor = 'pointer';
+      row.textContent = file.code + '  ' + file.path;
+      row.onclick = () => showGitDiff(file.path);
+      listBox.appendChild(row);
+    });
+    if (!info.files.length) listBox.textContent = 'nothing to commit';
+  } catch (error) {
+    statusBox.textContent = 'git: ' + error.message;
+  }
+}
+
+async function showGitDiff(path) {
+  const box = document.getElementById('gitDiff');
+  try {
+    const data = await api('/v1/git/diff?path=' + encodeURIComponent(path));
+    box.textContent = data.diff || '(untracked file — no diff yet)';
+  } catch (error) {
+    box.textContent = 'diff failed: ' + error.message;
+  }
+}
+
+async function commitGit() {
+  const message = (document.getElementById('gitMessage').value || '').trim();
+  if (message.length < 3) { toast('commit message likho (3+ characters)'); return; }
+  try {
+    const result = await api('/v1/git/commit', { method: 'POST', body: { message, add_all: true } });
+    toast('committed ' + (result.sha || ''));
+    document.getElementById('gitMessage').value = '';
+    loadGit();
+    loadTree(false);
+  } catch (error) {
+    toast('commit failed: ' + error.message);
+  }
+}
+
+async function searchTools() {
+  const query = (document.getElementById('toolQuery').value || '').trim();
+  const box = document.getElementById('toolResults');
+  if (query.length < 2) { toast('2+ characters chahiye'); return; }
+  box.textContent = 'searching…';
+  try {
+    const data = await api('/v1/tools/search?q=' + encodeURIComponent(query) + '&limit=8');
+    box.innerHTML = '';
+    data.results.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'meta';
+      row.style.marginBottom = '8px';
+      const title = document.createElement('b');
+      title.textContent = item.full_name;
+      const meta = document.createTextNode('  ★' + (item.stars || 0) + ' · ' + (item.license || 'no licence'));
+      const desc = document.createElement('div');
+      desc.textContent = item.description || '';
+      row.appendChild(title); row.appendChild(meta); row.appendChild(desc);
+      box.appendChild(row);
+    });
+    if (!data.results.length) box.textContent = 'no matches';
+  } catch (error) {
+    box.textContent = 'search failed: ' + error.message;
+  }
+}
 
 loadTree(true);
 </script>
