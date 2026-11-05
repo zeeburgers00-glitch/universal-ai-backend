@@ -198,7 +198,8 @@ async def get_lead(lead_id: UUID):
 @router.post("/leads/{lead_id}/drafts", dependencies=[Depends(require_api_key)])
 async def create_lead_draft(lead_id: UUID, request: DraftCreateRequest):
     lead = await get_lead(lead_id)
-    if lead.get("lead_status") == "do_not_contact":
+    lead_status = lead.get("lead_status")
+    if lead_status == "do_not_contact":
         raise HTTPException(status_code=409, detail="This business is marked do_not_contact.")
     row = {
         "lead_id": str(lead_id),

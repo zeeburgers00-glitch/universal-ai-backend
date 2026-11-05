@@ -59,7 +59,7 @@ create index if not exists uaib_client_campaign_drafts_lead_idx
 alter table public.uaib_client_campaign_leads enable row level security;
 alter table public.uaib_client_campaign_drafts enable row level security;
 
--- Explicit server-only access. Never expose prospect or draft data to anon/authenticated clients.
+-- Explicit server-only access. Never expose prospect or draft data through anonymous or authenticated client roles.
 revoke all on table public.uaib_client_campaign_leads from public, anon, authenticated;
 revoke all on table public.uaib_client_campaign_drafts from public, anon, authenticated;
 grant select, insert, update, delete on table public.uaib_client_campaign_leads to service_role;
