@@ -121,6 +121,8 @@ curl -s http://127.0.0.1:8000/v1/workers/status | python3 -m json.tool
 `voice` flips to `configured`. Keep `WORKER_ALLOW_INSECURE_HTTP` untouched — it
 exists only for the loopback workers.
 
+For a **zero-ops** option with HTTPS built in and per-second billing (idle costs $0), deploy the same worker with `../modal/` instead of a notebook.
+
 > Free GPU studios stop when you close them, so treat voice as **best-effort**.
 > For dependable TTS, put `voice_worker` on the hourly GPU host in
 > `../runpod/` and point `VOICE_WORKER_URL` there instead.

@@ -129,5 +129,6 @@ call.
 
 ## When to stop using Kaggle
 
-Move to `deploy/runpod/` (~$0.35-0.70/hour) as soon as anything real depends on
-voice. Kaggle is a testing bench, not a host.
+Move to `deploy/modal/` for a managed HTTPS endpoint that scales to zero, or
+`deploy/runpod/` (~$0.35-0.70/hour) for a persistent pod, as soon as anything
+real depends on voice. Kaggle is a testing bench, not a host.

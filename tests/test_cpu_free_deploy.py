@@ -107,3 +107,15 @@ def test_readme_documents_the_gpu_boundary():
     assert "voice" in text
     assert "gpu" in text
     assert "503" in text  # the honest failure the API returns
+
+
+def test_env_templates_are_not_gitignored():
+    """A `.env.*` ignore rule once swallowed these templates entirely."""
+    root = Path(__file__).resolve().parent.parent
+    ignore = (root / ".gitignore").read_text(encoding="utf-8")
+    assert "!.env.*.example" in ignore, (
+        "deploy env templates must be un-ignored or they vanish from the repository"
+    )
+    for template in (DEPLOY_DIR / ".env.cpu-free.example",
+                     root / "deploy" / "runpod" / ".env.runpod.example"):
+        assert template.is_file(), f"missing {template.name}"
