@@ -67,6 +67,21 @@ export default async function handler(req, res) {
         : "running";
       const message = job.stage || (status === "completed" ? "MP4 render completed" : "Preparing your video");
       const events = [{ stage: "video-render", status: status === "completed" ? "completed" : status === "failed" ? "failed" : "running", message }];
+      let videoUrl = "/api/chat?task_id=" + id + "&video=1";
+      let stockFootage = job.stock_footage || null;
+      if (status === "completed") {
+        try {
+          const signed = await requestJson("/v1/command/" + id + "/download-token");
+          if (signed.ok) {
+            const token = await signed.json();
+            if (typeof token.path === "string" && token.path.startsWith("/v1/command/" + id + "/download?")) {
+              videoUrl = base + token.path;
+            }
+          }
+        } catch {
+          // Keep the authenticated Vercel proxy as a compatibility fallback.
+        }
+      }
       return res.status(200).json({
         task: {
           status,
@@ -74,11 +89,15 @@ export default async function handler(req, res) {
           stage: job.stage,
           error_message: job.error || job.hint || null,
           result: status === "completed" ? {
-            answer: "Your MP4 is ready. Download it below. This build uses generated scene cards and captions; connect stock-footage and voice services for full production.",
-            video_url: "/api/chat?task_id=" + id + "&video=1",
+            answer: stockFootage?.provider === "pexels"
+              ? "Your MP4 is ready with Pexels stock footage and captions. Download it below."
+              : "Your MP4 is ready. Download it below. Check the job's stock_footage details for the media source used.",
+            video_url: videoUrl,
             seo: job.seo,
             plan: job.plan,
-            output: job.output
+            output: job.output,
+            stock_footage: stockFootage,
+            media_warnings: job.media_warnings || []
           } : null
         },
         events
