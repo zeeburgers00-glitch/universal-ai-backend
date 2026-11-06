@@ -26,27 +26,48 @@ export default async function handler(req, res) {
         });
         const data = await upstream.json();
         if (!upstream.ok) {
-          const fallback = await requestJson("/v1/chat/completions", "POST", {
-            provider: "groq",
-            model: "llama-3.3-70b-versatile",
-            messages: [
-              { role: "system", content: "You are the AI assistant inside AutoTube AI Studio. Help with YouTube strategy, scripts, SEO, production planning and general questions. Be accurate and practical. Never claim you searched live trends, rendered media, uploaded a video, changed a channel, or completed an external action unless a connected tool actually confirms it. Explain when a feature needs a missing worker or account connection." },
-              { role: "user", content: message }
-            ],
-            temperature: 0.4,
-            max_tokens: 1800
-          });
-          const answerData = await fallback.json();
-          const answer = answerData?.choices?.[0]?.message?.content;
-          if (!fallback.ok || typeof answer !== "string" || !answer.trim()) {
+          const messages = [
+            { role: "system", content: "You are the AI assistant inside AutoTube AI Studio. Help with YouTube strategy, scripts, SEO, production planning and general questions. Be accurate and practical. Never claim you searched live trends, rendered media, uploaded a video, changed a channel, or completed an external action unless a connected tool actually confirms it. Explain when a feature needs a missing worker or account connection." },
+            { role: "user", content: message }
+          ];
+          const providerOrder = [
+            ["groq", "llama-3.3-70b-versatile"],
+            ["gemini", "gemini-2.0-flash"],
+            ["openrouter", "meta-llama/llama-3.3-70b-instruct"],
+            ["mistral", "mistral-small-latest"],
+            ["huggingface", "meta-llama/Llama-3.1-8B-Instruct"]
+          ];
+          let answer = "";
+          let lastProviderError = "";
+          try {
+            const statusResponse = await requestJson("/v1/providers");
+            const statusData = statusResponse.ok ? await statusResponse.json() : {};
+            const ready = new Set((statusData.providers || []).filter(p => p.ready || p.configured).map(p => p.id));
+            const candidates = providerOrder.filter(([id]) => ready.has(id));
+            for (const [provider, model] of candidates) {
+              const fallback = await requestJson("/v1/chat/completions", "POST", {
+                provider, model, messages, temperature: 0.4, max_tokens: 1800
+              });
+              const answerData = await fallback.json();
+              const content = answerData?.choices?.[0]?.message?.content;
+              if (fallback.ok && typeof content === "string" && content.trim()) {
+                answer = content.trim();
+                break;
+              }
+              lastProviderError = answerData?.detail || answerData?.error || ("Provider " + provider + " failed.");
+            }
+          } catch (providerError) {
+            lastProviderError = providerError?.message || "Provider status check failed.";
+          }
+          if (!answer) {
             return res.status(upstream.status).json({
-              error: data.detail || data.error || "Chat task could not be queued.",
-              hint: "Persistent multi-agent chat needs Supabase and Redis/Celery; direct chat also needs a working model provider."
+              error: data.detail || data.error || "No configured AI provider could answer.",
+              hint: lastProviderError || "Add a free-tier Groq or Gemini API key in Studio → Settings. Persistent agent history also needs Supabase and Redis/Celery."
             });
           }
           return res.status(200).json({
-            kind: "instant", status: "completed", answer: answer.trim(),
-            notice: "Instant AI chat is active. Persistent multi-agent task history is waiting for Supabase and Redis/Celery setup."
+            kind: "instant", status: "completed", answer,
+            notice: "AI fallback selected an available configured provider. Persistent multi-agent task history still needs Supabase and Redis/Celery."
           });
         }
         return res.status(202).json({ task_id: data.task_id, conversation_id: data.conversation_id, kind: "chat", status: data.status || "queued" });
