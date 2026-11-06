@@ -25,10 +25,30 @@ export default async function handler(req, res) {
           message, conversation_id: typeof req.body?.conversation_id === "string" ? req.body.conversation_id : undefined
         });
         const data = await upstream.json();
-        if (!upstream.ok) return res.status(upstream.status).json({
-          error: data.detail || data.error || "Chat task could not be queued.",
-          hint: "Durable chat requires Supabase, Redis/Celery and an active AI model provider."
-        });
+        if (!upstream.ok) {
+          const fallback = await requestJson("/v1/chat/completions", "POST", {
+            provider: "groq",
+            model: "llama-3.3-70b-versatile",
+            messages: [
+              { role: "system", content: "You are the AI assistant inside AutoTube AI Studio. Help with YouTube strategy, scripts, SEO, production planning and general questions. Be accurate and practical. Never claim you searched live trends, rendered media, uploaded a video, changed a channel, or completed an external action unless a connected tool actually confirms it. Explain when a feature needs a missing worker or account connection." },
+              { role: "user", content: message }
+            ],
+            temperature: 0.4,
+            max_tokens: 1800
+          });
+          const answerData = await fallback.json();
+          const answer = answerData?.choices?.[0]?.message?.content;
+          if (!fallback.ok || typeof answer !== "string" || !answer.trim()) {
+            return res.status(upstream.status).json({
+              error: data.detail || data.error || "Chat task could not be queued.",
+              hint: "Persistent multi-agent chat needs Supabase and Redis/Celery; direct chat also needs a working model provider."
+            });
+          }
+          return res.status(200).json({
+            kind: "instant", status: "completed", answer: answer.trim(),
+            notice: "Instant AI chat is active. Persistent multi-agent task history is waiting for Supabase and Redis/Celery setup."
+          });
+        }
         return res.status(202).json({ task_id: data.task_id, conversation_id: data.conversation_id, kind: "chat", status: data.status || "queued" });
       }
       const upstream = await requestJson("/v1/command", "POST", {
