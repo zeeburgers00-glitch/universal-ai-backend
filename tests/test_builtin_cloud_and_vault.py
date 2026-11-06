@@ -34,15 +34,20 @@ def test_builtin_cloud_runtime_makes_all_45_providers_9_workers_37_channels_and_
     client = TestClient(app)
     headers = {"X-API-Key": "test-secret-key"}
 
-    # 1. All 45 LLM providers & all 9 workers ready
+    # 1. All 48 LLM provider entries; only the 9 implemented built-in workers are ready.
     prov_resp = client.get("/v1/providers")
     assert prov_resp.status_code == 200
     prov_data = prov_resp.json()
     assert prov_data["total"] == 48
     assert prov_data["ready_count"] == 48
     assert all(p["ready"] is True for p in prov_data["providers"])
-    assert len(prov_data["workers"]) == 9
-    assert all(w["configured"] is True for w in prov_data["workers"])
+    assert len(prov_data["workers"]) == 12
+    ready_workers = {w["id"] for w in prov_data["workers"] if w["configured"]}
+    assert len(ready_workers) == 9
+    assert ready_workers == {"voice", "openvoice", "media", "automation", "agents",
+                             "desktop", "youtube", "channels", "rea"}
+    assert all(w["configured"] is False for w in prov_data["workers"]
+               if w["id"] in {"plugins", "mail", "finance"})
 
     # 2. All 37 publishing channels configured
     chan_resp = client.get("/v1/channels")
