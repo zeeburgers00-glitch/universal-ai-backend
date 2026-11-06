@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "policies": {
-    "ad_traffic": "Only genuine human traffic and policy-compliant placements. Never click, refresh, incentivize, or automate ad interactions.",
+    "ad_traffic": "Only genuine human traffic and policy-compliant placements. Artificial traffic is prohibited. Never click, refresh, incentivize, or automate ad interactions.",
     "affiliate": "Disclose affiliate relationships clearly and follow program terms.",
     "revenue": "Only finalized provider statements or verified payment events count as realized revenue; estimates are tracked separately."
   },
