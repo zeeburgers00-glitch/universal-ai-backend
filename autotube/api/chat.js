@@ -44,10 +44,18 @@ export default async function handler(req, res) {
       if (!/^cmd-[a-f0-9]{16}$/i.test(id)) return res.status(400).json({ error: "Invalid job id." });
 
       if (req.query.video === "1") {
-        const upstream = await requestJson("/v1/command/" + id + "/download-token");
-        const data = await upstream.json();
-        if (!upstream.ok) return res.status(upstream.status).json({ error: data.detail || "Video is not ready." });
-        return res.redirect(302, base + data.path);
+        const upstream = await requestJson("/v1/command/" + id + "/video");
+        if (!upstream.ok) {
+          const body = await upstream.text();
+          return res.status(upstream.status).json({ error: body || "Video is not ready." });
+        }
+        const bytes = Buffer.from(await upstream.arrayBuffer());
+        res.status(200);
+        res.setHeader("Content-Type", "video/mp4");
+        res.setHeader("Content-Disposition", 'attachment; filename="' + id + '.mp4"');
+        res.setHeader("Content-Length", String(bytes.length));
+        res.setHeader("Cache-Control", "no-store");
+        return res.send(bytes);
       }
 
       const upstream = await requestJson("/v1/command/" + id);
