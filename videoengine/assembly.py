@@ -53,16 +53,38 @@ def find_ffmpeg() -> str:
 
 
 def run_ffmpeg(args: list[str], *, ffmpeg: str, timeout: int = 3600) -> str:
-    completed = subprocess.run(
-        [ffmpeg, "-hide_banner", "-nostdin", *args],
-        capture_output=True,
-        text=True,
-        timeout=timeout,
-        check=False,
-    )
+    """Run FFmpeg and preserve actionable diagnostics instead of hiding the cause."""
+    try:
+        completed = subprocess.run(
+            [ffmpeg, "-hide_banner", "-nostdin", *args],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        stderr = exc.stderr or ""
+        if isinstance(stderr, bytes):
+            stderr = stderr.decode("utf-8", errors="replace")
+        tail = str(stderr).strip().splitlines()[-24:]
+        raise RuntimeError(
+            f"ffmpeg timed out after {timeout}s"
+            + (": " + " | ".join(tail) if tail else "")
+        ) from exc
     if completed.returncode != 0:
-        tail = (completed.stderr or "").strip().splitlines()[-12:]
-        raise RuntimeError("ffmpeg failed: " + " | ".join(tail))
+        lines = (completed.stderr or "").strip().splitlines()
+        # Keep the real error line (often above FFmpeg's final frame counters).
+        useful = [line for line in lines if any(
+            marker in line.lower() for marker in
+            ("error", "invalid", "failed", "could not", "no such", "unable", "not found")
+        )]
+        tail = (useful[-8:] + lines[-16:])[-24:]
+        command = " ".join(str(part) for part in args[-8:])
+        raise RuntimeError(
+            f"ffmpeg failed (exit {completed.returncode})"
+            + (": " + " | ".join(tail) if tail else "")
+            + f"; output_args={command[:500]}"
+        )
     return completed.stderr or ""
 
 
@@ -132,8 +154,11 @@ def render_scene(
     args: list[str] = ["-y"]
 
     if video is not None:
-        args += ["-stream_loop", "-1", "-i", str(video)]
-        filters = [_fit_filter(width, height)]
+        # Pexels files may start with missing/non-zero timestamps. Regenerate
+        # timestamps and force a constant output frame cadence to avoid a
+        # zero-frame MP4 even when FFmpeg can read the source stream metadata.
+        args += ["-fflags", "+genpts", "-stream_loop", "-1", "-i", str(video)]
+        filters = [f"fps={fps}," + _fit_filter(width, height)]
     elif image is not None:
         args += ["-loop", "1", "-i", str(image)]
         filters = [_zoom_filter(width, height, fps, frames) if ken_burns else _fit_filter(width, height)]
@@ -159,6 +184,8 @@ def render_scene(
         "-map", "0:v:0",
         "-vf", ",".join(filters),
         "-r", str(fps),
+        "-fps_mode", "cfr",
+        "-avoid_negative_ts", "make_zero",
         "-c:v", "libx264",
         "-preset", "veryfast",
         "-crf", "21",
