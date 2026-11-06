@@ -306,8 +306,20 @@ def _render_job(
             media_warnings=media_warnings,
         )
     except Exception as exc:  # surface the real reason instead of a generic 500
-        _update(job_id, status="failed", stage="failed", error=f"{type(exc).__name__}: {exc}",
-                finished_at=_now())
+        # Preserve the last render phase so an operator can distinguish stock
+        # decoding, scene encoding, concatenation and caption burn-in failures.
+        try:
+            failed_stage = str(_load(job_id).get("stage") or "unknown")
+        except Exception:
+            failed_stage = "unknown"
+        _update(
+            job_id,
+            status="failed",
+            stage="failed",
+            failed_stage=failed_stage,
+            error=f"{type(exc).__name__}: {exc}",
+            finished_at=_now(),
+        )
 
 
 # --------------------------------------------------------------------------- routes
