@@ -122,7 +122,9 @@ def test_channel_manifest_does_not_claim_every_connector_is_live():
 def test_control_plane_imports_and_exposes_worker_and_base44_routes():
     from app.main import app
 
-    paths = {route.path for route in app.routes}
+    # FastAPI's included-router wrapper changed shape in newer releases; OpenAPI
+    # is the stable public view of the registered HTTP routes.
+    paths = set(app.openapi()["paths"])
     required = {
         "/health",
         "/explorer",
