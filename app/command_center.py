@@ -376,6 +376,54 @@ def get_timeline(job_id: str, _: bool = Depends(require_api_key)) -> dict[str, A
     return {"job_id": job_id, "timeline": job["timeline"]}
 
 
+@router.get("/{job_id}/download-token")
+def command_download_token(job_id: str, _: bool = Depends(require_api_key)) -> dict[str, Any]:
+    """Issue a short-lived signed URL so large MP4s download directly from Railway, not through Vercel."""
+    import hashlib
+    import hmac
+
+    if not job_id.startswith("cmd-") or len(job_id) != 20:
+        raise HTTPException(status_code=404, detail="Command job not found")
+    job = _load(job_id)
+    path = Path((job.get("output") or {}).get("path", ""))
+    if job.get("status") != "completed" or not path.is_file():
+        raise HTTPException(status_code=409, detail=f"Video is not ready (status: {job.get('status')})")
+    secret = os.getenv("BACKEND_API_KEY", "")
+    if not secret:
+        raise HTTPException(status_code=503, detail="Backend API key is not configured on the server")
+    expires = int(time.time()) + 600
+    payload = f"{job_id}:{expires}".encode("utf-8")
+    signature = hmac.new(secret.encode("utf-8"), payload, hashlib.sha256).hexdigest()
+    return {
+        "path": f"/v1/command/{job_id}/download?expires={expires}&signature={signature}",
+        "expires_at": expires,
+    }
+
+
+@router.get("/{job_id}/download")
+def command_download_signed(job_id: str, expires: int, signature: str):
+    """Serve a completed MP4 using a 10-minute, job-scoped signed download URL."""
+    import hashlib
+    import hmac
+
+    secret = os.getenv("BACKEND_API_KEY", "")
+    now = int(time.time())
+    if not secret or expires < now or expires > now + 600:
+        raise HTTPException(status_code=401, detail="Download link expired or invalid")
+    payload = f"{job_id}:{expires}".encode("utf-8")
+    expected = hmac.new(secret.encode("utf-8"), payload, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(signature, expected):
+        raise HTTPException(status_code=401, detail="Download link expired or invalid")
+    if not job_id.startswith("cmd-") or len(job_id) != 20:
+        raise HTTPException(status_code=404, detail="Command job not found")
+    from fastapi.responses import FileResponse
+    job = _load(job_id)
+    path = Path((job.get("output") or {}).get("path", ""))
+    if job.get("status") != "completed" or not path.is_file():
+        raise HTTPException(status_code=404, detail="Video file not found")
+    return FileResponse(path, media_type="video/mp4", filename=f"{job_id}.mp4")
+
+
 @router.get("/{job_id}/video")
 def get_video(
     job_id: str,
