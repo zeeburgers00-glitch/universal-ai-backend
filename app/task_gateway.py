@@ -18,6 +18,11 @@ from .builtin_workers import (
 from .vault import get_secret
 
 
+BUILTIN_WORKER_SERVICES = {
+    "voice", "openvoice", "media", "automation", "agents", "desktop",
+    "youtube", "channels", "rea",
+}
+
 SERVICES = {
     "voice": {"url_env": "VOICE_WORKER_URL", "key_env": "VOICE_WORKER_API_KEY"},
     "openvoice": {"url_env": "OPENVOICE_WORKER_URL", "key_env": "OPENVOICE_WORKER_API_KEY"},
@@ -42,7 +47,8 @@ def service_status() -> list[dict[str, Any]]:
         base_url = get_secret(config["url_env"])
         secret = get_secret(config["key_env"])
         direct_configured = bool(base_url and secret)
-        effective_configured = True if cloud_builtin else direct_configured
+        builtin_configured = cloud_builtin and service_id in BUILTIN_WORKER_SERVICES
+        effective_configured = builtin_configured or direct_configured
         result.append({
             "id": service_id,
             "configured": effective_configured,
@@ -51,7 +57,7 @@ def service_status() -> list[dict[str, Any]]:
             "secret_configured": bool(secret) or cloud_builtin,
             "url_env": config["url_env"],
             "secret_env": config["key_env"],
-            "mode": "external_worker" if direct_configured else ("builtin_cloud_worker" if cloud_builtin else "unconfigured"),
+            "mode": "external_worker" if direct_configured else ("builtin_cloud_worker" if builtin_configured else "unconfigured"),
             "status": "configured" if effective_configured else "not_configured",
             "note": "Only the configuration state is returned. Secret values and base URLs are never echoed.",
         })
@@ -65,7 +71,7 @@ def _worker_config(service: str) -> tuple[str, str] | None:
     base_url = get_secret(config["url_env"]).rstrip("/")
     api_key = get_secret(config["key_env"])
     if not base_url or not api_key:
-        if builtin_runtime_enabled():
+        if builtin_runtime_enabled() and service in BUILTIN_WORKER_SERVICES:
             return None
         raise HTTPException(
             status_code=503,
