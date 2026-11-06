@@ -174,6 +174,48 @@ def _ffmpeg_or_skip() -> str:
         pytest.skip("ffmpeg not available in this environment")
 
 
+def test_render_job_uses_downloaded_pexels_clips(monkeypatch, secured, isolated_store):
+    clip = isolated_store / "stock.mp4"
+    clip.write_bytes(b"placeholder")
+    monkeypatch.setattr(
+        command_center,
+        "download_pexels_videos",
+        lambda **kwargs: [{
+            "path": str(clip),
+            "pexels_video_id": 123,
+            "source_url": "https://www.pexels.com/video/123/",
+            "creator_name": "Test Creator",
+            "creator_url": "https://www.pexels.com/@testcreator/",
+            "attribution": "Video by Test Creator via Pexels",
+        }],
+    )
+    monkeypatch.setattr(command_center, "find_ffmpeg", lambda: "ffmpeg")
+    seen = {}
+
+    def fake_render(timeline, assets_for_scene, output, **kwargs):
+        seen.update(assets_for_scene(timeline.scenes[0]))
+        return {"duration": 4.0, "size_bytes": 2048}
+
+    monkeypatch.setattr(command_center, "render_timeline", fake_render)
+    job_id = "cmd-0123456789abcdef"
+    command_center._save({"job_id": job_id, "created_at": command_center._now(), "status": "queued"})
+    request = command_center.CommandRequest(command="make a 4 second video about mountains")
+    plan = {
+        "title": "Mountains", "duration_seconds": 4, "aspect_ratio": "16:9",
+        "scene_seconds": 4, "beats": ["Explore the mountains."],
+        "visual_prompts": ["mountain landscape"], "source": "heuristic", "language": "en",
+        "topic": "mountains",
+    }
+
+    command_center._render_job(job_id, request, plan, [])
+    job = command_center._load(job_id)
+    assert seen["video"] == clip
+    assert job["status"] == "completed"
+    assert job["stock_footage"]["provider"] == "pexels"
+    assert job["stock_footage"]["clip_count"] == 1
+    assert job["stock_footage"]["attribution"] == ["Video by Test Creator via Pexels"]
+
+
 def test_command_renders_a_real_video(secured, isolated_store):
     _ffmpeg_or_skip()
     response = client.post(
