@@ -56,14 +56,12 @@ PROVIDERS: dict[str, Provider] = {
                     "glm-4.6", "https://api.z.ai/api/paas/v4"),
     "openrouter": Provider("openrouter", "OpenRouter", "OPENROUTER_API_KEY", "OPENROUTER_DEFAULT_MODEL",
                            "meta-llama/llama-3.3-70b-instruct", "https://openrouter.ai/api/v1"),
-    "huggingface": Provider("huggingface", "Hugging Face Router", "HF_API_KEY", "HF_DEFAULT_MODEL",
+    "huggingface": Provider("huggingface", "Hugging Face Router", "HUGGINGFACE_API_KEY", "HUGGINGFACE_DEFAULT_MODEL",
                             "meta-llama/Llama-3.3-70B-Instruct", "https://router.huggingface.co/v1"),
     "opencode_zen": Provider("opencode_zen", "OpenCode Zen", "OPENCODE_ZEN_API_KEY",
-                             "OPENCODE_ZEN_DEFAULT_MODEL", "", base_env="OPENCODE_ZEN_BASE_URL",
-                             note="Base URL unknown — set OPENCODE_ZEN_BASE_URL."),
-    "hackerai": Provider("hackerai", "Hacker AI", "HACKERAI_API_KEY", "HACKERAI_DEFAULT_MODEL",
-                         "", base_env="HACKERAI_BASE_URL",
-                         note="Base URL unknown — set HACKERAI_BASE_URL."),
+                             "OPENCODE_ZEN_DEFAULT_MODEL", "", "https://opencode.ai/zen/v1"),
+    "hackerai": Provider("hackerai", "Hacker AI", "HACKER_AI_API_KEY", "HACKER_AI_DEFAULT_MODEL",
+                         "", "https://api.hackerai.sh/v1"),
     "custom": Provider("custom", "Custom OpenAI-compatible", "AI_API_KEY", "AI_DEFAULT_MODEL",
                        "", base_env="AI_BASE_URL"),
 }
@@ -223,6 +221,8 @@ def health(probe: bool = False) -> dict[str, Any]:
             entry["problem"] = "Base URL must use HTTPS."
         elif not key:
             entry["problem"] = f"No key. Set {spec.key_env}."
+        elif not entry["model"]:
+            entry["problem"] = f"Missing model. Set {spec.model_env}."
         items.append(entry)
 
     if probe:
