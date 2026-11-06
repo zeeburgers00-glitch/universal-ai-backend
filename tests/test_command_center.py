@@ -150,6 +150,20 @@ def test_two_hour_command_plans_without_rendering(secured, isolated_store):
     assert timeline["scene_count"] == 900
 
 
+def test_image_paths_cannot_escape_using_a_shared_directory_prefix(secured, isolated_store):
+    sibling = Path(str(isolated_store) + "-outside")
+    sibling.mkdir()
+    secret_file = sibling / "not-an-image.png"
+    secret_file.write_bytes(b"not an image")
+    response = client.post(
+        "/v1/command",
+        headers=HEADERS,
+        json={"command": "make a 10 second video", "render": False,
+              "image_paths": [str(secret_file)]},
+    )
+    assert response.status_code == 400
+
+
 def test_image_paths_outside_the_data_dir_are_rejected(secured, isolated_store):
     response = client.post(
         "/v1/command",
