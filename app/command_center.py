@@ -36,6 +36,7 @@ from videoengine.seo import seo_pack
 from .ai_router import chain as ai_chain, complete as ai_complete
 from .security import require_api_key
 from .vault import get_secret
+from .pexels import download_pexels_videos
 
 router = APIRouter(prefix="/v1/command", tags=["command"])
 
@@ -82,7 +83,7 @@ class CommandRequest(BaseModel):
     command: str = Field(min_length=3, max_length=4000)
     render: bool = Field(default=True, description="Start rendering immediately")
     scene_seconds: float | None = Field(default=None, ge=2, le=60)
-    fps: int = Field(default=30)
+    fps: int = Field(default=30, ge=12, le=60)
     captions: bool = True
     image_paths: list[str] = Field(default_factory=list, max_length=5000)
     grade: str = Field(default="cinematic", max_length=32)
@@ -119,11 +120,11 @@ def capabilities() -> dict[str, Any]:
     upgrades: list[str] = []
     if model is None:
         upgrades.append("a model key (GROQ_ / GEMINI_ / MISTRAL_ / OPENROUTER_ / ZAI_ / HF_) for real scripts")
-    if not (os.getenv("PEXELS_API_KEY") or "").strip():
+    if not get_secret("PEXELS_API_KEY"):
         upgrades.append("PEXELS_API_KEY for real stock footage instead of colour cards")
-    if not (os.getenv("VOICE_WORKER_URL") or "").strip():
+    if not get_secret("VOICE_WORKER_URL"):
         upgrades.append("VOICE_WORKER_URL for narration audio")
-    if not (os.getenv("MEDIA_WORKER_URL") or "").strip():
+    if not get_secret("MEDIA_WORKER_URL"):
         upgrades.append("MEDIA_WORKER_URL for AI-generated visuals and post-processing")
 
     return {
@@ -201,7 +202,9 @@ def _resolve_images(request: CommandRequest) -> list[Path]:
     allowed: list[Path] = []
     for raw in request.image_paths:
         candidate = Path(raw).resolve()
-        if not str(candidate).startswith(str(DATA_DIR)):
+        try:
+            candidate.relative_to(DATA_DIR.resolve())
+        except ValueError:
             raise HTTPException(status_code=400, detail="image_paths must live under COMMAND_DATA_DIR")
         if not candidate.is_file():
             raise HTTPException(status_code=400, detail=f"image not found: {candidate.name}")
@@ -213,7 +216,9 @@ def _resolve_logo(raw: str | None) -> Path | None:
     if not raw:
         return None
     candidate = Path(raw).resolve()
-    if not str(candidate).startswith(str(DATA_DIR)):
+    try:
+        candidate.relative_to(DATA_DIR.resolve())
+    except ValueError:
         raise HTTPException(status_code=400, detail="logo_path must live under COMMAND_DATA_DIR")
     if not candidate.is_file():
         raise HTTPException(status_code=400, detail=f"logo not found: {candidate.name}")
@@ -242,10 +247,28 @@ def _render_job(
 
         binary = find_ffmpeg()
         cards: dict[int, Path] = {}
+        stock_videos: list[dict[str, Any]] = []
+        media_warnings: list[str] = []
+        if not images:
+            orientation = "portrait" if timeline.height > timeline.width else "landscape"
+            try:
+                stock_videos = download_pexels_videos(
+                    query=str(plan_data.get("topic") or plan_data.get("title") or request.command),
+                    output_dir=DATA_DIR / "assets" / job_id,
+                    orientation=orientation,
+                    max_downloads=min(8, len(timeline.scenes)),
+                )
+            except Exception as exc:
+                media_warnings.append(
+                    f"Pexels footage unavailable ({type(exc).__name__}); using generated scene cards."
+                )
 
         def assets(scene):
             if images:
                 return {"image": images[scene.index % len(images)], "ken_burns": True}
+            if stock_videos:
+                clip = stock_videos[scene.index % len(stock_videos)]
+                return {"video": Path(clip["path"]), "ken_burns": False}
             if scene.index not in cards:
                 cards[scene.index] = _card_for(scene.index, timeline.width, timeline.height, binary)
             return {"image": cards[scene.index], "ken_burns": True}
@@ -270,6 +293,17 @@ def _render_job(
             output={"path": str(output), "url": f"/v1/command/{job_id}/video",
                     "duration": info["duration"], "size_bytes": info["size_bytes"],
                     "resolution": f"{timeline.width}x{timeline.height}"},
+            stock_footage={
+                "provider": "pexels" if stock_videos else ("user_uploads" if images else "generated_cards"),
+                "clip_count": len(stock_videos),
+                "attribution": [item["attribution"] for item in stock_videos],
+                "sources": [
+                    {"video_id": item.get("pexels_video_id"), "url": item.get("source_url"),
+                     "creator": item.get("creator_name"), "creator_url": item.get("creator_url")}
+                    for item in stock_videos
+                ],
+            },
+            media_warnings=media_warnings,
         )
     except Exception as exc:  # surface the real reason instead of a generic 500
         _update(job_id, status="failed", stage="failed", error=f"{type(exc).__name__}: {exc}",
