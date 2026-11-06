@@ -12,9 +12,9 @@ export default async function handler(req, res) {
   const path = method === "GET" ? String(req.query?.path || "") : String(req.body?.path || "");
   const pathname = path.split("?")[0];
   const allowed = [
-    /^\\/v1\\/(tools|skills|tools\\/categories|catalog\\/(stats|sources)|providers|models\\/providers|workers\\/status|runtime\\/capabilities|workflows|agents|voice\\/providers|vault\\/status|channels|agent-fleet|youtube\\/team|rea\\/(status|tools)|discover\\/(categories|github))$/,
-    /^\\/v1\\/(agents\\/[a-zA-Z0-9_.:-]+\\/run|workflows\\/[a-zA-Z0-9_.:-]+\\/run|vault\\/secrets|voice\\/(tts|clone)|media\\/jobs|youtube\\/publish|rea\\/inspect)$/,
-    /^\\/v1\\/vault\\/secrets\\/[A-Z][A-Z0-9_]{1,95}$/
+    /^\/v1\/(tools|skills|tools\/categories|catalog\/(stats|sources)|providers|models\/providers|workers\/status|runtime\/capabilities|workflows|agents|voice\/providers|vault\/status|channels|agent-fleet|youtube\/team|rea\/(status|tools)|discover\/(categories|github))$/,
+    /^\/v1\/(agents\/[a-zA-Z0-9_.:-]+\/run|workflows\/[a-zA-Z0-9_.:-]+\/run|vault\/secrets|voice\/(tts|clone)|media\/jobs|youtube\/publish|rea\/inspect)$/,
+    /^\/v1\/vault\/secrets\/[A-Z][A-Z0-9_]{1,95}$/
   ];
   if (!pathname.startsWith("/v1/") || pathname.includes("..") || !allowed.some((pattern) => pattern.test(pathname))) {
     return res.status(400).json({ error: "This backend route is not available through the Studio proxy." });
