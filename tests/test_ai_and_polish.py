@@ -22,8 +22,8 @@ HEADERS = {"X-API-Key": KEY}
 
 ALL_KEY_ENVS = [
     "GROQ_API_KEY", "GEMINI_API_KEY", "MISTRAL_API_KEY", "ZAI_API_KEY", "OPENROUTER_API_KEY",
-    "HF_API_KEY", "OPENCODE_ZEN_API_KEY", "HACKERAI_API_KEY", "AI_API_KEY",
-    "OPENCODE_ZEN_BASE_URL", "HACKERAI_BASE_URL", "AI_BASE_URL",
+    "HUGGINGFACE_API_KEY", "HUGGINGFACE_DEFAULT_MODEL", "OPENCODE_ZEN_API_KEY", "HACKER_AI_API_KEY", "HACKER_AI_DEFAULT_MODEL", "AI_API_KEY",
+    "OPENCODE_ZEN_BASE_URL", "AI_BASE_URL",
 ]
 
 
@@ -53,7 +53,20 @@ def test_router_explains_why_a_provider_is_unusable(clean_keys):
     data = ai_router.health()
     entry = next(item for item in data["providers"] if item["provider"] == "opencode_zen")
     assert entry["usable"] is False
-    assert "OPENCODE_ZEN_BASE_URL" in entry["problem"]
+    assert "OPENCODE_ZEN_DEFAULT_MODEL" in entry["problem"]
+
+
+def test_router_uses_documented_huggingface_and_hackerai_environment_names(clean_keys):
+    clean_keys.setenv("HUGGINGFACE_API_KEY", "hf_test_token_123456")
+    clean_keys.setenv("HUGGINGFACE_DEFAULT_MODEL", "meta-llama/Llama-3.3-70B-Instruct")
+    clean_keys.setenv("HACKER_AI_API_KEY", "hacker_test_token_123456")
+    clean_keys.setenv("HACKER_AI_DEFAULT_MODEL", "hacker-model")
+    hf = ai_router.resolve("huggingface")
+    hacker = ai_router.resolve("hackerai")
+    assert hf is not None and hf.key_env == "HUGGINGFACE_API_KEY"
+    assert hf.base == "https://router.huggingface.co/v1"
+    assert hacker is not None and hacker.key_env == "HACKER_AI_API_KEY"
+    assert hacker.base == "https://api.hackerai.sh/v1"
 
 
 def test_router_honours_the_configured_order(clean_keys):
